@@ -75,9 +75,7 @@ Sisteminize uygun dosyayı [en son sürümden](https://github.com/qybaihe/bothub
 | Windows 10/11 (x64) | `BotHub-Setup-<sürüm>-x64.exe` |
 
 > [!TIP]
-> Derlemeler henüz kod imzalı değil.
-> - **macOS**: `BotHub.app` dosyasını Uygulamalar klasörüne sürükleyin, ilk açılışta sağ tıklayıp **Aç**'ı seçin (veya *Sistem Ayarları → Gizlilik ve Güvenlik → Yine de Aç*). Karantina işaretini `xattr -cr /Applications/BotHub.app` ile de kaldırabilirsiniz.
-> - **Windows**: SmartScreen "Windows bilgisayarınızı korudu" uyarısı gösterirse **Ek bilgi → Yine de çalıştır**'a tıklayın.
+> **macOS sürümleri Apple Developer ID ile imzalanmış ve noter onaylıdır (Notarized).** `BotHub.app` dosyasını `Applications` klasörüne sürükleyip doğrudan açabilirsiniz.
 
 Ardından kenar çubuğundaki **+** düğmesine tıklayın, bir platform seçin ve oturum açın. Her bot kendi hesabını kullanır.
 
@@ -160,27 +158,6 @@ Her platformun protokolleri ve API notları [`docs/`](../README.md) içinde:
 - **Hark** (`hark.com`): [`docs/hark/protocol.md`](../hark/protocol.md): REST ve NDJSON akış uç noktaları, bağlayıcılar, zamanlanmış görevler, sanal makine dosya ağacı ve bilgisayar oturumları
 
 ## ❓ Sık sorulan sorular
-
-<details>
-<summary><b>BotHub bu platformların resmî uygulaması mı?</b></summary>
-
-Hayır. BotHub bağımsız bir istemcidir ve Meta, xAI, Hark veya OpenAI ile bağlantısı yoktur. Her platformda kendi hesaplarınızı kullanır.
-
-</details>
-
-<details>
-<summary><b>Hesaplarım ve token'larım nerede saklanıyor?</b></summary>
-
-Yalnızca bilgisayarınızda. Web oturumları hesap başına ayrı Electron bölümlerinde tutulur; token'lar ve proxy parolaları `safeStorage` (macOS'ta Anahtar Zinciri) ile şifrelenip `0600` izinleriyle kaydedilir. BotHub telemetri göndermez.
-
-</details>
-
-<details>
-<summary><b>macOS, BotHub'ın açılamadığını söylüyor. Ne yapmalıyım?</b></summary>
-
-Derlemeler henüz imzalı değil. Uygulamaya sağ tıklayıp **Aç**'ı seçin veya `xattr -cr /Applications/BotHub.app` komutunu çalıştırın. Ayrıntılar için [Hızlı başlangıç](#-hızlı-başlangıç) bölümüne bakın.
-
-</details>
 
 <details>
 <summary><b>Bir mesaj uzun süredir "teslim edildi · yanıtlanıyor" durumunda. Yeniden denersem iki kez gider mi?</b></summary>

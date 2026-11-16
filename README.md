@@ -8,55 +8,57 @@
 
 # BotHub
 
-### **Bring all your personal agents together and use them in one client, just like Grok Bot**
+### **All your personal AI agents in one native desktop workspace**
 
-**A macOS and Windows app that puts your Meta Muse, Grok Bot, Hark and Dot bots in one window, each signed in with its own isolated account.**
+**Run Grok Bot, ChatGPT Dot, Meta Muse, and Hark side by side on macOS & Windows — with multi-account isolation, automatic multi-bot sidebar sync, and a Grok-style right-side workbench.**
 
-[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=Release&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
+[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=Latest&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
+[![Apple Notarized](https://img.shields.io/badge/macOS-Signed_%26_Notarized-16a34a?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/qybaihe/bothub/releases/latest)
+[![Windows](https://img.shields.io/badge/Windows-10%2F11_x64-0078d4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/qybaihe/bothub/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/bothub/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/qybaihe/bothub/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/Platform-macOS_%7C_Windows-6e56cf?style=for-the-badge)](#-quick-start)
-[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-38bdf8?style=for-the-badge)](LICENSE)
 
-**[⬇️ Download for macOS](https://github.com/qybaihe/bothub/releases/latest) · [⬇️ Download for Windows](https://github.com/qybaihe/bothub/releases/latest) · [📦 All releases](https://github.com/qybaihe/bothub/releases) · [🐛 Report an issue](https://github.com/qybaihe/bothub/issues)**
+<br />
 
-[Quick Start](#-quick-start) · [Platforms](#-supported-platforms) · [Features](#-features) · [Development](#-development) · [Releasing](#-releasing) · [Protocol Docs](#-protocol-docs) · [FAQ](#-faq)
+**[🍎 Download for Mac (Apple Silicon)](https://github.com/qybaihe/bothub/releases/latest) · [💻 Download for Mac (Intel)](https://github.com/qybaihe/bothub/releases/latest) · [🪟 Download for Windows](https://github.com/qybaihe/bothub/releases/latest) · [💬 Discussions](https://github.com/qybaihe/bothub/discussions)**
+
+[Why BotHub](#-why-bothub) · [30-Second Quick Start](#-30-second-quick-start) · [Supported Platforms](#-supported-platforms) · [Everyday Workflows](#-everyday-workflows) · [Development](#-development) · [FAQ](#-faq)
 
 </div>
 
 ---
 
-> [!NOTE]
-> BotHub is an independent client. It is not affiliated with Meta, xAI, Hark or OpenAI. You sign in with your own accounts, and credentials stay on your computer.
-
 <div align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/bothub-dark.webp">
-  <img src="docs/assets/bothub-light.webp" alt="BotHub: Muse, Dot, Hark and Grok Bot bots grouped in the sidebar, a conversation and the bot inspector (sample data)" width="100%">
+  <img src="docs/assets/bothub-light.webp" alt="BotHub workspace: bots grouped in the left sidebar, streaming chat in the center, and the right-side workbench" width="100%">
 </picture>
-<sub>Screenshot with fictional sample data.</sub>
 </div>
 
 <br />
+
+## 💡 Why BotHub?
+
+If you rely on personal AI agents every day, your desktop quickly turns into four separate apps and a dozen incognito browser profiles. **BotHub replaces the clutter with one calm, fast native window:**
 
 <table>
 <tr>
 <td width="33%" valign="top">
 
-### 🧩 Every agent, one window
-Muse, Grok Bot, Hark and Dot bots side by side, grouped in the sidebar, each with its own chat, inspector and settings.
+### 🗂️ Bot-first left sidebar
+Organize **Grok Bot**, **ChatGPT Dot**, **Meta Muse**, and **Hark** into custom project groups. Sign into **one Grok Bot account** and every bot on that account automatically expands into the sidebar — ready to switch in one click or via `⌘K`.
 
 </td>
 <td width="33%" valign="top">
 
-### 🔐 Isolated accounts
-Every account runs in its own session partition or encrypted credential slot, so several accounts on the same platform never mix.
+### 👥 Multi-account without friction
+Keep work, personal, and team accounts online at the same time without ever mixing sessions. Sign in via window, 1-click default browser auth, token/cookie paste, batch email import, and 1-to-1 proxy pool binding.
 
 </td>
 <td width="33%" valign="top">
 
-### ✅ Reliable delivery
-Messages show *sending*, *delivered · replying*, *no reply* or *failed*. A message the platform accepted is never offered as unsent, so a retry never posts it twice.
+### 🛠️ Right-side workbench (`⌘I`)
+Keep the center conversation clean. Open the right-hand workbench whenever you need to inspect subagent tasks, edit memories & skills, manage scheduled jobs, browse generated files, or control cloud sandboxes.
 
 </td>
 </tr>
@@ -64,138 +66,122 @@ Messages show *sending*, *delivered · replying*, *no reply* or *failed*. A mess
 
 ---
 
-## ⚡ Quick Start
+## ⚡ 30-Second Quick Start
 
-Download the file for your system from the [latest release](https://github.com/qybaihe/bothub/releases/latest):
+### 1. Download & Install
 
-| System | File |
-| :--- | :--- |
-| macOS, Apple silicon | `BotHub-<version>-arm64.dmg` |
-| macOS, Intel | `BotHub-<version>-x64.dmg` |
-| Windows 10/11 (x64) | `BotHub-Setup-<version>-x64.exe` |
+Grab the installer for your machine from [**Releases**](https://github.com/qybaihe/bothub/releases/latest):
 
-> [!TIP]
-> Builds are not code-signed yet.
-> - **macOS**: drag `BotHub.app` into Applications, then right-click it and choose **Open** the first time (or *System Settings → Privacy & Security → Open Anyway*). You can also clear the quarantine flag with `xattr -cr /Applications/BotHub.app`.
-> - **Windows**: if SmartScreen says "Windows protected your PC", click **More info → Run anyway**.
+| Platform | Installer | Notes |
+| :--- | :--- | :--- |
+| **macOS (Apple Silicon M1–M4)** | `BotHub-<version>-arm64.dmg` | **Apple Developer ID signed & notarized** — drag into `Applications` and open directly |
+| **macOS (Intel)** | `BotHub-<version>-x64.dmg` | **Apple Developer ID signed & notarized** — opens directly without Gatekeeper warnings |
+| **Windows 10 / 11 (x64)** | `BotHub-Setup-<version>-x64.exe` | One-click NSIS installer with automatic background updates |
 
-Then click **+** in the sidebar, pick a platform, and sign in. Each bot keeps its own account.
+### 2. Connect Your Accounts (Two Easy Entry Points)
 
-**Updates**: on Windows, BotHub downloads new versions in the background and installs them with one click. On macOS, it tells you when a new version is out and opens the download page.
+- **Top-left `+` button (`⌘N`)**: Pick a platform to sign in via window, authorize in your default browser, or paste credentials directly.
+- **Bottom-left `Settings & Accounts`**: Manage all connected accounts in one dashboard, batch-import Muse or Dot accounts, sync all bots under a Grok account, and configure your proxy pool.
+
+> 💡 **Built-in Full-Screen Guide**: Click the **✦ Sparkles** icon at the bottom-left of the sidebar anytime for an interactive walkthrough of the layout, account import paths, and right-side workbench.
+
+### 3. Chat & Control
+
+Click any bot on the left to stream replies, attach files, or approve actions. Press **`⌘I`** (`Ctrl+I` on Windows) or click the top-right panel icon to toggle that bot's tailored right-side workbench.
+
+---
 
 ## 🤖 Supported Platforms
 
-| Platform | Protocol & transport | What you get |
-| :--- | :--- | :--- |
-| **Meta Muse** (`muse.ai`) | Isolated Electron partition + native WebSocket gateway | Multiple accounts, batch import with email codes, per-account HTTP/SOCKS5 proxy, cloud computer, goals, peers, workspace files, connector approvals and diagnostics |
-| **Grok Bot** (`grok.com`) | Connect-RPC / Protobuf over the Sand gateway (`*.sand.x.ai`) | Multiple accounts, Sand cloud workspace, live streaming, tool-call traces, sessions, scheduled tasks, memories and skills |
-| **Hark** (`hark.com`) | WebSocket RPC + multimodal REST | Browser sign-in (Google or email), live streaming with background reply sync, file and image attachments, document cards, scheduled tasks, memories and connectors |
-| **Dot** (`chatgpt.com/dots`) | OpenAI Orbit/TBO REST + server-sent events | Browser OAuth sign-in or Access/Refresh Token import, encrypted token storage, live streaming, file uploads, skills, automations, connectors and per-account proxy |
+Each platform adapts the right-side workbench to its real capabilities — no generic filler panels:
 
-## ✨ Features
+| Platform | How You Sign In / Import | How It Appears in Sidebar | Right-Side Workbench (`⌘I`) |
+| :--- | :--- | :--- | :--- |
+| **Grok Bot** (`grok.com`) | Clean sign-in window, **1-click default browser auth**, or Token / Cookie / JSON / API Key paste | **1 account → many bots**: all agents & group rooms on your account sync automatically as individual sidebar bots; create new bots without re-authenticating | Sessions, live subagent tasks, automations, memories & skills, generated files, cloud sandbox, MCP connectors & recipe import/export |
+| **Meta Muse** (`muse.ai`) | Partition sign-in window or **batch email OTP import** | 1 bot per isolated Muse account (supports 10+ parallel accounts) | Usage quota, action approvals, session history, cron schedules, goals, memories, skills, workspace file preview & cloud computer view |
+| **ChatGPT Dot** (`chatgpt.com/dots`) | Web sign-in window or **single / multi-line AT, RT & JSON batch import** | 1 bot per Dot account with automatic Refresh Token renewal | Orbit persona switcher, Dot vs. Native mode, core goal editor, **1-click cross-account memory migration**, and Pages / Library browser |
+| **Hark** (`hark.com`) | Google / email sign-in window or **Session Cookie / Token paste** | 1 bot per Hark account | Home workflow cards, conversation switcher, scheduled tasks, generated file library, live cloud browser view & workspace connectors |
 
-- **Many accounts, no cross-talk**: each account lives in its own Electron `persist:` partition or encrypted credential slot, so you can run several accounts of the same platform at once.
-- **Management console**: a full-screen view with a fleet overview, bot filtering and search, batch connection checks, and per-platform accounts, tokens and proxies.
-- **Rich agent chat**: live streaming with thinking traces and tool cards, recovery for long background tasks, Markdown tables, highlighted code, document previews, and attachment downloads.
-- **Bot inspector**: the right-hand panel shows each bot's sessions, scheduled tasks, memories, skills, files and members, depending on the platform.
-- **Living avatars**: every bot gets an animated `GrokBotMark` character that follows your pointer and reacts while it works; pick a shape and color or upload a photo.
-- **Secure by default**: tokens and proxy passwords are encrypted with Electron `safeStorage` (Keychain on macOS) and written with `0600` permissions. No hard-coded secrets, no telemetry.
-- **English and Chinese UI**, light and dark themes.
+---
+
+## ✨ Everyday Workflows
+
+- **Create & clone Grok Bots in seconds**: Already signed into Grok Bot? Click `+` → **Grok Bot** to spin up a new specialized bot on your existing account or re-sync your full roster in one click.
+- **1-to-1 Proxy Pool for multi-account fleets**: Paste a list of `SOCKS5` / `SOCKS5H` / `HTTP` proxies in **Settings → Proxy Pool** and bind one dedicated egress IP per account. If a proxy fails, BotHub blocks traffic rather than leaking your direct IP.
+- **Never double-sends a message**: Every turn tracks *sending*, *accepted · replying*, *no reply*, or *failed*. Once a platform accepts your prompt, BotHub never mislabels it as unsent.
+- **Living interactive avatars**: Every bot features a customizable 3D `GrokBotMark` character that tracks your cursor and animates as it thinks, works, or streams — or upload your own custom avatar.
+- **One-click updates on macOS & Windows**: Signed builds download new releases in the background and update in a single click.
+- **100% local & telemetry-free**: BotHub is an independent open-source client (not affiliated with xAI, OpenAI, Meta, or Hark). Your accounts, cookies, and Keychain-protected tokens never leave your computer.
+
+---
+
+## ⌨️ Useful Shortcuts
+
+| Shortcut (macOS / Windows) | Action |
+| :--- | :--- |
+| `⌘K` / `Ctrl+K` | Command Palette — instant search across bots, groups, and actions |
+| `⌘N` / `Ctrl+N` | Add a new bot or connect an account |
+| `⌘I` / `Ctrl+I` | Toggle the right-side workbench for the active bot |
+| `⌘[` · `⌘]` / `Ctrl+[` · `Ctrl+]` | Jump to the previous / next bot in the sidebar |
+
+---
 
 ## 🧰 Development
 
+Requires **Node.js 22.19+** (Node 24 recommended; see [`.nvmrc`](.nvmrc)).
+
 ```bash
+git clone https://github.com/qybaihe/bothub.git
+cd bothub
 npm ci
-npm run dev          # Electron + Vite with hot reload
+npm run dev          # Launch Electron + Vite with hot reload
 ```
 
 | Command | Description |
 | :--- | :--- |
-| `npm run dev` | Run the Electron main process, preload and React renderer with hot reload |
-| `npm run dev:web` | Run only the renderer in a browser (no Electron, no accounts) |
-| `npm run typecheck` | Type-check the Node and web targets |
-| `npm test` | Unit tests (Vitest) |
-| `npm run build` | Type-check and build production bundles into `out/` |
-| `npm run dist:mac` / `npm run dist:win` | Package macOS `dmg` + `zip` (arm64 + x64) / the Windows NSIS installer into `release/` |
-| `npm run dist:dir` | Unpacked macOS arm64 app for a quick smoke test |
+| `npm run dev` | Start Electron main, preload, and React renderer with hot reload |
+| `npm run typecheck` | Type-check both Node and renderer TypeScript targets |
+| `npm test` | Run the Vitest unit test suite |
+| `npm run build` | Build production bundles into `out/` |
+| `npm run dist:dir` | Package an unpacked macOS `arm64` app in `release/` for quick local testing |
+| `npm run dist:mac` / `npm run dist:win` | Build distributable macOS `.dmg` + `.zip` or Windows `.exe` installers |
 
-The README screenshot is generated from fictional data: `npx -y -p playwright@1.64 node scripts/screenshot/capture.mjs [--dark]`.
+Want to contribute or add a new agent platform? Read [**CONTRIBUTING.md**](CONTRIBUTING.md) and explore the wire-protocol notes in [**`docs/`**](docs/README.md).
 
-## 🚀 Releasing
-
-CI ([`ci.yml`](.github/workflows/ci.yml)) type-checks, tests, builds and packages on macOS and Windows for every push.
-
-1. Bump `version` in `package.json` and merge to `main`.
-2. Push a tag `vX.Y.Z` that matches the version.
-3. [`release.yml`](.github/workflows/release.yml) creates a draft release, builds macOS (arm64 + x64 `dmg`/`zip`, `latest-mac.yml`) and Windows (NSIS `exe`, `latest.yml`), uploads everything, and publishes the release once every file is there.
-
-Builds are unsigned by default. Signing and notarization turn on when these repository secrets are set: `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` (macOS) or `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD` (Windows).
-
-## 📁 Project Structure
-
-```text
-src/
-  adapters/        Platform adapters (Meta Muse, Grok Bot, Hark, Dot) and the shared PlatformAdapter interface
-  main/            Electron main process
-    muse/          Muse partition sessions, batch sign-in and per-account proxy routing
-    muse-native/   Native WebSocket gateway client for Muse cloud computer and workspace calls
-    grok/          Grok Bot Sand auth, Connect-RPC client and IPC handlers
-    hark/          Hark WebSocket/REST client, attachment uploader and IPC handlers
-    dot/           OpenAI Dot (Orbit/TBO) client, encrypted token vault, SSE streaming and IPC
-  preload/         Typed contextBridge API exposed as window.electron
-  shared/          IPC channel contracts and bridge types shared by main and renderer
-  renderer/        React + Tailwind + Zustand desktop UI
-    components/    Sidebar, chat, inspector, platform panels, management console, GrokBotMark
-    store/         Bot fleet state, streaming reconciler and persistence
-scripts/screenshot/  README screenshot from fictional sample data
-```
-
-## 📚 Protocol Docs
-
-Wire protocols and API notes for each platform live in [`docs/`](docs/README.md):
-
-- **OpenAI Dot** (`chatgpt.com/dots`): [`docs/dot/protocol.md`](docs/dot/protocol.md): OAuth PKCE and web session auth, Orbit profiles, room SSE and REST, the JSON-RPC 2.0 WebSocket, Pages, Library and memory migration
-- **Meta Muse** (`muse.ai`): [`docs/museai/protocol.md`](docs/museai/protocol.md): the `Noise_XX_25519_ChaChaPoly_SHA256` WebSocket handshake and 65+ JSON-RPC methods
-- **xAI Grok Bot** (`grok.com`): [`docs/grokbot-protocol/protocol.md`](docs/grokbot-protocol/protocol.md): Connect-RPC unary and streaming calls over HTTP/2, Sand auth, skills, memories, automations and the cloud sandbox
-- **Hark** (`hark.com`): [`docs/hark/protocol.md`](docs/hark/protocol.md): REST and NDJSON streaming endpoints, connectors, scheduled tasks, the VM file tree and computer sessions
+---
 
 ## ❓ FAQ
 
 <details>
-<summary><b>Is BotHub an official app from these platforms?</b></summary>
+<summary><b>Is BotHub affiliated with xAI, OpenAI, Meta, or Hark?</b></summary>
 
-No. BotHub is an independent client and is not affiliated with Meta, xAI, Hark or OpenAI. It uses your own accounts on each platform.
-
-</details>
-
-<details>
-<summary><b>Where are my accounts and tokens stored?</b></summary>
-
-Only on your computer. Web sessions live in per-account Electron partitions; tokens and proxy passwords are encrypted with `safeStorage` (Keychain on macOS) and saved with `0600` permissions. BotHub sends no telemetry.
+No. BotHub is an independent, MIT-licensed desktop client. You sign in with your own accounts, and BotHub talks directly to each platform from your machine.
 
 </details>
 
 <details>
-<summary><b>macOS says BotHub can't be opened. What do I do?</b></summary>
+<summary><b>Do I get Gatekeeper warnings on macOS?</b></summary>
 
-The builds are not signed yet. Right-click the app and choose **Open**, or run `xattr -cr /Applications/BotHub.app`. See [Quick Start](#-quick-start).
-
-</details>
-
-<details>
-<summary><b>A message says "delivered · replying" for a long time. Will retrying send it twice?</b></summary>
-
-No. Once the platform has accepted a message, BotHub never offers it as unsent. If no reply arrives, it shows *no reply* with a **Send again** button that clearly posts a second copy.
+No — official macOS `.dmg` releases (`v0.5.0+`) are signed with an **Apple Developer ID** certificate and **notarized by Apple**. Just drag `BotHub.app` to `Applications` and launch it normally.
 
 </details>
 
 <details>
-<summary><b>Can each account use its own proxy?</b></summary>
+<summary><b>How does Grok Bot multi-bot sync work?</b></summary>
 
-Yes, for Muse and Dot accounts (HTTP or SOCKS5). If the proxy can't be applied, BotHub blocks that account's traffic instead of falling back to a direct connection.
+In Grok Bot, one user account owns multiple specialized bots and group rooms. As soon as you sign into or import a Grok account in BotHub, all bots on that account appear individually in your left sidebar. Removing one bot locally hides it without signing out your other bots, and clicking **Sync All Bots** restores the full list anytime.
 
 </details>
+
+<details>
+<summary><b>Where are my sessions and tokens stored?</b></summary>
+
+Exclusively on your device (`~/Library/Application Support/bothub` on macOS, `%APPDATA%\bothub` on Windows), protected by your OS Keychain / DPAPI (`safeStorage`). BotHub collects zero analytics or telemetry.
+
+</details>
+
+---
 
 ## 📄 License
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE). If BotHub saves you from tab overload, a **⭐ Star** on GitHub helps more agent builders discover it!

@@ -75,9 +75,7 @@ Scarica il file per il tuo sistema dall'[ultima versione](https://github.com/qyb
 | Windows 10/11 (x64) | `BotHub-Setup-<versione>-x64.exe` |
 
 > [!TIP]
-> Le build non sono ancora firmate.
-> - **macOS**: trascina `BotHub.app` in Applicazioni, poi la prima volta fai clic destro e scegli **Apri** (oppure *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*). Puoi anche rimuovere l'attributo di quarantena con `xattr -cr /Applications/BotHub.app`.
-> - **Windows**: se SmartScreen mostra "Windows ha protetto il PC", fai clic su **Ulteriori informazioni → Esegui comunque**.
+> **Le build per macOS sono firmate e autenticate (Notarized) con Apple Developer ID.** Trascina `BotHub.app` in `Applications` e aprila direttamente.
 
 Poi fai clic su **+** nella barra laterale, scegli una piattaforma e accedi. Ogni bot mantiene il proprio account.
 
@@ -160,27 +158,6 @@ I protocolli e le note sulle API di ogni piattaforma si trovano in [`docs/`](../
 - **Hark** (`hark.com`): [`docs/hark/protocol.md`](../hark/protocol.md): endpoint REST e di streaming NDJSON, connettori, attività pianificate, l'albero dei file della VM e sessioni del computer
 
 ## ❓ Domande frequenti
-
-<details>
-<summary><b>BotHub è un'app ufficiale di queste piattaforme?</b></summary>
-
-No. BotHub è un client indipendente e non è affiliato a Meta, xAI, Hark o OpenAI. Usa i tuoi account su ciascuna piattaforma.
-
-</details>
-
-<details>
-<summary><b>Dove vengono salvati account e token?</b></summary>
-
-Solo sul tuo computer. Le sessioni web stanno in partizioni Electron separate per account; token e password dei proxy sono cifrati con `safeStorage` (Portachiavi su macOS) e salvati con permessi `0600`. BotHub non invia telemetria.
-
-</details>
-
-<details>
-<summary><b>macOS dice che BotHub non può essere aperto. Cosa faccio?</b></summary>
-
-Le build non sono ancora firmate. Fai clic destro sull'app e scegli **Apri**, oppure esegui `xattr -cr /Applications/BotHub.app`. Vedi [Avvio rapido](#-avvio-rapido).
-
-</details>
 
 <details>
 <summary><b>Un messaggio resta a lungo su "consegnato · in risposta". Riprovare lo invierà due volte?</b></summary>

@@ -75,9 +75,7 @@ Unduh berkas untuk sistem Anda dari [rilis terbaru](https://github.com/qybaihe/b
 | Windows 10/11 (x64) | `BotHub-Setup-<versi>-x64.exe` |
 
 > [!TIP]
-> Build belum ditandatangani secara digital.
-> - **macOS**: seret `BotHub.app` ke folder Aplikasi, lalu saat pertama kali klik kanan dan pilih **Buka** (atau *Pengaturan Sistem → Privasi & Keamanan → Tetap Buka*). Anda juga bisa menghapus tanda karantina dengan `xattr -cr /Applications/BotHub.app`.
-> - **Windows**: jika SmartScreen menampilkan "Windows melindungi PC Anda", klik **Info selengkapnya → Tetap jalankan**.
+> **Build macOS telah ditandatangani dan dinotariskan dengan Apple Developer ID.** Cukup seret `BotHub.app` ke `Applications` dan buka langsung.
 
 Setelah itu klik **+** di bilah samping, pilih platform, lalu masuk. Setiap bot memakai akunnya sendiri.
 
@@ -160,27 +158,6 @@ Protokol dan catatan API setiap platform ada di [`docs/`](../README.md):
 - **Hark** (`hark.com`): [`docs/hark/protocol.md`](../hark/protocol.md): endpoint REST dan streaming NDJSON, konektor, tugas terjadwal, pohon berkas VM, dan sesi komputer
 
 ## ❓ Tanya jawab
-
-<details>
-<summary><b>Apakah BotHub aplikasi resmi dari platform-platform ini?</b></summary>
-
-Bukan. BotHub adalah klien independen dan tidak berafiliasi dengan Meta, xAI, Hark, atau OpenAI. BotHub memakai akun Anda sendiri di setiap platform.
-
-</details>
-
-<details>
-<summary><b>Di mana akun dan token saya disimpan?</b></summary>
-
-Hanya di komputer Anda. Sesi web disimpan di partisi Electron terpisah untuk tiap akun; token dan kata sandi proxy dienkripsi dengan `safeStorage` (Keychain di macOS) dan disimpan dengan izin `0600`. BotHub tidak mengirim telemetri.
-
-</details>
-
-<details>
-<summary><b>macOS bilang BotHub tidak bisa dibuka. Apa yang harus saya lakukan?</b></summary>
-
-Build belum ditandatangani. Klik kanan aplikasinya dan pilih **Buka**, atau jalankan `xattr -cr /Applications/BotHub.app`. Lihat [Mulai cepat](#-mulai-cepat).
-
-</details>
 
 <details>
 <summary><b>Pesan lama sekali berstatus "terkirim · sedang membalas". Apakah mencoba lagi akan mengirimnya dua kali?</b></summary>

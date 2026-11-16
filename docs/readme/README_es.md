@@ -75,9 +75,7 @@ Descarga el archivo para tu sistema desde la [última versión](https://github.c
 | Windows 10/11 (x64) | `BotHub-Setup-<versión>-x64.exe` |
 
 > [!TIP]
-> Las compilaciones aún no están firmadas.
-> - **macOS**: arrastra `BotHub.app` a Aplicaciones y, la primera vez, haz clic derecho y elige **Abrir** (o *Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente*). También puedes quitar la marca de cuarentena con `xattr -cr /Applications/BotHub.app`.
-> - **Windows**: si SmartScreen muestra "Windows protegió su PC", haz clic en **Más información → Ejecutar de todas formas**.
+> **Las compilaciones de macOS están firmadas y notarizadas con Apple Developer ID.** Arrastra `BotHub.app` a `Applications` y ábrela directamente.
 
 Después haz clic en **+** en la barra lateral, elige una plataforma e inicia sesión. Cada bot conserva su propia cuenta.
 
@@ -160,27 +158,6 @@ Los protocolos y notas de API de cada plataforma están en [`docs/`](../README.m
 - **Hark** (`hark.com`): [`docs/hark/protocol.md`](../hark/protocol.md): endpoints REST y de streaming NDJSON, conectores, tareas programadas, el árbol de archivos de la VM y sesiones de ordenador
 
 ## ❓ Preguntas frecuentes
-
-<details>
-<summary><b>¿BotHub es una app oficial de estas plataformas?</b></summary>
-
-No. BotHub es un cliente independiente y no está afiliado a Meta, xAI, Hark ni OpenAI. Usa tus propias cuentas en cada plataforma.
-
-</details>
-
-<details>
-<summary><b>¿Dónde se guardan mis cuentas y tokens?</b></summary>
-
-Solo en tu ordenador. Las sesiones web viven en particiones de Electron por cuenta; los tokens y las contraseñas de proxy se cifran con `safeStorage` (Llavero en macOS) y se guardan con permisos `0600`. BotHub no envía telemetría.
-
-</details>
-
-<details>
-<summary><b>macOS dice que no se puede abrir BotHub. ¿Qué hago?</b></summary>
-
-Las compilaciones aún no están firmadas. Haz clic derecho en la app y elige **Abrir**, o ejecuta `xattr -cr /Applications/BotHub.app`. Consulta el [Inicio rápido](#-inicio-rápido).
-
-</details>
 
 <details>
 <summary><b>Un mensaje lleva mucho rato en "entregado · respondiendo". ¿Reintentar lo enviará dos veces?</b></summary>

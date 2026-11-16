@@ -75,9 +75,7 @@ Téléchargez le fichier correspondant à votre système depuis la [dernière ve
 | Windows 10/11 (x64) | `BotHub-Setup-<version>-x64.exe` |
 
 > [!TIP]
-> Les versions ne sont pas encore signées.
-> - **macOS** : glissez `BotHub.app` dans Applications, puis faites un clic droit et choisissez **Ouvrir** la première fois (ou *Réglages Système → Confidentialité et sécurité → Ouvrir quand même*). Vous pouvez aussi retirer l'attribut de quarantaine avec `xattr -cr /Applications/BotHub.app`.
-> - **Windows** : si SmartScreen affiche « Windows a protégé votre ordinateur », cliquez sur **Informations complémentaires → Exécuter quand même**.
+> **Les versions macOS sont signées et notarisées avec un certificat Apple Developer ID.** Glissez `BotHub.app` dans `Applications` et ouvrez-la directement.
 
 Cliquez ensuite sur **+** dans la barre latérale, choisissez une plateforme et connectez-vous. Chaque bot garde son propre compte.
 
@@ -160,27 +158,6 @@ Les protocoles et notes d'API de chaque plateforme se trouvent dans [`docs/`](..
 - **Hark** (`hark.com`) : [`docs/hark/protocol.md`](../hark/protocol.md) : endpoints REST et streaming NDJSON, connecteurs, tâches planifiées, arborescence de fichiers de la VM et sessions d'ordinateur
 
 ## ❓ FAQ
-
-<details>
-<summary><b>BotHub est-il une application officielle de ces plateformes ?</b></summary>
-
-Non. BotHub est un client indépendant, sans lien avec Meta, xAI, Hark ou OpenAI. Il utilise vos propres comptes sur chaque plateforme.
-
-</details>
-
-<details>
-<summary><b>Où sont stockés mes comptes et jetons ?</b></summary>
-
-Uniquement sur votre ordinateur. Les sessions web sont dans des partitions Electron propres à chaque compte ; les jetons et mots de passe de proxy sont chiffrés avec `safeStorage` (Trousseau sur macOS) et enregistrés avec les permissions `0600`. BotHub n'envoie aucune télémétrie.
-
-</details>
-
-<details>
-<summary><b>macOS indique que BotHub ne peut pas être ouvert. Que faire ?</b></summary>
-
-Les versions ne sont pas encore signées. Faites un clic droit sur l'application et choisissez **Ouvrir**, ou lancez `xattr -cr /Applications/BotHub.app`. Voir le [Démarrage rapide](#-démarrage-rapide).
-
-</details>
 
 <details>
 <summary><b>Un message reste longtemps sur « remis · réponse en cours ». Réessayer l'enverra-t-il deux fois ?</b></summary>

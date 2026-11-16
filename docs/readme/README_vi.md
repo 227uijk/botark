@@ -75,9 +75,7 @@ Tải tệp phù hợp với hệ điều hành của bạn từ [phiên bản m
 | Windows 10/11 (x64) | `BotHub-Setup-<phiên bản>-x64.exe` |
 
 > [!TIP]
-> Các bản dựng hiện chưa được ký mã.
-> - **macOS**: kéo `BotHub.app` vào thư mục Ứng dụng, rồi lần đầu mở hãy nhấp chuột phải và chọn **Mở** (hoặc *Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Vẫn mở*). Bạn cũng có thể xóa thuộc tính cách ly bằng `xattr -cr /Applications/BotHub.app`.
-> - **Windows**: nếu SmartScreen báo "Windows đã bảo vệ PC của bạn", hãy bấm **Thông tin thêm → Vẫn chạy**.
+> **Bản macOS đã được ký số và công chứng (Notarized) bởi Apple Developer ID.** Chỉ cần kéo `BotHub.app` vào `Applications` và mở trực tiếp.
 
 Sau đó bấm **+** ở thanh bên, chọn nền tảng và đăng nhập. Mỗi bot giữ tài khoản riêng của mình.
 
@@ -160,27 +158,6 @@ Giao thức và ghi chú API của từng nền tảng nằm trong [`docs/`](../
 - **Hark** (`hark.com`): [`docs/hark/protocol.md`](../hark/protocol.md): endpoint REST và phát trực tiếp NDJSON, connector, tác vụ theo lịch, cây tệp của VM và phiên máy tính
 
 ## ❓ Câu hỏi thường gặp
-
-<details>
-<summary><b>BotHub có phải ứng dụng chính thức của các nền tảng này không?</b></summary>
-
-Không. BotHub là ứng dụng độc lập, không liên kết với Meta, xAI, Hark hay OpenAI. Ứng dụng dùng tài khoản của chính bạn trên từng nền tảng.
-
-</details>
-
-<details>
-<summary><b>Tài khoản và token của tôi được lưu ở đâu?</b></summary>
-
-Chỉ trên máy tính của bạn. Phiên web nằm trong các phân vùng Electron riêng cho từng tài khoản; token và mật khẩu proxy được mã hóa bằng `safeStorage` (Keychain trên macOS) và lưu với quyền `0600`. BotHub không gửi dữ liệu đo lường.
-
-</details>
-
-<details>
-<summary><b>macOS báo không thể mở BotHub. Tôi phải làm gì?</b></summary>
-
-Các bản dựng hiện chưa được ký. Nhấp chuột phải vào ứng dụng và chọn **Mở**, hoặc chạy `xattr -cr /Applications/BotHub.app`. Xem [Bắt đầu nhanh](#-bắt-đầu-nhanh).
-
-</details>
 
 <details>
 <summary><b>Tin nhắn hiện "đã gửi tới · đang trả lời" rất lâu. Thử lại có gửi hai lần không?</b></summary>

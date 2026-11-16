@@ -75,9 +75,7 @@ Baixe o arquivo para o seu sistema na [versão mais recente](https://github.com/
 | Windows 10/11 (x64) | `BotHub-Setup-<versão>-x64.exe` |
 
 > [!TIP]
-> As versões ainda não têm assinatura de código.
-> - **macOS**: arraste `BotHub.app` para Aplicativos e, na primeira vez, clique com o botão direito e escolha **Abrir** (ou *Ajustes do Sistema → Privacidade e Segurança → Abrir Mesmo Assim*). Também é possível remover o atributo de quarentena com `xattr -cr /Applications/BotHub.app`.
-> - **Windows**: se o SmartScreen mostrar "O Windows protegeu o computador", clique em **Mais informações → Executar assim mesmo**.
+> **As versões para macOS são assinadas e notarizadas com Apple Developer ID.** Arraste o `BotHub.app` para `Applications` e abra normalmente.
 
 Depois clique em **+** na barra lateral, escolha uma plataforma e entre. Cada bot mantém sua própria conta.
 
@@ -160,27 +158,6 @@ Os protocolos e notas de API de cada plataforma ficam em [`docs/`](../README.md)
 - **Hark** (`hark.com`): [`docs/hark/protocol.md`](../hark/protocol.md): endpoints REST e de streaming NDJSON, conectores, tarefas agendadas, a árvore de arquivos da VM e sessões de computador
 
 ## ❓ Perguntas frequentes
-
-<details>
-<summary><b>O BotHub é um app oficial dessas plataformas?</b></summary>
-
-Não. O BotHub é um cliente independente e não tem vínculo com Meta, xAI, Hark ou OpenAI. Ele usa suas próprias contas em cada plataforma.
-
-</details>
-
-<details>
-<summary><b>Onde ficam minhas contas e tokens?</b></summary>
-
-Só no seu computador. As sessões web ficam em partições do Electron separadas por conta; tokens e senhas de proxy são criptografados com `safeStorage` (Chaves no macOS) e gravados com permissões `0600`. O BotHub não envia telemetria.
-
-</details>
-
-<details>
-<summary><b>O macOS diz que o BotHub não pode ser aberto. O que eu faço?</b></summary>
-
-As versões ainda não são assinadas. Clique com o botão direito no app e escolha **Abrir**, ou execute `xattr -cr /Applications/BotHub.app`. Veja o [Início rápido](#-início-rápido).
-
-</details>
 
 <details>
 <summary><b>Uma mensagem fica muito tempo em "entregue · respondendo". Tentar de novo vai enviá-la duas vezes?</b></summary>

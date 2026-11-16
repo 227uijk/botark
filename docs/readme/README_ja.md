@@ -75,9 +75,7 @@ Muse・Grok Bot・Hark・Dot の Bot をサイドバーにグループごとに�
 | Windows 10/11（x64） | `BotHub-Setup-<バージョン>-x64.exe` |
 
 > [!TIP]
-> 現在のビルドはコード署名されていません。
-> - **macOS**：`BotHub.app` を「アプリケーション」にドラッグし、初回は右クリックして「開く」を選びます（または「システム設定 → プライバシーとセキュリティ」で「このまま開く」）。`xattr -cr /Applications/BotHub.app` で隔離属性を削除することもできます。
-> - **Windows**：SmartScreen に「Windows によって PC が保護されました」と表示されたら、「詳細情報 → 実行」をクリックします。
+> **macOS 版は Apple Developer ID による署名・公証（Notarized）済みです。** `BotHub.app` を `Applications` フォルダにドラッグしてそのまま起動できます。
 
 インストール後、サイドバーの **+** をクリックしてプラットフォームを選び、サインインします。Bot ごとに個別のアカウントを使います。
 
@@ -160,27 +158,6 @@ scripts/screenshot/  架空のデータから README のスクリーンショッ
 - **Hark**（`hark.com`）：[`docs/hark/protocol.md`](../hark/protocol.md)：REST と NDJSON ストリーミングのエンドポイント、コネクタ、定期タスク、VM のファイルツリー、コンピューターセッション
 
 ## ❓ よくある質問
-
-<details>
-<summary><b>BotHub は各プラットフォームの公式アプリですか？</b></summary>
-
-いいえ。BotHub は独立したクライアントで、Meta・xAI・Hark・OpenAI とは関係ありません。各プラットフォームのご自身のアカウントを使います。
-
-</details>
-
-<details>
-<summary><b>アカウントやトークンはどこに保存されますか？</b></summary>
-
-お使いのコンピューターにのみ保存されます。Web セッションはアカウントごとの Electron パーティションに、トークンとプロキシのパスワードは `safeStorage`（macOS ではキーチェーン）で暗号化して `0600` の権限で保存します。BotHub はテレメトリーを送信しません。
-
-</details>
-
-<details>
-<summary><b>macOS で BotHub を開けないと表示されます。</b></summary>
-
-ビルドはまだ署名されていません。アプリを右クリックして「開く」を選ぶか、`xattr -cr /Applications/BotHub.app` を実行してください。詳しくは[クイックスタート](#-クイックスタート)をご覧ください。
-
-</details>
 
 <details>
 <summary><b>「配信済み · 返信待ち」のままです。再試行すると二重送信されますか？</b></summary>

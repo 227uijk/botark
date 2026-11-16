@@ -75,9 +75,7 @@ Muse, Grok Bot, Hark, Dot 봇이 사이드바에 그룹별로 나란히 놓이�
 | Windows 10/11 (x64) | `BotHub-Setup-<버전>-x64.exe` |
 
 > [!TIP]
-> 아직 코드 서명이 되지 않은 빌드입니다.
-> - **macOS**: `BotHub.app`을 응용 프로그램 폴더로 옮긴 뒤, 처음 실행할 때 마우스 오른쪽 버튼을 눌러 **열기**를 선택하세요(또는 *시스템 설정 → 개인정보 보호 및 보안 → 그래도 열기*). `xattr -cr /Applications/BotHub.app`으로 격리 속성을 지울 수도 있습니다.
-> - **Windows**: SmartScreen에 "Windows의 PC 보호"가 표시되면 **추가 정보 → 실행**을 누르세요.
+> **macOS 빌드는 Apple Developer ID 서명 및 공증(Notarized)이 완료되어 있습니다.** `BotHub.app`을 `Applications` 폴더로 드래그해 바로 실행하세요.
 
 설치 후 사이드바의 **+**를 눌러 플랫폼을 고르고 로그인하면 됩니다. 봇마다 각자의 계정을 사용합니다.
 
@@ -160,27 +158,6 @@ scripts/screenshot/  가상의 샘플 데이터로 README 스크린샷 생성
 - **Hark** (`hark.com`): [`docs/hark/protocol.md`](../hark/protocol.md): REST 및 NDJSON 스트리밍 엔드포인트, 커넥터, 예약 작업, VM 파일 트리, 컴퓨터 세션
 
 ## ❓ 자주 묻는 질문
-
-<details>
-<summary><b>BotHub는 이 플랫폼들의 공식 앱인가요?</b></summary>
-
-아닙니다. BotHub는 독립적으로 개발된 클라이언트로 Meta, xAI, Hark, OpenAI와 관련이 없습니다. 각 플랫폼의 본인 계정을 사용합니다.
-
-</details>
-
-<details>
-<summary><b>계정과 토큰은 어디에 저장되나요?</b></summary>
-
-사용자의 컴퓨터에만 저장됩니다. 웹 세션은 계정별 Electron 파티션에, 토큰과 프록시 비밀번호는 `safeStorage`(macOS에서는 키체인)로 암호화해 `0600` 권한으로 저장합니다. BotHub는 원격 측정 데이터를 보내지 않습니다.
-
-</details>
-
-<details>
-<summary><b>macOS에서 BotHub를 열 수 없다고 나와요.</b></summary>
-
-아직 서명되지 않은 빌드이기 때문입니다. 앱을 마우스 오른쪽 버튼으로 눌러 **열기**를 선택하거나 `xattr -cr /Applications/BotHub.app`을 실행하세요. [빠른 시작](#-빠른-시작)을 참고하세요.
-
-</details>
 
 <details>
 <summary><b>메시지가 오랫동안 "전달됨 · 답변 중"으로 표시돼요. 다시 시도하면 두 번 전송되나요?</b></summary>

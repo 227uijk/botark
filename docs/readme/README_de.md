@@ -75,9 +75,7 @@ Laden Sie die Datei für Ihr System aus der [neuesten Version](https://github.co
 | Windows 10/11 (x64) | `BotHub-Setup-<Version>-x64.exe` |
 
 > [!TIP]
-> Die Builds sind noch nicht signiert.
-> - **macOS**: Ziehen Sie `BotHub.app` in den Ordner „Programme“ und wählen Sie beim ersten Start per Rechtsklick **Öffnen** (oder *Systemeinstellungen → Datenschutz & Sicherheit → Trotzdem öffnen*). Alternativ entfernen Sie das Quarantäne-Attribut mit `xattr -cr /Applications/BotHub.app`.
-> - **Windows**: Wenn SmartScreen „Der Computer wurde durch Windows geschützt“ meldet, klicken Sie auf **Weitere Informationen → Trotzdem ausführen**.
+> **macOS-Builds sind mit einer Apple Developer ID signiert und notarisiert.** Ziehe `BotHub.app` einfach in `Applications` und starte die App direkt.
 
 Klicken Sie anschließend in der Seitenleiste auf **+**, wählen Sie eine Plattform und melden Sie sich an. Jeder Bot behält sein eigenes Konto.
 
@@ -160,27 +158,6 @@ Protokolle und API-Notizen zu jeder Plattform finden Sie in [`docs/`](../README.
 - **Hark** (`hark.com`): [`docs/hark/protocol.md`](../hark/protocol.md): REST- und NDJSON-Streaming-Endpunkte, Konnektoren, geplante Aufgaben, der Dateibaum der VM und Computer-Sitzungen
 
 ## ❓ FAQ
-
-<details>
-<summary><b>Ist BotHub eine offizielle App dieser Plattformen?</b></summary>
-
-Nein. BotHub ist ein unabhängiger Client und steht in keiner Verbindung zu Meta, xAI, Hark oder OpenAI. Es nutzt Ihre eigenen Konten auf den jeweiligen Plattformen.
-
-</details>
-
-<details>
-<summary><b>Wo werden meine Konten und Tokens gespeichert?</b></summary>
-
-Nur auf Ihrem Computer. Web-Sitzungen liegen in Electron-Partitionen pro Konto; Tokens und Proxy-Passwörter werden mit `safeStorage` (Schlüsselbund unter macOS) verschlüsselt und mit den Rechten `0600` gespeichert. BotHub sendet keine Telemetrie.
-
-</details>
-
-<details>
-<summary><b>macOS meldet, dass BotHub nicht geöffnet werden kann. Was tun?</b></summary>
-
-Die Builds sind noch nicht signiert. Klicken Sie mit der rechten Maustaste auf die App und wählen Sie **Öffnen**, oder führen Sie `xattr -cr /Applications/BotHub.app` aus. Siehe [Schnellstart](#-schnellstart).
-
-</details>
 
 <details>
 <summary><b>Eine Nachricht zeigt lange „zugestellt · Antwort folgt“. Wird sie bei einem erneuten Versuch doppelt gesendet?</b></summary>

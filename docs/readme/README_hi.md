@@ -75,9 +75,7 @@ Muse, Grok Bot, Hark और Dot के बॉट साइडबार में
 | Windows 10/11 (x64) | `BotHub-Setup-<संस्करण>-x64.exe` |
 
 > [!TIP]
-> बिल्ड अभी कोड-साइन नहीं किए गए हैं।
-> - **macOS**: `BotHub.app` को Applications फ़ोल्डर में खींचें, फिर पहली बार राइट-क्लिक करके **Open** चुनें (या *System Settings → Privacy & Security → Open Anyway*)। आप `xattr -cr /Applications/BotHub.app` से क्वारंटीन फ़्लैग भी हटा सकते हैं।
-> - **Windows**: अगर SmartScreen "Windows protected your PC" दिखाए, तो **More info → Run anyway** पर क्लिक करें।
+> **macOS बिल्ड Apple Developer ID द्वारा हस्ताक्षरित और नोटराइज़्ड (Notarized) हैं।** बस `BotHub.app` को `Applications` में ड्रैग करें और सीधे खोलें।
 
 इसके बाद साइडबार में **+** पर क्लिक करें, प्लेटफ़ॉर्म चुनें और साइन इन करें। हर बॉट अपना खाता रखता है।
 
@@ -160,27 +158,6 @@ scripts/screenshot/  काल्पनिक नमूना डेटा स�
 - **Hark** (`hark.com`): [`docs/hark/protocol.md`](../hark/protocol.md): REST और NDJSON स्ट्रीमिंग एंडपॉइंट, कनेक्टर, शेड्यूल किए गए काम, VM फ़ाइल ट्री और कंप्यूटर सेशन
 
 ## ❓ अक्सर पूछे जाने वाले सवाल
-
-<details>
-<summary><b>क्या BotHub इन प्लेटफ़ॉर्म का आधिकारिक ऐप है?</b></summary>
-
-नहीं। BotHub एक स्वतंत्र क्लाइंट है और इसका Meta, xAI, Hark या OpenAI से कोई संबंध नहीं है। यह हर प्लेटफ़ॉर्म पर आपके अपने खाते इस्तेमाल करता है।
-
-</details>
-
-<details>
-<summary><b>मेरे खाते और टोकन कहाँ सहेजे जाते हैं?</b></summary>
-
-सिर्फ़ आपके कंप्यूटर पर। वेब सेशन हर खाते के अलग Electron पार्टिशन में रहते हैं; टोकन और प्रॉक्सी पासवर्ड `safeStorage` (macOS पर Keychain) से एन्क्रिप्ट होकर `0600` अनुमतियों के साथ सहेजे जाते हैं। BotHub कोई टेलीमेट्री नहीं भेजता।
-
-</details>
-
-<details>
-<summary><b>macOS कहता है कि BotHub नहीं खुल सकता। क्या करूँ?</b></summary>
-
-बिल्ड अभी साइन नहीं किए गए हैं। ऐप पर राइट-क्लिक करके **Open** चुनें, या `xattr -cr /Applications/BotHub.app` चलाएँ। [जल्दी शुरू करें](#-जल्दी-शुरू-करें) देखें।
-
-</details>
 
 <details>
 <summary><b>संदेश बहुत देर से "पहुँच गया · जवाब आ रहा है" दिखा रहा है। क्या दोबारा कोशिश करने पर वह दो बार जाएगा?</b></summary>

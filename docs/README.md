@@ -1,10 +1,22 @@
-# BotHub Protocol & Reverse-Engineering Documentation
+# BotHub Documentation
 
-This directory contains the protocol specifications, wire-format documentation, and API references for all four personal AI agent platforms integrated into **BotHub**:
+Welcome to the **BotHub** documentation directory.
 
-| Platform | Directory | Transport & Protocol Highlights |
-| --- | --- | --- |
-| **OpenAI Dot** (`chatgpt.com/dots`) | [`docs/dot/protocol.md`](./dot/protocol.md) | OAuth PKCE & web session auth, `/backend-api/tbo` Orbit profiles, `/backend-api/calpico/rooms` SSE & REST, `/backend-api/otp/ws` JSON-RPC 2.0 WebSocket, Dynamic Pages (`/backend-api/pages`), Library (`/backend-api/files/library/nodes`), and cross-account memory migration |
-| **Meta Muse** (`muse.ai`) | [`docs/museai/protocol.md`](./museai/protocol.md) | `Noise_XX_25519_ChaChaPoly_SHA256` encrypted WebSocket handshake (`wss://www.muse.ai/ws`) and 65+ JSON-RPC methods (`chat.*`, `connectors.*`, `schedules.*`, `fs.*`, `artifacts.*`, `computer.*`, `browser_task.*`, `egress.*`, `peers.*`, `shared_agents.*`) |
-| **xAI Grok Bot** (`grok.com`) | [`docs/grokbot-protocol/protocol.md`](./grokbot-protocol/protocol.md) | Connect-RPC unary & server-streaming over HTTP/2 (`grok_bot.v1.GrokBotService/*`, `grok_Comms.v1.ChatRoomCommsService/*`), agent lifecycle, skills, memories, automations, and cloud sandbox |
-| **Hark** (`hark.com`) | [`docs/hark/protocol.md`](./hark/protocol.md) | `hark.com/api/*` REST + NDJSON streaming (`/chats/{id}/messages`, `/home/cards`, `/scheduled-tasks`, `/connectors/overview`, `/vm/files/tree`, `/computer/session`, `/billing/subscription`) |
+## 🌍 User Guides (Multi-Language READMEs)
+
+- [English (Main README)](../README.md)
+- [简体中文](./readme/README_zh.md) · [繁體中文](./readme/README_zh-TW.md)
+- [日本語](./readme/README_ja.md) · [한국어](./readme/README_ko.md)
+- [Español](./readme/README_es.md) · [Français](./readme/README_fr.md) · [Deutsch](./readme/README_de.md) · [Português (Brasil)](./readme/README_pt-BR.md) · [Italiano](./readme/README_it.md) · [Русский](./readme/README_ru.md)
+- [Tiếng Việt](./readme/README_vi.md) · [Türkçe](./readme/README_tr.md) · [Bahasa Indonesia](./readme/README_id.md) · [العربية](./readme/README_ar.md) · [हिन्दी](./readme/README_hi.md)
+
+## 🔌 Platform Integration & Protocol Notes
+
+Technical documentation for the four personal agent platforms supported in BotHub:
+
+| Platform | Reference Doc | Highlights |
+| :--- | :--- | :--- |
+| **Grok Bot** (`grok.com`) | [`docs/grokbot-protocol/protocol.md`](./grokbot-protocol/protocol.md) | Sand PKCE auth, multi-agent roster sync, Connect-RPC unary & streaming calls, skills, memories, automations & cloud sandbox |
+| **ChatGPT Dot** (`chatgpt.com/dots`) | [`docs/dot/protocol.md`](./dot/protocol.md) | OAuth & token import, Orbit personas, Calpico room SSE & REST, Pages, Library & cross-account memory migration |
+| **Meta Muse** (`muse.ai`) | [`docs/museai/protocol.md`](./museai/protocol.md) | `Noise_XX_25519_ChaChaPoly_SHA256` WebSocket gateway, batch OTP sign-in, approvals, schedules, files & cloud VM |
+| **Hark** (`hark.com`) | [`docs/hark/protocol.md`](./hark/protocol.md) | Session auth, NDJSON streaming, home cards, scheduled tasks, cloud browser preview & workspace connectors |
