@@ -1,2072 +1,2786 @@
 [
   {
-    "jsKey": "ensureSandBox",
     "name": "EnsureSandBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.EnsureSandBoxRequest",
+    "output": "aiserver.v1.EnsureSandBoxResponse"
   },
   {
-    "jsKey": "ensureSandBoxWindow",
     "name": "EnsureSandBoxWindow",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.EnsureSandBoxWindowRequest",
+    "output": "aiserver.v1.EnsureSandBoxResponse"
   },
   {
-    "jsKey": "recreateSandBox",
     "name": "RecreateSandBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RecreateSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "forceRecreateSandBox",
     "name": "ForceRecreateSandBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ForceRecreateSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "adminRecreateSandBox",
     "name": "AdminRecreateSandBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminRecreateSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "adminForceRecreateSandBox",
     "name": "AdminForceRecreateSandBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminForceRecreateSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "adminBreakGlassDeleteSandBoxPod",
     "name": "AdminBreakGlassDeleteSandBoxPod",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminBreakGlassDeleteSandBoxPodRequest",
+    "output": "aiserver.v1.AdminBreakGlassDeleteSandBoxPodResponse"
   },
   {
-    "jsKey": "presignSandBoxStoreWrites",
     "name": "PresignSandBoxStoreWrites",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PresignSandBoxStoreWritesRequest",
+    "output": "aiserver.v1.PresignSandBoxStoreWritesResponse"
   },
   {
-    "jsKey": "completeSandBoxStoreMultipartWrites",
     "name": "CompleteSandBoxStoreMultipartWrites",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CompleteSandBoxStoreMultipartWritesRequest",
+    "output": "aiserver.v1.CompleteSandBoxStoreMultipartWritesResponse"
   },
   {
-    "jsKey": "commitSandBoxStoreManifest",
     "name": "CommitSandBoxStoreManifest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CommitSandBoxStoreManifestRequest",
+    "output": "aiserver.v1.CommitSandBoxStoreManifestResponse"
   },
   {
-    "jsKey": "abortSandBoxStoreMultipartWrites",
     "name": "AbortSandBoxStoreMultipartWrites",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AbortSandBoxStoreMultipartWritesRequest",
+    "output": "aiserver.v1.AbortSandBoxStoreMultipartWritesResponse"
   },
   {
-    "jsKey": "presignSandBoxStoreReads",
     "name": "PresignSandBoxStoreReads",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PresignSandBoxStoreReadsRequest",
+    "output": "aiserver.v1.PresignSandBoxStoreReadsResponse"
   },
   {
-    "jsKey": "statSandBoxStoreObject",
     "name": "StatSandBoxStoreObject",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StatSandBoxStoreObjectRequest",
+    "output": "aiserver.v1.StatSandBoxStoreObjectResponse"
   },
   {
-    "jsKey": "listSandBoxStoreObjects",
     "name": "ListSandBoxStoreObjects",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListSandBoxStoreObjectsRequest",
+    "output": "aiserver.v1.ListSandBoxStoreObjectsResponse"
   },
   {
-    "jsKey": "adminGetSandBoxStoreStatus",
     "name": "AdminGetSandBoxStoreStatus",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSandBoxStoreStatusRequest",
+    "output": "aiserver.v1.AdminSandBoxStoreStatusResponse"
   },
   {
-    "jsKey": "adminUpdateSandBoxHost",
     "name": "AdminUpdateSandBoxHost",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminUpdateSandBoxHostRequest",
+    "output": "aiserver.v1.AdminUpdateSandBoxHostResponse"
   },
   {
-    "jsKey": "adminGetSandBoxHostStatus",
     "name": "AdminGetSandBoxHostStatus",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSandBoxHostStatusRequest",
+    "output": "aiserver.v1.AdminSandBoxHostStatusResponse"
   },
   {
-    "jsKey": "adminSnapshotSandBoxStore",
     "name": "AdminSnapshotSandBoxStore",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSnapshotSandBoxStoreRequest",
+    "output": "aiserver.v1.AdminSnapshotSandBoxStoreResponse"
   },
   {
-    "jsKey": "adminListSandBoxStoreManifestVersions",
     "name": "AdminListSandBoxStoreManifestVersions",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListSandBoxStoreManifestVersionsRequest",
+    "output": "aiserver.v1.AdminListSandBoxStoreManifestVersionsResponse"
   },
   {
-    "jsKey": "adminStatSandBoxStoreObject",
     "name": "AdminStatSandBoxStoreObject",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminStatSandBoxStoreObjectRequest",
+    "output": "aiserver.v1.AdminStatSandBoxStoreObjectResponse"
   },
   {
-    "jsKey": "adminRestoreSandBoxStoreSnapshot",
     "name": "AdminRestoreSandBoxStoreSnapshot",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminRestoreSandBoxStoreSnapshotRequest",
+    "output": "aiserver.v1.AdminRestoreSandBoxStoreSnapshotResponse"
   },
   {
-    "jsKey": "adminHibernateSandBox",
     "name": "AdminHibernateSandBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminHibernateSandBoxRequest",
+    "output": "aiserver.v1.AdminHibernateSandBoxResponse"
   },
   {
-    "jsKey": "adminRefreshSandBoxEgress",
     "name": "AdminRefreshSandBoxEgress",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminRefreshSandBoxEgressRequest",
+    "output": "aiserver.v1.AdminRefreshSandBoxEgressResponse"
   },
   {
-    "jsKey": "adminListSandAgents",
     "name": "AdminListSandAgents",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListSandAgentsRequest",
+    "output": "aiserver.v1.AdminListSandAgentsResponse"
   },
   {
-    "jsKey": "adminGetSandAgentTranscriptPage",
     "name": "AdminGetSandAgentTranscriptPage",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetSandAgentTranscriptPageRequest",
+    "output": "aiserver.v1.AdminGetSandAgentTranscriptPageResponse"
   },
   {
-    "jsKey": "watchSandBoxMigration",
     "name": "WatchSandBoxMigration",
-    "kind": "ServerStreaming"
+    "kind": "i.ServerStreaming",
+    "input": "aiserver.v1.WatchSandBoxMigrationRequest",
+    "output": "aiserver.v1.SandBoxMigrationEvent"
   },
   {
-    "jsKey": "adminWatchSandBoxMigration",
     "name": "AdminWatchSandBoxMigration",
-    "kind": "ServerStreaming"
+    "kind": "i.ServerStreaming",
+    "input": "aiserver.v1.AdminWatchSandBoxMigrationRequest",
+    "output": "aiserver.v1.SandBoxMigrationEvent"
   },
   {
-    "jsKey": "getSandBoxRunState",
     "name": "GetSandBoxRunState",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetSandBoxRunStateRequest",
+    "output": "aiserver.v1.GetSandBoxRunStateResponse"
   },
   {
-    "jsKey": "getSandBoxUpgradeSchedule",
     "name": "GetSandBoxUpgradeSchedule",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetSandBoxUpgradeScheduleRequest",
+    "output": "aiserver.v1.GetSandBoxUpgradeScheduleResponse"
   },
   {
-    "jsKey": "scheduleSandBoxUpgrade",
     "name": "ScheduleSandBoxUpgrade",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ScheduleSandBoxUpgradeRequest",
+    "output": "aiserver.v1.ScheduleSandBoxUpgradeResponse"
   },
   {
-    "jsKey": "cancelSandBoxUpgrade",
     "name": "CancelSandBoxUpgrade",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CancelSandBoxUpgradeRequest",
+    "output": "aiserver.v1.CancelSandBoxUpgradeResponse"
   },
   {
-    "jsKey": "rescheduleSandBoxUpgrade",
     "name": "RescheduleSandBoxUpgrade",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RescheduleSandBoxUpgradeRequest",
+    "output": "aiserver.v1.RescheduleSandBoxUpgradeResponse"
   },
   {
-    "jsKey": "listSandBoxes",
     "name": "ListSandBoxes",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListSandBoxesRequest",
+    "output": "aiserver.v1.ListSandBoxesResponse"
   },
   {
-    "jsKey": "notifySandAgentTurnFinished",
     "name": "NotifySandAgentTurnFinished",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.NotifySandAgentTurnFinishedRequest",
+    "output": "aiserver.v1.NotifySandAgentTurnFinishedResponse"
   },
   {
-    "jsKey": "listSandSetupManifests",
     "name": "ListSandSetupManifests",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListSandSetupManifestsRequest",
+    "output": "aiserver.v1.ListSandSetupManifestsResponse"
   },
   {
-    "jsKey": "listTeamSandSetupManifests",
     "name": "ListTeamSandSetupManifests",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListTeamSandSetupManifestsRequest",
+    "output": "aiserver.v1.ListTeamSandSetupManifestsResponse"
   },
   {
-    "jsKey": "saveTeamSandSetupManifest",
     "name": "SaveTeamSandSetupManifest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SaveTeamSandSetupManifestRequest",
+    "output": "aiserver.v1.SaveTeamSandSetupManifestResponse"
   },
   {
-    "jsKey": "deleteTeamSandSetupManifest",
     "name": "DeleteTeamSandSetupManifest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteTeamSandSetupManifestRequest",
+    "output": "aiserver.v1.DeleteTeamSandSetupManifestResponse"
   },
   {
-    "jsKey": "listTeamGroupSandSetupManifests",
     "name": "ListTeamGroupSandSetupManifests",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListTeamGroupSandSetupManifestsRequest",
+    "output": "aiserver.v1.ListTeamGroupSandSetupManifestsResponse"
   },
   {
-    "jsKey": "saveTeamGroupSandSetupManifest",
     "name": "SaveTeamGroupSandSetupManifest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SaveTeamGroupSandSetupManifestRequest",
+    "output": "aiserver.v1.SaveTeamGroupSandSetupManifestResponse"
   },
   {
-    "jsKey": "deleteTeamGroupSandSetupManifest",
     "name": "DeleteTeamGroupSandSetupManifest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteTeamGroupSandSetupManifestRequest",
+    "output": "aiserver.v1.DeleteTeamGroupSandSetupManifestResponse"
   },
   {
-    "jsKey": "listTeamSandSetupFiles",
     "name": "ListTeamSandSetupFiles",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListTeamSandSetupFilesRequest",
+    "output": "aiserver.v1.ListTeamSandSetupFilesResponse"
   },
   {
-    "jsKey": "createTeamSandSetupFileUpload",
     "name": "CreateTeamSandSetupFileUpload",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateTeamSandSetupFileUploadRequest",
+    "output": "aiserver.v1.CreateTeamSandSetupFileUploadResponse"
   },
   {
-    "jsKey": "completeTeamSandSetupFileUpload",
     "name": "CompleteTeamSandSetupFileUpload",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CompleteTeamSandSetupFileUploadRequest",
+    "output": "aiserver.v1.CompleteTeamSandSetupFileUploadResponse"
   },
   {
-    "jsKey": "setTeamSandSetupFileCurrentVersion",
     "name": "SetTeamSandSetupFileCurrentVersion",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetTeamSandSetupFileCurrentVersionRequest",
+    "output": "aiserver.v1.SetTeamSandSetupFileCurrentVersionResponse"
   },
   {
-    "jsKey": "deleteTeamSandSetupFile",
     "name": "DeleteTeamSandSetupFile",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteTeamSandSetupFileRequest",
+    "output": "aiserver.v1.DeleteTeamSandSetupFileResponse"
   },
   {
-    "jsKey": "deleteTeamGrokBot",
     "name": "DeleteTeamGrokBot",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteTeamGrokBotRequest",
+    "output": "aiserver.v1.DeleteTeamGrokBotResponse"
   },
   {
-    "jsKey": "listTeamMemberSandBoxes",
     "name": "ListTeamMemberSandBoxes",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListTeamMemberSandBoxesRequest",
+    "output": "aiserver.v1.ListTeamMemberSandBoxesResponse"
   },
   {
-    "jsKey": "killTeamMemberSandBox",
     "name": "KillTeamMemberSandBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.KillTeamMemberSandBoxRequest",
+    "output": "aiserver.v1.KillTeamMemberSandBoxResponse"
   },
   {
-    "jsKey": "recreateTeamMemberSandBox",
     "name": "RecreateTeamMemberSandBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RecreateTeamMemberSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "getTeamMemberSandBoxMigrationStatus",
     "name": "GetTeamMemberSandBoxMigrationStatus",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetTeamMemberSandBoxMigrationStatusRequest",
+    "output": "aiserver.v1.GetTeamMemberSandBoxMigrationStatusResponse"
   },
   {
-    "jsKey": "startBulkTeamMemberSandBoxOperation",
     "name": "StartBulkTeamMemberSandBoxOperation",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartBulkTeamMemberSandBoxOperationRequest",
+    "output": "aiserver.v1.StartBulkTeamMemberSandBoxOperationResponse"
   },
   {
-    "jsKey": "getBulkTeamMemberSandBoxOperationStatus",
     "name": "GetBulkTeamMemberSandBoxOperationStatus",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetBulkTeamMemberSandBoxOperationStatusRequest",
+    "output": "aiserver.v1.GetBulkTeamMemberSandBoxOperationStatusResponse"
   },
   {
-    "jsKey": "mintSandVoiceCallSecret",
     "name": "MintSandVoiceCallSecret",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.MintSandVoiceCallSecretRequest",
+    "output": "aiserver.v1.MintSandVoiceCallSecretResponse"
   },
   {
-    "jsKey": "beginOnePasswordConnection",
     "name": "BeginOnePasswordConnection",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.BeginOnePasswordConnectionRequest",
+    "output": "aiserver.v1.BeginOnePasswordConnectionResponse"
   },
   {
-    "jsKey": "completeOnePasswordConnection",
     "name": "CompleteOnePasswordConnection",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CompleteOnePasswordConnectionRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "getOnePasswordState",
     "name": "GetOnePasswordState",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetOnePasswordStateRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "syncOnePasswordConnections",
     "name": "SyncOnePasswordConnections",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SyncOnePasswordConnectionsRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "deleteOnePasswordConnection",
     "name": "DeleteOnePasswordConnection",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteOnePasswordConnectionRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "startOnePasswordOAuth",
     "name": "StartOnePasswordOAuth",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartOnePasswordOAuthRequest",
+    "output": "aiserver.v1.StartOnePasswordOAuthResponse"
   },
   {
-    "jsKey": "storeOnePasswordIntegrationKey",
     "name": "StoreOnePasswordIntegrationKey",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StoreOnePasswordIntegrationKeyRequest",
+    "output": "aiserver.v1.StoreOnePasswordIntegrationKeyResponse"
   },
   {
-    "jsKey": "completeOnePasswordOAuth",
     "name": "CompleteOnePasswordOAuth",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CompleteOnePasswordOAuthRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "approveOnePasswordCredentialRequest",
     "name": "ApproveOnePasswordCredentialRequest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ApproveOnePasswordCredentialRequestRequest",
+    "output": "aiserver.v1.OnePasswordCredentialDecisionResponse"
   },
   {
-    "jsKey": "denyOnePasswordCredentialRequest",
     "name": "DenyOnePasswordCredentialRequest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DenyOnePasswordCredentialRequestRequest",
+    "output": "aiserver.v1.OnePasswordCredentialDecisionResponse"
   },
   {
-    "jsKey": "commitGrokBotTranscriptEntries",
+    "name": "SetOnePasswordPreviousIntegration",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetOnePasswordPreviousIntegrationRequest",
+    "output": "aiserver.v1.OnePasswordState"
+  },
+  {
     "name": "CommitGrokBotTranscriptEntries",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CommitGrokBotTranscriptEntriesRequest",
+    "output": "aiserver.v1.CommitGrokBotTranscriptEntriesResponse"
   },
   {
-    "jsKey": "listGrokBotTranscriptEntries",
     "name": "ListGrokBotTranscriptEntries",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotTranscriptEntriesRequest",
+    "output": "aiserver.v1.ListGrokBotTranscriptEntriesResponse"
   },
   {
-    "jsKey": "watchGrokBotTranscripts",
     "name": "WatchGrokBotTranscripts",
-    "kind": "ServerStreaming"
+    "kind": "i.ServerStreaming",
+    "input": "aiserver.v1.WatchGrokBotTranscriptsRequest",
+    "output": "aiserver.v1.GrokBotTranscriptWatchFrame"
   },
   {
-    "jsKey": "setGrokBotAgentClientState",
+    "name": "SearchGrokBotTranscripts",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SearchGrokBotTranscriptsRequest",
+    "output": "aiserver.v1.SearchGrokBotTranscriptsResponse"
+  },
+  {
     "name": "SetGrokBotAgentClientState",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentClientStateRequest",
+    "output": "aiserver.v1.SetGrokBotAgentClientStateResponse"
   },
   {
-    "jsKey": "listGrokBotAgentStatuses",
     "name": "ListGrokBotAgentStatuses",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentStatusesRequest",
+    "output": "aiserver.v1.ListGrokBotAgentStatusesResponse"
   },
   {
-    "jsKey": "listGrokBotAgentSessions",
     "name": "ListGrokBotAgentSessions",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentSessionsRequest",
+    "output": "aiserver.v1.ListGrokBotAgentSessionsResponse"
   },
   {
-    "jsKey": "readGrokBotAgentAttachmentChunk",
     "name": "ReadGrokBotAgentAttachmentChunk",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReadGrokBotAgentAttachmentChunkRequest",
+    "output": "aiserver.v1.ReadGrokBotAgentAttachmentChunkResponse"
   },
   {
-    "jsKey": "resolveGrokBotAttachmentReads",
     "name": "ResolveGrokBotAttachmentReads",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ResolveGrokBotAttachmentReadsRequest",
+    "output": "aiserver.v1.ResolveGrokBotAttachmentReadsResponse"
   },
   {
-    "jsKey": "readGrokBotGroupChatDocument",
     "name": "ReadGrokBotGroupChatDocument",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReadGrokBotGroupChatDocumentRequest",
+    "output": "aiserver.v1.ReadGrokBotGroupChatDocumentResponse"
   },
   {
-    "jsKey": "readGrokBotGroupChatCanvas",
     "name": "ReadGrokBotGroupChatCanvas",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReadGrokBotGroupChatCanvasRequest",
+    "output": "aiserver.v1.ReadGrokBotGroupChatCanvasResponse"
   },
   {
-    "jsKey": "readGrokBotMcpAppDocument",
     "name": "ReadGrokBotMcpAppDocument",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReadGrokBotMcpAppDocumentRequest",
+    "output": "aiserver.v1.ReadGrokBotMcpAppDocumentResponse"
   },
   {
-    "jsKey": "callGrokBotMcpAppTool",
     "name": "CallGrokBotMcpAppTool",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CallGrokBotMcpAppToolRequest",
+    "output": "aiserver.v1.CallGrokBotMcpAppToolResponse"
   },
   {
-    "jsKey": "uploadGrokBotAgentAttachmentChunk",
     "name": "UploadGrokBotAgentAttachmentChunk",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UploadGrokBotAgentAttachmentChunkRequest",
+    "output": "aiserver.v1.UploadGrokBotAgentAttachmentChunkResponse"
   },
   {
-    "jsKey": "beginGrokBotAttachmentUpload",
     "name": "BeginGrokBotAttachmentUpload",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.BeginGrokBotAttachmentUploadRequest",
+    "output": "aiserver.v1.BeginGrokBotAttachmentUploadResponse"
   },
   {
-    "jsKey": "presignGrokBotAttachmentUploadParts",
     "name": "PresignGrokBotAttachmentUploadParts",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PresignGrokBotAttachmentUploadPartsRequest",
+    "output": "aiserver.v1.PresignGrokBotAttachmentUploadPartsResponse"
   },
   {
-    "jsKey": "completeGrokBotAttachmentUpload",
     "name": "CompleteGrokBotAttachmentUpload",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CompleteGrokBotAttachmentUploadRequest",
+    "output": "aiserver.v1.CompleteGrokBotAttachmentUploadResponse"
   },
   {
-    "jsKey": "abortGrokBotAttachmentUpload",
     "name": "AbortGrokBotAttachmentUpload",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AbortGrokBotAttachmentUploadRequest",
+    "output": "aiserver.v1.AbortGrokBotAttachmentUploadResponse"
   },
   {
-    "jsKey": "reportGrokBotClientPresence",
     "name": "ReportGrokBotClientPresence",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReportGrokBotClientPresenceRequest",
+    "output": "aiserver.v1.ReportGrokBotClientPresenceResponse"
   },
   {
-    "jsKey": "reportGrokBotDesktopActivity",
     "name": "ReportGrokBotDesktopActivity",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReportGrokBotDesktopActivityRequest",
+    "output": "aiserver.v1.ReportGrokBotDesktopActivityResponse"
   },
   {
-    "jsKey": "reportGrokBotNotificationPermission",
     "name": "ReportGrokBotNotificationPermission",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReportGrokBotNotificationPermissionRequest",
+    "output": "aiserver.v1.ReportGrokBotNotificationPermissionResponse"
   },
   {
-    "jsKey": "reportSandBoxHostState",
+    "name": "ReportGrokBotMessagingCapabilities",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReportGrokBotMessagingCapabilitiesRequest",
+    "output": "aiserver.v1.ReportGrokBotMessagingCapabilitiesResponse"
+  },
+  {
     "name": "ReportSandBoxHostState",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReportSandBoxHostStateRequest",
+    "output": "aiserver.v1.ReportSandBoxHostStateResponse"
   },
   {
-    "jsKey": "listGrokBotAgentAutomations",
+    "name": "ReportSandBoxStoreFlush",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReportSandBoxStoreFlushRequest",
+    "output": "aiserver.v1.ReportSandBoxStoreFlushResponse"
+  },
+  {
     "name": "ListGrokBotAgentAutomations",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentAutomationsRequest",
+    "output": "aiserver.v1.ListGrokBotAgentAutomationsResponse"
   },
   {
-    "jsKey": "listGrokBotAccountAutomations",
     "name": "ListGrokBotAccountAutomations",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAccountAutomationsRequest",
+    "output": "aiserver.v1.ListGrokBotAccountAutomationsResponse"
   },
   {
-    "jsKey": "listGrokBotAgentTodos",
     "name": "ListGrokBotAgentTodos",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentTodosRequest",
+    "output": "aiserver.v1.ListGrokBotAgentTodosResponse"
   },
   {
-    "jsKey": "listGrokBotAgentTasks",
     "name": "ListGrokBotAgentTasks",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentTasksRequest",
+    "output": "aiserver.v1.ListGrokBotAgentTasksResponse"
   },
   {
-    "jsKey": "listGrokBotSubagents",
     "name": "ListGrokBotSubagents",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotSubagentsRequest",
+    "output": "aiserver.v1.ListGrokBotSubagentsResponse"
   },
   {
-    "jsKey": "markGrokBotAgentTaskDone",
     "name": "MarkGrokBotAgentTaskDone",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.MarkGrokBotAgentTaskDoneRequest",
+    "output": "aiserver.v1.MarkGrokBotAgentTaskDoneResponse"
   },
   {
-    "jsKey": "markGrokBotAgentTaskRead",
     "name": "MarkGrokBotAgentTaskRead",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.MarkGrokBotAgentTaskReadRequest",
+    "output": "aiserver.v1.MarkGrokBotAgentTaskReadResponse"
   },
   {
-    "jsKey": "setGrokBotAgentTaskPinned",
     "name": "SetGrokBotAgentTaskPinned",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentTaskPinnedRequest",
+    "output": "aiserver.v1.SetGrokBotAgentTaskPinnedResponse"
   },
   {
-    "jsKey": "dismissGrokBotAgentSuggestions",
     "name": "DismissGrokBotAgentSuggestions",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DismissGrokBotAgentSuggestionsRequest",
+    "output": "aiserver.v1.DismissGrokBotAgentSuggestionsResponse"
   },
   {
-    "jsKey": "listGrokBotLibraryDocs",
     "name": "ListGrokBotLibraryDocs",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotLibraryDocsRequest",
+    "output": "aiserver.v1.ListGrokBotLibraryDocsResponse"
   },
   {
-    "jsKey": "keepGrokBotTaskList",
     "name": "KeepGrokBotTaskList",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.KeepGrokBotTaskListRequest",
+    "output": "aiserver.v1.KeepGrokBotTaskListResponse"
   },
   {
-    "jsKey": "listGrokBotTasks",
     "name": "ListGrokBotTasks",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotTasksRequest",
+    "output": "aiserver.v1.ListGrokBotTasksResponse"
   },
   {
-    "jsKey": "dismissGrokBotTask",
     "name": "DismissGrokBotTask",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DismissGrokBotTaskRequest",
+    "output": "aiserver.v1.DismissGrokBotTaskResponse"
   },
   {
-    "jsKey": "markGrokBotTasksSeen",
     "name": "MarkGrokBotTasksSeen",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.MarkGrokBotTasksSeenRequest",
+    "output": "aiserver.v1.MarkGrokBotTasksSeenResponse"
   },
   {
-    "jsKey": "setGrokBotAgentAutomationEnabled",
     "name": "SetGrokBotAgentAutomationEnabled",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentAutomationEnabledRequest",
+    "output": "aiserver.v1.SetGrokBotAgentAutomationEnabledResponse"
   },
   {
-    "jsKey": "deleteGrokBotAgentAutomation",
     "name": "DeleteGrokBotAgentAutomation",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotAgentAutomationRequest",
+    "output": "aiserver.v1.DeleteGrokBotAgentAutomationResponse"
   },
   {
-    "jsKey": "listGrokBotAgentRoutines",
     "name": "ListGrokBotAgentRoutines",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentRoutinesRequest",
+    "output": "aiserver.v1.ListGrokBotAgentRoutinesResponse"
   },
   {
-    "jsKey": "setGrokBotAgentRoutineEnabled",
     "name": "SetGrokBotAgentRoutineEnabled",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentRoutineEnabledRequest",
+    "output": "aiserver.v1.SetGrokBotAgentRoutineEnabledResponse"
   },
   {
-    "jsKey": "listGrokBotAgentSkills",
+    "name": "SetGrokBotAgentRoutineForTeam",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentRoutineForTeamRequest",
+    "output": "aiserver.v1.SetGrokBotAgentRoutineForTeamResponse"
+  },
+  {
     "name": "ListGrokBotAgentSkills",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentSkillsRequest",
+    "output": "aiserver.v1.ListGrokBotAgentSkillsResponse"
   },
   {
-    "jsKey": "getGrokBotUserMcpSettings",
     "name": "GetGrokBotUserMcpSettings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotUserMcpSettingsRequest",
+    "output": "aiserver.v1.GetGrokBotUserMcpSettingsResponse"
   },
   {
-    "jsKey": "setGrokBotUserMcpSettings",
     "name": "SetGrokBotUserMcpSettings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotUserMcpSettingsRequest",
+    "output": "aiserver.v1.SetGrokBotUserMcpSettingsResponse"
   },
   {
-    "jsKey": "getGrokBotUserRuntimeSettings",
     "name": "GetGrokBotUserRuntimeSettings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotUserRuntimeSettingsRequest",
+    "output": "aiserver.v1.GetGrokBotUserRuntimeSettingsResponse"
   },
   {
-    "jsKey": "updateGrokBotUserRuntimeSettings",
     "name": "UpdateGrokBotUserRuntimeSettings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotUserRuntimeSettingsRequest",
+    "output": "aiserver.v1.UpdateGrokBotUserRuntimeSettingsResponse"
   },
   {
-    "jsKey": "listGrokBotLibraryPins",
+    "name": "GetGrokBotUserProfile",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotUserProfileRequest",
+    "output": "aiserver.v1.GetGrokBotUserProfileResponse"
+  },
+  {
+    "name": "SetGrokBotUserProfilePhoto",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotUserProfilePhotoRequest",
+    "output": "aiserver.v1.SetGrokBotUserProfilePhotoResponse"
+  },
+  {
+    "name": "DeleteGrokBotUserProfilePhoto",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotUserProfilePhotoRequest",
+    "output": "aiserver.v1.DeleteGrokBotUserProfilePhotoResponse"
+  },
+  {
+    "name": "ListGrokBotTryOnImages",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotTryOnImagesRequest",
+    "output": "aiserver.v1.ListGrokBotTryOnImagesResponse"
+  },
+  {
     "name": "ListGrokBotLibraryPins",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotLibraryPinsRequest",
+    "output": "aiserver.v1.ListGrokBotLibraryPinsResponse"
   },
   {
-    "jsKey": "setGrokBotLibraryPin",
     "name": "SetGrokBotLibraryPin",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotLibraryPinRequest",
+    "output": "aiserver.v1.SetGrokBotLibraryPinResponse"
   },
   {
-    "jsKey": "mergeGrokBotLibraryPins",
     "name": "MergeGrokBotLibraryPins",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.MergeGrokBotLibraryPinsRequest",
+    "output": "aiserver.v1.MergeGrokBotLibraryPinsResponse"
   },
   {
-    "jsKey": "getGrokBotMcpToolPermissions",
+    "name": "ListGrokBotCartItems",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotCartItemsRequest",
+    "output": "aiserver.v1.ListGrokBotCartItemsResponse"
+  },
+  {
+    "name": "SetGrokBotCartItem",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotCartItemRequest",
+    "output": "aiserver.v1.SetGrokBotCartItemResponse"
+  },
+  {
+    "name": "RemoveGrokBotCartItems",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RemoveGrokBotCartItemsRequest",
+    "output": "aiserver.v1.RemoveGrokBotCartItemsResponse"
+  },
+  {
     "name": "GetGrokBotMcpToolPermissions",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotMcpToolPermissionsRequest",
+    "output": "aiserver.v1.GetGrokBotMcpToolPermissionsResponse"
   },
   {
-    "jsKey": "setGrokBotMcpToolPermissions",
     "name": "SetGrokBotMcpToolPermissions",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotMcpToolPermissionsRequest",
+    "output": "aiserver.v1.SetGrokBotMcpToolPermissionsResponse"
   },
   {
-    "jsKey": "setGrokBotMainAgent",
     "name": "SetGrokBotMainAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotMainAgentRequest",
+    "output": "aiserver.v1.SetGrokBotMainAgentResponse"
   },
   {
-    "jsKey": "ensureGrokBotDefaultMainAgent",
     "name": "EnsureGrokBotDefaultMainAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.EnsureGrokBotDefaultMainAgentRequest",
+    "output": "aiserver.v1.EnsureGrokBotDefaultMainAgentResponse"
   },
   {
-    "jsKey": "markGrokBotTermsSeen",
     "name": "MarkGrokBotTermsSeen",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.MarkGrokBotTermsSeenRequest",
+    "output": "aiserver.v1.MarkGrokBotTermsSeenResponse"
   },
   {
-    "jsKey": "getGrokBotTermsSeen",
     "name": "GetGrokBotTermsSeen",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotTermsSeenRequest",
+    "output": "aiserver.v1.GetGrokBotTermsSeenResponse"
   },
   {
-    "jsKey": "createGrokBotAgent",
     "name": "CreateGrokBotAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotAgentRequest",
+    "output": "aiserver.v1.CreateGrokBotAgentResponse"
   },
   {
-    "jsKey": "createGrokBotTemporalAgent",
     "name": "CreateGrokBotTemporalAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotAgentRequest",
+    "output": "aiserver.v1.CreateGrokBotAgentResponse"
   },
   {
-    "jsKey": "listGrokBotAgents",
     "name": "ListGrokBotAgents",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentsRequest",
+    "output": "aiserver.v1.ListGrokBotAgentsResponse"
   },
   {
-    "jsKey": "listGrokBotTeamAgents",
     "name": "ListGrokBotTeamAgents",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotTeamAgentsRequest",
+    "output": "aiserver.v1.ListGrokBotTeamAgentsResponse"
   },
   {
-    "jsKey": "getGrokBotRuntimeCapabilities",
     "name": "GetGrokBotRuntimeCapabilities",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotRuntimeCapabilitiesRequest",
+    "output": "aiserver.v1.GetGrokBotRuntimeCapabilitiesResponse"
   },
   {
-    "jsKey": "getGrokBotPhoneUiGates",
     "name": "GetGrokBotPhoneUiGates",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotPhoneUiGatesRequest",
+    "output": "aiserver.v1.GetGrokBotPhoneUiGatesResponse"
   },
   {
-    "jsKey": "listDeletedGrokBotAgentIds",
     "name": "ListDeletedGrokBotAgentIds",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListDeletedGrokBotAgentIdsRequest",
+    "output": "aiserver.v1.ListDeletedGrokBotAgentIdsResponse"
   },
   {
-    "jsKey": "ensureGrokBotBoxHarnessMigrationPass",
     "name": "EnsureGrokBotBoxHarnessMigrationPass",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.EnsureGrokBotBoxHarnessMigrationPassRequest",
+    "output": "aiserver.v1.EnsureGrokBotBoxHarnessMigrationPassResponse"
   },
   {
-    "jsKey": "setGrokBotAgentVisibility",
     "name": "SetGrokBotAgentVisibility",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentVisibilityRequest",
+    "output": "aiserver.v1.SetGrokBotAgentVisibilityResponse"
   },
   {
-    "jsKey": "cloneGrokBotAgentToTeam",
     "name": "CloneGrokBotAgentToTeam",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CloneGrokBotAgentToTeamRequest",
+    "output": "aiserver.v1.CloneGrokBotAgentToTeamResponse"
   },
   {
-    "jsKey": "shareGrokBotAgentInPlace",
     "name": "ShareGrokBotAgentInPlace",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ShareGrokBotAgentInPlaceRequest",
+    "output": "aiserver.v1.ShareGrokBotAgentInPlaceResponse"
   },
   {
-    "jsKey": "getGrokBotAgentInPlaceShareStatus",
     "name": "GetGrokBotAgentInPlaceShareStatus",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotAgentInPlaceShareStatusRequest",
+    "output": "aiserver.v1.GetGrokBotAgentInPlaceShareStatusResponse"
   },
   {
-    "jsKey": "duplicateGrokBotAgent",
     "name": "DuplicateGrokBotAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DuplicateGrokBotAgentRequest",
+    "output": "aiserver.v1.DuplicateGrokBotAgentResponse"
   },
   {
-    "jsKey": "publishGrokBotAgent",
     "name": "PublishGrokBotAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PublishGrokBotAgentRequest",
+    "output": "aiserver.v1.PublishGrokBotAgentResponse"
   },
   {
-    "jsKey": "unpublishGrokBotAgent",
     "name": "UnpublishGrokBotAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UnpublishGrokBotAgentRequest",
+    "output": "aiserver.v1.UnpublishGrokBotAgentResponse"
   },
   {
-    "jsKey": "addGrokBotAgentManager",
     "name": "AddGrokBotAgentManager",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AddGrokBotAgentManagerRequest",
+    "output": "aiserver.v1.AddGrokBotAgentManagerResponse"
   },
   {
-    "jsKey": "removeGrokBotAgentManager",
     "name": "RemoveGrokBotAgentManager",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RemoveGrokBotAgentManagerRequest",
+    "output": "aiserver.v1.RemoveGrokBotAgentManagerResponse"
   },
   {
-    "jsKey": "listGrokBotAgentManagers",
     "name": "ListGrokBotAgentManagers",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentManagersRequest",
+    "output": "aiserver.v1.ListGrokBotAgentManagersResponse"
   },
   {
-    "jsKey": "getGrokBotAgentAnalytics",
     "name": "GetGrokBotAgentAnalytics",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotAgentAnalyticsRequest",
+    "output": "aiserver.v1.GetGrokBotAgentAnalyticsResponse"
   },
   {
-    "jsKey": "listGrokBotAgentMeetings",
     "name": "ListGrokBotAgentMeetings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentMeetingsRequest",
+    "output": "aiserver.v1.ListGrokBotAgentMeetingsResponse"
   },
   {
-    "jsKey": "addGrokBotAgentAccessPrincipal",
     "name": "AddGrokBotAgentAccessPrincipal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AddGrokBotAgentAccessPrincipalRequest",
+    "output": "aiserver.v1.AddGrokBotAgentAccessPrincipalResponse"
   },
   {
-    "jsKey": "removeGrokBotAgentAccessPrincipal",
     "name": "RemoveGrokBotAgentAccessPrincipal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RemoveGrokBotAgentAccessPrincipalRequest",
+    "output": "aiserver.v1.RemoveGrokBotAgentAccessPrincipalResponse"
   },
   {
-    "jsKey": "listGrokBotAgentAccessPrincipals",
     "name": "ListGrokBotAgentAccessPrincipals",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentAccessPrincipalsRequest",
+    "output": "aiserver.v1.ListGrokBotAgentAccessPrincipalsResponse"
   },
   {
-    "jsKey": "getGrokBotAgentAccess",
     "name": "GetGrokBotAgentAccess",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotAgentAccessRequest",
+    "output": "aiserver.v1.GetGrokBotAgentAccessResponse"
   },
   {
-    "jsKey": "updateGrokBotAgentAccess",
     "name": "UpdateGrokBotAgentAccess",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotAgentAccessRequest",
+    "output": "aiserver.v1.UpdateGrokBotAgentAccessResponse"
   },
   {
-    "jsKey": "getGrokBotAgentLinkAccess",
     "name": "GetGrokBotAgentLinkAccess",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotAgentLinkAccessRequest",
+    "output": "aiserver.v1.GetGrokBotAgentLinkAccessResponse"
   },
   {
-    "jsKey": "createGrokBotAgentAccessInvite",
     "name": "CreateGrokBotAgentAccessInvite",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotAgentAccessInviteRequest",
+    "output": "aiserver.v1.CreateGrokBotAgentAccessInviteResponse"
   },
   {
-    "jsKey": "listGrokBotAgentAccessInvites",
     "name": "ListGrokBotAgentAccessInvites",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentAccessInvitesRequest",
+    "output": "aiserver.v1.ListGrokBotAgentAccessInvitesResponse"
   },
   {
-    "jsKey": "revokeGrokBotAgentAccessInvite",
     "name": "RevokeGrokBotAgentAccessInvite",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RevokeGrokBotAgentAccessInviteRequest",
+    "output": "aiserver.v1.RevokeGrokBotAgentAccessInviteResponse"
   },
   {
-    "jsKey": "previewGrokBotAgentAccessInvite",
+    "name": "GetGrokBotInviteByEmailAccess",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotInviteByEmailAccessRequest",
+    "output": "aiserver.v1.GetGrokBotInviteByEmailAccessResponse"
+  },
+  {
     "name": "PreviewGrokBotAgentAccessInvite",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PreviewGrokBotAgentAccessInviteRequest",
+    "output": "aiserver.v1.PreviewGrokBotAgentAccessInviteResponse"
   },
   {
-    "jsKey": "acceptGrokBotAgentAccessInvite",
     "name": "AcceptGrokBotAgentAccessInvite",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AcceptGrokBotAgentAccessInviteRequest",
+    "output": "aiserver.v1.AcceptGrokBotAgentAccessInviteResponse"
   },
   {
-    "jsKey": "updateGrokBotAgent",
     "name": "UpdateGrokBotAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotAgentRequest",
+    "output": "aiserver.v1.UpdateGrokBotAgentResponse"
   },
   {
-    "jsKey": "setGrokBotAgentVoice",
     "name": "SetGrokBotAgentVoice",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentVoiceRequest",
+    "output": "aiserver.v1.SetGrokBotAgentVoiceResponse"
   },
   {
-    "jsKey": "setGrokBotAgentDraftingDisabled",
     "name": "SetGrokBotAgentDraftingDisabled",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentDraftingDisabledRequest",
+    "output": "aiserver.v1.SetGrokBotAgentDraftingDisabledResponse"
   },
   {
-    "jsKey": "setGrokBotAgentAllowCollaboratorAutomationCreation",
     "name": "SetGrokBotAgentAllowCollaboratorAutomationCreation",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentAllowCollaboratorAutomationCreationRequest",
+    "output": "aiserver.v1.SetGrokBotAgentAllowCollaboratorAutomationCreationResponse"
   },
   {
-    "jsKey": "getGrokBotTeamLinkPreview",
     "name": "GetGrokBotTeamLinkPreview",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotTeamLinkPreviewRequest",
+    "output": "aiserver.v1.GetGrokBotTeamLinkPreviewResponse"
   },
   {
-    "jsKey": "setGrokBotTeamLinkPreview",
     "name": "SetGrokBotTeamLinkPreview",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotTeamLinkPreviewRequest",
+    "output": "aiserver.v1.SetGrokBotTeamLinkPreviewResponse"
   },
   {
-    "jsKey": "deleteGrokBotAgent",
     "name": "DeleteGrokBotAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotAgentRequest",
+    "output": "aiserver.v1.DeleteGrokBotAgentResponse"
   },
   {
-    "jsKey": "listGrokBotSecrets",
     "name": "ListGrokBotSecrets",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotSecretsRequest",
+    "output": "aiserver.v1.ListGrokBotSecretsResponse"
   },
   {
-    "jsKey": "putGrokBotSecret",
     "name": "PutGrokBotSecret",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PutGrokBotSecretRequest",
+    "output": "aiserver.v1.PutGrokBotSecretResponse"
   },
   {
-    "jsKey": "deleteGrokBotSecret",
     "name": "DeleteGrokBotSecret",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotSecretRequest",
+    "output": "aiserver.v1.DeleteGrokBotSecretResponse"
   },
   {
-    "jsKey": "listGrokBotVaultCredentials",
     "name": "ListGrokBotVaultCredentials",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotVaultCredentialsRequest",
+    "output": "aiserver.v1.ListGrokBotVaultCredentialsResponse"
   },
   {
-    "jsKey": "putGrokBotVaultCredential",
     "name": "PutGrokBotVaultCredential",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PutGrokBotVaultCredentialRequest",
+    "output": "aiserver.v1.PutGrokBotVaultCredentialResponse"
   },
   {
-    "jsKey": "batchCreateGrokBotVaultCredentials",
     "name": "BatchCreateGrokBotVaultCredentials",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.BatchCreateGrokBotVaultCredentialsRequest",
+    "output": "aiserver.v1.BatchCreateGrokBotVaultCredentialsResponse"
   },
   {
-    "jsKey": "updateGrokBotVaultCard",
     "name": "UpdateGrokBotVaultCard",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotVaultCardRequest",
+    "output": "aiserver.v1.UpdateGrokBotVaultCardResponse"
   },
   {
-    "jsKey": "createGrokBotVaultCard",
     "name": "CreateGrokBotVaultCard",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotVaultCardRequest",
+    "output": "aiserver.v1.CreateGrokBotVaultCardResponse"
   },
   {
-    "jsKey": "deleteGrokBotVaultCredential",
     "name": "DeleteGrokBotVaultCredential",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotVaultCredentialRequest",
+    "output": "aiserver.v1.DeleteGrokBotVaultCredentialResponse"
   },
   {
-    "jsKey": "putGrokBotVaultItem",
     "name": "PutGrokBotVaultItem",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PutGrokBotVaultItemRequest",
+    "output": "aiserver.v1.PutGrokBotVaultItemResponse"
   },
   {
-    "jsKey": "getGrokBotDefaultPaymentMethod",
     "name": "GetGrokBotDefaultPaymentMethod",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotDefaultPaymentMethodRequest",
+    "output": "aiserver.v1.GetGrokBotDefaultPaymentMethodResponse"
   },
   {
-    "jsKey": "setGrokBotDefaultPaymentMethod",
     "name": "SetGrokBotDefaultPaymentMethod",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotDefaultPaymentMethodRequest",
+    "output": "aiserver.v1.SetGrokBotDefaultPaymentMethodResponse"
   },
   {
-    "jsKey": "createGrokBotEmailInbox",
     "name": "CreateGrokBotEmailInbox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotEmailInboxRequest",
+    "output": "aiserver.v1.CreateGrokBotEmailInboxResponse"
   },
   {
-    "jsKey": "listGrokBotEmailInboxes",
     "name": "ListGrokBotEmailInboxes",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotEmailInboxesRequest",
+    "output": "aiserver.v1.ListGrokBotEmailInboxesResponse"
   },
   {
-    "jsKey": "checkGrokBotEmailAddressAvailability",
     "name": "CheckGrokBotEmailAddressAvailability",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CheckGrokBotEmailAddressAvailabilityRequest",
+    "output": "aiserver.v1.CheckGrokBotEmailAddressAvailabilityResponse"
   },
   {
-    "jsKey": "deleteGrokBotEmailInbox",
     "name": "DeleteGrokBotEmailInbox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotEmailInboxRequest",
+    "output": "aiserver.v1.DeleteGrokBotEmailInboxResponse"
   },
   {
-    "jsKey": "searchGrokBotEmailThreads",
     "name": "SearchGrokBotEmailThreads",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SearchGrokBotEmailThreadsRequest",
+    "output": "aiserver.v1.SearchGrokBotEmailThreadsResponse"
   },
   {
-    "jsKey": "readGrokBotEmailThread",
     "name": "ReadGrokBotEmailThread",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReadGrokBotEmailThreadRequest",
+    "output": "aiserver.v1.ReadGrokBotEmailThreadResponse"
   },
   {
-    "jsKey": "readGrokBotEmailAttachment",
     "name": "ReadGrokBotEmailAttachment",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReadGrokBotEmailAttachmentRequest",
+    "output": "aiserver.v1.ReadGrokBotEmailAttachmentResponse"
   },
   {
-    "jsKey": "listGrokBotEmailThreads",
     "name": "ListGrokBotEmailThreads",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotEmailThreadsRequest",
+    "output": "aiserver.v1.ListGrokBotEmailThreadsResponse"
   },
   {
-    "jsKey": "issueGrokBotMessagingLinkCode",
     "name": "IssueGrokBotMessagingLinkCode",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.IssueGrokBotMessagingLinkCodeRequest",
+    "output": "aiserver.v1.IssueGrokBotMessagingLinkCodeResponse"
   },
   {
-    "jsKey": "getGrokBotMessagingLinkStatus",
     "name": "GetGrokBotMessagingLinkStatus",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotMessagingLinkStatusRequest",
+    "output": "aiserver.v1.GetGrokBotMessagingLinkStatusResponse"
   },
   {
-    "jsKey": "listGrokBotMessagingLinkedPhones",
     "name": "ListGrokBotMessagingLinkedPhones",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotMessagingLinkedPhonesRequest",
+    "output": "aiserver.v1.ListGrokBotMessagingLinkedPhonesResponse"
   },
   {
-    "jsKey": "unlinkGrokBotMessagingPhone",
     "name": "UnlinkGrokBotMessagingPhone",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UnlinkGrokBotMessagingPhoneRequest",
+    "output": "aiserver.v1.UnlinkGrokBotMessagingPhoneResponse"
   },
   {
-    "jsKey": "getGrokBotAgentPlugins",
     "name": "GetGrokBotAgentPlugins",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotAgentPluginsRequest",
+    "output": "aiserver.v1.GetGrokBotAgentPluginsResponse"
   },
   {
-    "jsKey": "setGrokBotAgentPlugins",
     "name": "SetGrokBotAgentPlugins",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentPluginsRequest",
+    "output": "aiserver.v1.SetGrokBotAgentPluginsResponse"
   },
   {
-    "jsKey": "setGrokBotAgentPluginVariables",
     "name": "SetGrokBotAgentPluginVariables",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotAgentPluginVariablesRequest",
+    "output": "aiserver.v1.SetGrokBotAgentPluginVariablesResponse"
   },
   {
-    "jsKey": "attachGrokBotAgentDelegatedCredential",
     "name": "AttachGrokBotAgentDelegatedCredential",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AttachGrokBotAgentDelegatedCredentialRequest",
+    "output": "aiserver.v1.AttachGrokBotAgentDelegatedCredentialResponse"
   },
   {
-    "jsKey": "removeGrokBotAgentDelegatedCredential",
     "name": "RemoveGrokBotAgentDelegatedCredential",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RemoveGrokBotAgentDelegatedCredentialRequest",
+    "output": "aiserver.v1.RemoveGrokBotAgentDelegatedCredentialResponse"
   },
   {
-    "jsKey": "updateGrokBotAgentMarketplace",
     "name": "UpdateGrokBotAgentMarketplace",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotAgentMarketplaceRequest",
+    "output": "aiserver.v1.UpdateGrokBotAgentMarketplaceResponse"
   },
   {
-    "jsKey": "getGrokBotAgentCustomMcp",
     "name": "GetGrokBotAgentCustomMcp",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotAgentCustomMcpRequest",
+    "output": "aiserver.v1.GetGrokBotAgentCustomMcpResponse"
   },
   {
-    "jsKey": "updateGrokBotAgentCustomMcp",
     "name": "UpdateGrokBotAgentCustomMcp",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotAgentCustomMcpRequest",
+    "output": "aiserver.v1.UpdateGrokBotAgentCustomMcpResponse"
   },
   {
-    "jsKey": "addGrokBotAgentSkill",
     "name": "AddGrokBotAgentSkill",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AddGrokBotAgentSkillRequest",
+    "output": "aiserver.v1.AddGrokBotAgentSkillResponse"
   },
   {
-    "jsKey": "updateGrokBotAgentSkill",
     "name": "UpdateGrokBotAgentSkill",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotAgentSkillRequest",
+    "output": "aiserver.v1.UpdateGrokBotAgentSkillResponse"
   },
   {
-    "jsKey": "removeGrokBotAgentSkill",
     "name": "RemoveGrokBotAgentSkill",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RemoveGrokBotAgentSkillRequest",
+    "output": "aiserver.v1.RemoveGrokBotAgentSkillResponse"
   },
   {
-    "jsKey": "getGrokBotAgentPluginFile",
+    "name": "MakeGrokBotAgentSkillPrivate",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.MakeGrokBotAgentSkillPrivateRequest",
+    "output": "aiserver.v1.MakeGrokBotAgentSkillPrivateResponse"
+  },
+  {
     "name": "GetGrokBotAgentPluginFile",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotAgentPluginFileRequest",
+    "output": "aiserver.v1.GetGrokBotAgentPluginFileResponse"
   },
   {
-    "jsKey": "beginGrokBotAgentFileUpload",
     "name": "BeginGrokBotAgentFileUpload",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.BeginGrokBotAgentFileUploadRequest",
+    "output": "aiserver.v1.BeginGrokBotAgentFileUploadResponse"
   },
   {
-    "jsKey": "finishGrokBotAgentFileUpload",
     "name": "FinishGrokBotAgentFileUpload",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.FinishGrokBotAgentFileUploadRequest",
+    "output": "aiserver.v1.FinishGrokBotAgentFileUploadResponse"
   },
   {
-    "jsKey": "listGrokBotAgentFiles",
     "name": "ListGrokBotAgentFiles",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentFilesRequest",
+    "output": "aiserver.v1.ListGrokBotAgentFilesResponse"
   },
   {
-    "jsKey": "deleteGrokBotAgentFile",
     "name": "DeleteGrokBotAgentFile",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotAgentFileRequest",
+    "output": "aiserver.v1.DeleteGrokBotAgentFileResponse"
   },
   {
-    "jsKey": "listGrokBotUserStoreFiles",
     "name": "ListGrokBotUserStoreFiles",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotUserStoreFilesRequest",
+    "output": "aiserver.v1.ListGrokBotUserStoreFilesResponse"
   },
   {
-    "jsKey": "deleteGrokBotUserStoreFile",
     "name": "DeleteGrokBotUserStoreFile",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotUserStoreFileRequest",
+    "output": "aiserver.v1.DeleteGrokBotUserStoreFileResponse"
   },
   {
-    "jsKey": "getGrokBotTeamContextSummary",
+    "name": "MakeGrokBotAgentFilePrivate",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.MakeGrokBotAgentFilePrivateRequest",
+    "output": "aiserver.v1.MakeGrokBotAgentFilePrivateResponse"
+  },
+  {
     "name": "GetGrokBotTeamContextSummary",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotTeamContextSummaryRequest",
+    "output": "aiserver.v1.GetGrokBotTeamContextSummaryResponse"
   },
   {
-    "jsKey": "listGrokBotUserBotMemories",
     "name": "ListGrokBotUserBotMemories",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotUserBotMemoriesRequest",
+    "output": "aiserver.v1.ListGrokBotUserBotMemoriesResponse"
   },
   {
-    "jsKey": "promoteGrokBotMemoriesToTeam",
     "name": "PromoteGrokBotMemoriesToTeam",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PromoteGrokBotMemoriesToTeamRequest",
+    "output": "aiserver.v1.PromoteGrokBotMemoriesToTeamResponse"
   },
   {
-    "jsKey": "listGrokBotTeamReviewItems",
     "name": "ListGrokBotTeamReviewItems",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotTeamReviewItemsRequest",
+    "output": "aiserver.v1.ListGrokBotTeamReviewItemsResponse"
   },
   {
-    "jsKey": "resolveGrokBotTeamReviewItem",
     "name": "ResolveGrokBotTeamReviewItem",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ResolveGrokBotTeamReviewItemRequest",
+    "output": "aiserver.v1.ResolveGrokBotTeamReviewItemResponse"
   },
   {
-    "jsKey": "addGrokBotTeamReviewItem",
     "name": "AddGrokBotTeamReviewItem",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AddGrokBotTeamReviewItemRequest",
+    "output": "aiserver.v1.AddGrokBotTeamReviewItemResponse"
   },
   {
-    "jsKey": "createGrokBotTemplate",
+    "name": "SummarizeGrokBotTeamReviewItems",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SummarizeGrokBotTeamReviewItemsRequest",
+    "output": "aiserver.v1.SummarizeGrokBotTeamReviewItemsResponse"
+  },
+  {
     "name": "CreateGrokBotTemplate",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotTemplateRequest",
+    "output": "aiserver.v1.CreateGrokBotTemplateResponse"
   },
   {
-    "jsKey": "listGrokBotTemplates",
     "name": "ListGrokBotTemplates",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotTemplatesRequest",
+    "output": "aiserver.v1.ListGrokBotTemplatesResponse"
   },
   {
-    "jsKey": "deleteGrokBotTemplate",
     "name": "DeleteGrokBotTemplate",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotTemplateRequest",
+    "output": "aiserver.v1.DeleteGrokBotTemplateResponse"
   },
   {
-    "jsKey": "setGrokBotTemplateVisibility",
     "name": "SetGrokBotTemplateVisibility",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotTemplateVisibilityRequest",
+    "output": "aiserver.v1.SetGrokBotTemplateVisibilityResponse"
   },
   {
-    "jsKey": "activateGrokBotTemplateVersion",
     "name": "ActivateGrokBotTemplateVersion",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ActivateGrokBotTemplateVersionRequest",
+    "output": "aiserver.v1.ActivateGrokBotTemplateVersionResponse"
   },
   {
-    "jsKey": "getGrokBotTemplateVersion",
     "name": "GetGrokBotTemplateVersion",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotTemplateVersionRequest",
+    "output": "aiserver.v1.GetGrokBotTemplateVersionResponse"
   },
   {
-    "jsKey": "getGrokBotTemplateForSourceAgent",
     "name": "GetGrokBotTemplateForSourceAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotTemplateForSourceAgentRequest",
+    "output": "aiserver.v1.GetGrokBotTemplateForSourceAgentResponse"
   },
   {
-    "jsKey": "getGrokBotTemplateExportPolicy",
     "name": "GetGrokBotTemplateExportPolicy",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotTemplateExportPolicyRequest",
+    "output": "aiserver.v1.GetGrokBotTemplateExportPolicyResponse"
   },
   {
-    "jsKey": "getPublicGrokBotTemplate",
     "name": "GetPublicGrokBotTemplate",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetPublicGrokBotTemplateRequest",
+    "output": "aiserver.v1.GetPublicGrokBotTemplateResponse"
   },
   {
-    "jsKey": "getPublicGrokBotAgentPreview",
     "name": "GetPublicGrokBotAgentPreview",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetPublicGrokBotAgentPreviewRequest",
+    "output": "aiserver.v1.GetPublicGrokBotAgentPreviewResponse"
   },
   {
-    "jsKey": "listPublicGrokBotMarketplaceListings",
     "name": "ListPublicGrokBotMarketplaceListings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListPublicGrokBotMarketplaceListingsRequest",
+    "output": "aiserver.v1.ListPublicGrokBotMarketplaceListingsResponse"
   },
   {
-    "jsKey": "getPublicGrokBotMarketplaceListing",
     "name": "GetPublicGrokBotMarketplaceListing",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetPublicGrokBotMarketplaceListingRequest",
+    "output": "aiserver.v1.GetPublicGrokBotMarketplaceListingResponse"
   },
   {
-    "jsKey": "getGrokBotTemplateImportDetails",
     "name": "GetGrokBotTemplateImportDetails",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotTemplateImportDetailsRequest",
+    "output": "aiserver.v1.GetGrokBotTemplateImportDetailsResponse"
   },
   {
-    "jsKey": "createGrokBotAgentFromTemplate",
     "name": "CreateGrokBotAgentFromTemplate",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotAgentFromTemplateRequest",
+    "output": "aiserver.v1.CreateGrokBotAgentFromTemplateResponse"
   },
   {
-    "jsKey": "sendGrokBotUserMessage",
     "name": "SendGrokBotUserMessage",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SendGrokBotUserMessageRequest",
+    "output": "aiserver.v1.SendGrokBotUserMessageResponse"
   },
   {
-    "jsKey": "getGrokBotSendStatus",
     "name": "GetGrokBotSendStatus",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotSendStatusRequest",
+    "output": "aiserver.v1.GetGrokBotSendStatusResponse"
   },
   {
-    "jsKey": "startGrokBotImagePrecaption",
     "name": "StartGrokBotImagePrecaption",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartGrokBotImagePrecaptionRequest",
+    "output": "aiserver.v1.StartGrokBotImagePrecaptionResponse"
   },
   {
-    "jsKey": "extractGrokBotCardFromPhoto",
     "name": "ExtractGrokBotCardFromPhoto",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ExtractGrokBotCardFromPhotoRequest",
+    "output": "aiserver.v1.ExtractGrokBotCardFromPhotoResponse"
   },
   {
-    "jsKey": "suggestGrokBotAddresses",
     "name": "SuggestGrokBotAddresses",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SuggestGrokBotAddressesRequest",
+    "output": "aiserver.v1.SuggestGrokBotAddressesResponse"
   },
   {
-    "jsKey": "resolveGrokBotAddress",
     "name": "ResolveGrokBotAddress",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ResolveGrokBotAddressRequest",
+    "output": "aiserver.v1.ResolveGrokBotAddressResponse"
   },
   {
-    "jsKey": "getGrokBotCloudAgentWatchers",
     "name": "GetGrokBotCloudAgentWatchers",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotCloudAgentWatchersRequest",
+    "output": "aiserver.v1.GetGrokBotCloudAgentWatchersResponse"
   },
   {
-    "jsKey": "interruptGrokBotAgentRun",
     "name": "InterruptGrokBotAgentRun",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.InterruptGrokBotAgentRunRequest",
+    "output": "aiserver.v1.InterruptGrokBotAgentRunResponse"
   },
   {
-    "jsKey": "startFreshGrokBotConversation",
     "name": "StartFreshGrokBotConversation",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartFreshGrokBotConversationRequest",
+    "output": "aiserver.v1.StartFreshGrokBotConversationResponse"
   },
   {
-    "jsKey": "rollBackGrokBotConversation",
     "name": "RollBackGrokBotConversation",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RollBackGrokBotConversationRequest",
+    "output": "aiserver.v1.RollBackGrokBotConversationResponse"
   },
   {
-    "jsKey": "respondGrokBotWidget",
     "name": "RespondGrokBotWidget",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RespondGrokBotWidgetRequest",
+    "output": "aiserver.v1.RespondGrokBotWidgetResponse"
   },
   {
-    "jsKey": "submitGrokBotSecret",
     "name": "SubmitGrokBotSecret",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SubmitGrokBotSecretRequest",
+    "output": "aiserver.v1.SubmitGrokBotSecretResponse"
   },
   {
-    "jsKey": "resolveGrokBotCredentialRequest",
     "name": "ResolveGrokBotCredentialRequest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ResolveGrokBotCredentialRequestRequest",
+    "output": "aiserver.v1.ResolveGrokBotCredentialRequestResponse"
   },
   {
-    "jsKey": "dismissGrokBotWidget",
     "name": "DismissGrokBotWidget",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DismissGrokBotWidgetRequest",
+    "output": "aiserver.v1.DismissGrokBotWidgetResponse"
   },
   {
-    "jsKey": "searchGrokBotPlacesArea",
     "name": "SearchGrokBotPlacesArea",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SearchGrokBotPlacesAreaRequest",
+    "output": "aiserver.v1.SearchGrokBotPlacesAreaResponse"
   },
   {
-    "jsKey": "submitGrokBotUserForm",
+    "name": "SearchGrokBotSimilarProducts",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SearchGrokBotSimilarProductsRequest",
+    "output": "aiserver.v1.SearchGrokBotSimilarProductsResponse"
+  },
+  {
+    "name": "LookupGrokBotShoppingProduct",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.LookupGrokBotShoppingProductRequest",
+    "output": "aiserver.v1.LookupGrokBotShoppingProductResponse"
+  },
+  {
+    "name": "GenerateGrokBotTryOnImage",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GenerateGrokBotTryOnImageRequest",
+    "output": "aiserver.v1.GenerateGrokBotTryOnImageResponse"
+  },
+  {
+    "name": "ResolveGrokBotFlightBookingLink",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ResolveGrokBotFlightBookingLinkRequest",
+    "output": "aiserver.v1.ResolveGrokBotFlightBookingLinkResponse"
+  },
+  {
+    "name": "GetGrokBotPlaceDetails",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotPlaceDetailsRequest",
+    "output": "aiserver.v1.GetGrokBotPlaceDetailsResponse"
+  },
+  {
     "name": "SubmitGrokBotUserForm",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SubmitGrokBotUserFormRequest",
+    "output": "aiserver.v1.SubmitGrokBotUserFormResponse"
   },
   {
-    "jsKey": "dismissGrokBotUserForm",
     "name": "DismissGrokBotUserForm",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DismissGrokBotUserFormRequest",
+    "output": "aiserver.v1.DismissGrokBotUserFormResponse"
   },
   {
-    "jsKey": "hangUpGrokBotOutboundCall",
+    "name": "GetGrokBotMessagingCard",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotMessagingCardRequest",
+    "output": "aiserver.v1.GetGrokBotMessagingCardResponse"
+  },
+  {
+    "name": "AnswerGrokBotMessagingCard",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AnswerGrokBotMessagingCardRequest",
+    "output": "aiserver.v1.AnswerGrokBotMessagingCardResponse"
+  },
+  {
     "name": "HangUpGrokBotOutboundCall",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.HangUpGrokBotOutboundCallRequest",
+    "output": "aiserver.v1.HangUpGrokBotOutboundCallResponse"
   },
   {
-    "jsKey": "transferGrokBotOutboundCall",
     "name": "TransferGrokBotOutboundCall",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.TransferGrokBotOutboundCallRequest",
+    "output": "aiserver.v1.TransferGrokBotOutboundCallResponse"
   },
   {
-    "jsKey": "retryGrokBotOutboundCallRecording",
     "name": "RetryGrokBotOutboundCallRecording",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RetryGrokBotOutboundCallRecordingRequest",
+    "output": "aiserver.v1.RetryGrokBotOutboundCallRecordingResponse"
   },
   {
-    "jsKey": "sendGrokBotDraft",
     "name": "SendGrokBotDraft",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SendGrokBotDraftRequest",
+    "output": "aiserver.v1.SendGrokBotDraftResponse"
   },
   {
-    "jsKey": "discardGrokBotDraft",
     "name": "DiscardGrokBotDraft",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DiscardGrokBotDraftRequest",
+    "output": "aiserver.v1.DiscardGrokBotDraftResponse"
   },
   {
-    "jsKey": "getGrokBotIMessageDraftSender",
     "name": "GetGrokBotIMessageDraftSender",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotIMessageDraftSenderRequest",
+    "output": "aiserver.v1.GetGrokBotIMessageDraftSenderResponse"
   },
   {
-    "jsKey": "reactToGrokBotMessage",
     "name": "ReactToGrokBotMessage",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReactToGrokBotMessageRequest",
+    "output": "aiserver.v1.ReactToGrokBotMessageResponse"
   },
   {
-    "jsKey": "createGrokBotThreadFromMessage",
     "name": "CreateGrokBotThreadFromMessage",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotThreadFromMessageRequest",
+    "output": "aiserver.v1.CreateGrokBotThreadFromMessageResponse"
   },
   {
-    "jsKey": "voteGrokBotFeedback",
     "name": "VoteGrokBotFeedback",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.VoteGrokBotFeedbackRequest",
+    "output": "aiserver.v1.VoteGrokBotFeedbackResponse"
   },
   {
-    "jsKey": "sendGrokBotAgentMessage",
+    "name": "AnswerGrokBotLabelerQuestion",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AnswerGrokBotLabelerQuestionRequest",
+    "output": "aiserver.v1.AnswerGrokBotLabelerQuestionResponse"
+  },
+  {
     "name": "SendGrokBotAgentMessage",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SendGrokBotAgentMessageRequest",
+    "output": "aiserver.v1.SendGrokBotAgentMessageResponse"
   },
   {
-    "jsKey": "resolveGrokBotAutoReviewApproval",
     "name": "ResolveGrokBotAutoReviewApproval",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ResolveGrokBotAutoReviewApprovalRequest",
+    "output": "aiserver.v1.ResolveGrokBotAutoReviewApprovalResponse"
   },
   {
-    "jsKey": "resolveGrokBotLocalToolPermission",
     "name": "ResolveGrokBotLocalToolPermission",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ResolveGrokBotLocalToolPermissionRequest",
+    "output": "aiserver.v1.ResolveGrokBotLocalToolPermissionResponse"
   },
   {
-    "jsKey": "resolveGrokBotConnectorGrant",
     "name": "ResolveGrokBotConnectorGrant",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ResolveGrokBotConnectorGrantRequest",
+    "output": "aiserver.v1.ResolveGrokBotConnectorGrantResponse"
   },
   {
-    "jsKey": "clearGrokBotConnectorAlwaysAllow",
     "name": "ClearGrokBotConnectorAlwaysAllow",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ClearGrokBotConnectorAlwaysAllowRequest",
+    "output": "aiserver.v1.ClearGrokBotConnectorAlwaysAllowResponse"
   },
   {
-    "jsKey": "getGrokBotConnectorSharedSpaceAllowlist",
     "name": "GetGrokBotConnectorSharedSpaceAllowlist",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotConnectorSharedSpaceAllowlistRequest",
+    "output": "aiserver.v1.GetGrokBotConnectorSharedSpaceAllowlistResponse"
   },
   {
-    "jsKey": "updateGrokBotConnectorSharedSpaceAllowlist",
     "name": "UpdateGrokBotConnectorSharedSpaceAllowlist",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotConnectorSharedSpaceAllowlistRequest",
+    "output": "aiserver.v1.UpdateGrokBotConnectorSharedSpaceAllowlistResponse"
   },
   {
-    "jsKey": "raiseGrokBotVirtualCard",
     "name": "RaiseGrokBotVirtualCard",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RaiseGrokBotVirtualCardRequest",
+    "output": "aiserver.v1.RaiseGrokBotVirtualCardResponse"
   },
   {
-    "jsKey": "resolveGrokBotVirtualCardApproval",
     "name": "ResolveGrokBotVirtualCardApproval",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ResolveGrokBotVirtualCardApprovalRequest",
+    "output": "aiserver.v1.ResolveGrokBotVirtualCardApprovalResponse"
   },
   {
-    "jsKey": "listGrokBotStripeLinkPaymentMethods",
     "name": "ListGrokBotStripeLinkPaymentMethods",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotStripeLinkPaymentMethodsRequest",
+    "output": "aiserver.v1.ListGrokBotStripeLinkPaymentMethodsResponse"
   },
   {
-    "jsKey": "startGrokBotXConnect",
     "name": "StartGrokBotXConnect",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartGrokBotXConnectRequest",
+    "output": "aiserver.v1.StartGrokBotXConnectResponse"
   },
   {
-    "jsKey": "finishGrokBotXConnect",
     "name": "FinishGrokBotXConnect",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.FinishGrokBotXConnectRequest",
+    "output": "aiserver.v1.FinishGrokBotXConnectResponse"
   },
   {
-    "jsKey": "startPasskeyEnrollment",
     "name": "StartPasskeyEnrollment",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartPasskeyEnrollmentRequest",
+    "output": "aiserver.v1.StartPasskeyEnrollmentResponse"
   },
   {
-    "jsKey": "verifyPasskeyEnrollmentCode",
     "name": "VerifyPasskeyEnrollmentCode",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.VerifyPasskeyEnrollmentCodeRequest",
+    "output": "aiserver.v1.VerifyPasskeyEnrollmentCodeResponse"
   },
   {
-    "jsKey": "beginPasskeyRegistration",
     "name": "BeginPasskeyRegistration",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.BeginPasskeyRegistrationRequest",
+    "output": "aiserver.v1.BeginPasskeyRegistrationResponse"
   },
   {
-    "jsKey": "finishPasskeyRegistration",
     "name": "FinishPasskeyRegistration",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.FinishPasskeyRegistrationRequest",
+    "output": "aiserver.v1.FinishPasskeyRegistrationResponse"
   },
   {
-    "jsKey": "getPasskeyCeremony",
     "name": "GetPasskeyCeremony",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetPasskeyCeremonyRequest",
+    "output": "aiserver.v1.GetPasskeyCeremonyResponse"
   },
   {
-    "jsKey": "getPasskeyCeremonyStatus",
     "name": "GetPasskeyCeremonyStatus",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetPasskeyCeremonyStatusRequest",
+    "output": "aiserver.v1.GetPasskeyCeremonyStatusResponse"
   },
   {
-    "jsKey": "listPasskeys",
     "name": "ListPasskeys",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListPasskeysRequest",
+    "output": "aiserver.v1.ListPasskeysResponse"
   },
   {
-    "jsKey": "revokePasskey",
     "name": "RevokePasskey",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RevokePasskeyRequest",
+    "output": "aiserver.v1.RevokePasskeyResponse"
   },
   {
-    "jsKey": "beginGrokBotSpendApproval",
     "name": "BeginGrokBotSpendApproval",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.BeginGrokBotSpendApprovalRequest",
+    "output": "aiserver.v1.BeginGrokBotSpendApprovalResponse"
   },
   {
-    "jsKey": "finishGrokBotSpendApprovalAssertion",
     "name": "FinishGrokBotSpendApprovalAssertion",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.FinishGrokBotSpendApprovalAssertionRequest",
+    "output": "aiserver.v1.FinishGrokBotSpendApprovalAssertionResponse"
   },
   {
-    "jsKey": "issueGrokBotUserComputerCredential",
     "name": "IssueGrokBotUserComputerCredential",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.IssueGrokBotUserComputerCredentialRequest",
+    "output": "aiserver.v1.IssueGrokBotUserComputerCredentialResponse"
   },
   {
-    "jsKey": "watchGrokBotUserComputerRequests",
     "name": "WatchGrokBotUserComputerRequests",
-    "kind": "ServerStreaming"
+    "kind": "i.ServerStreaming",
+    "input": "aiserver.v1.WatchGrokBotUserComputerRequestsRequest",
+    "output": "aiserver.v1.WatchGrokBotUserComputerRequestsEvent"
   },
   {
-    "jsKey": "pollGrokBotUserComputerRequests",
     "name": "PollGrokBotUserComputerRequests",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PollGrokBotUserComputerRequestsRequest",
+    "output": "aiserver.v1.PollGrokBotUserComputerRequestsResponse"
   },
   {
-    "jsKey": "submitGrokBotUserComputerResponses",
     "name": "SubmitGrokBotUserComputerResponses",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SubmitGrokBotUserComputerResponsesRequest",
+    "output": "aiserver.v1.SubmitGrokBotUserComputerResponsesResponse"
   },
   {
-    "jsKey": "withdrawGrokBotUserComputerPresence",
     "name": "WithdrawGrokBotUserComputerPresence",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.WithdrawGrokBotUserComputerPresenceRequest",
+    "output": "aiserver.v1.WithdrawGrokBotUserComputerPresenceResponse"
   },
   {
-    "jsKey": "listGrokBotUserComputers",
     "name": "ListGrokBotUserComputers",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotUserComputersRequest",
+    "output": "aiserver.v1.ListGrokBotUserComputersResponse"
   },
   {
-    "jsKey": "pullGrokBotMeetings",
     "name": "PullGrokBotMeetings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PullGrokBotMeetingsRequest",
+    "output": "aiserver.v1.PullGrokBotMeetingsResponse"
   },
   {
-    "jsKey": "reportGrokBotMeetings",
     "name": "ReportGrokBotMeetings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReportGrokBotMeetingsRequest",
+    "output": "aiserver.v1.ReportGrokBotMeetingsResponse"
   },
   {
-    "jsKey": "listGrokBotServerMeetings",
     "name": "ListGrokBotServerMeetings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotServerMeetingsRequest",
+    "output": "aiserver.v1.ListGrokBotServerMeetingsResponse"
   },
   {
-    "jsKey": "leaveGrokBotServerMeeting",
     "name": "LeaveGrokBotServerMeeting",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.LeaveGrokBotServerMeetingRequest",
+    "output": "aiserver.v1.LeaveGrokBotServerMeetingResponse"
   },
   {
-    "jsKey": "getGrokBotMeetingRecord",
+    "name": "UpdateGrokBotMeetingSettings",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotMeetingSettingsRequest",
+    "output": "aiserver.v1.UpdateGrokBotMeetingSettingsResponse"
+  },
+  {
     "name": "GetGrokBotMeetingRecord",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotMeetingRecordRequest",
+    "output": "aiserver.v1.GetGrokBotMeetingRecordResponse"
   },
   {
-    "jsKey": "openGrokBotUserComputerRequest",
     "name": "OpenGrokBotUserComputerRequest",
-    "kind": "ServerStreaming"
+    "kind": "i.ServerStreaming",
+    "input": "aiserver.v1.OpenGrokBotUserComputerRequestRequest",
+    "output": "aiserver.v1.GrokBotUserComputerResponseFrame"
   },
   {
-    "jsKey": "cancelGrokBotUserComputerRequest",
     "name": "CancelGrokBotUserComputerRequest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CancelGrokBotUserComputerRequestRequest",
+    "output": "aiserver.v1.CancelGrokBotUserComputerRequestResponse"
   },
   {
-    "jsKey": "endGrokBotBoxHandoff",
+    "name": "WatchGrokBotCalendarEvents",
+    "kind": "i.ServerStreaming",
+    "input": "aiserver.v1.WatchGrokBotCalendarEventsRequest",
+    "output": "aiserver.v1.WatchGrokBotCalendarEventsEvent"
+  },
+  {
+    "name": "PollGrokBotCalendarEvents",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PollGrokBotCalendarEventsRequest",
+    "output": "aiserver.v1.PollGrokBotCalendarEventsResponse"
+  },
+  {
+    "name": "ActOnGrokBotMeetingPrompt",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ActOnGrokBotMeetingPromptRequest",
+    "output": "aiserver.v1.ActOnGrokBotMeetingPromptResponse"
+  },
+  {
     "name": "EndGrokBotBoxHandoff",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.EndGrokBotBoxHandoffRequest",
+    "output": "aiserver.v1.EndGrokBotBoxHandoffResponse"
   },
   {
-    "jsKey": "requestGrokBotRoomMemberTurn",
     "name": "RequestGrokBotRoomMemberTurn",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RequestGrokBotRoomMemberTurnRequest",
+    "output": "aiserver.v1.RequestGrokBotRoomMemberTurnResponse"
   },
   {
-    "jsKey": "cancelGrokBotRoomMemberTurn",
     "name": "CancelGrokBotRoomMemberTurn",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CancelGrokBotRoomMemberTurnRequest",
+    "output": "aiserver.v1.CancelGrokBotRoomMemberTurnResponse"
   },
   {
-    "jsKey": "deliverGrokBotRoomMemberTurnResult",
     "name": "DeliverGrokBotRoomMemberTurnResult",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeliverGrokBotRoomMemberTurnResultRequest",
+    "output": "aiserver.v1.DeliverGrokBotRoomMemberTurnResultResponse"
   },
   {
-    "jsKey": "createGrokBotRoom",
     "name": "CreateGrokBotRoom",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotRoomRequest",
+    "output": "aiserver.v1.CreateGrokBotRoomResponse"
   },
   {
-    "jsKey": "setGrokBotRoomMembers",
     "name": "SetGrokBotRoomMembers",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotRoomMembersRequest",
+    "output": "aiserver.v1.SetGrokBotRoomMembersResponse"
   },
   {
-    "jsKey": "addGrokBotRoomPeople",
     "name": "AddGrokBotRoomPeople",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AddGrokBotRoomPeopleRequest",
+    "output": "aiserver.v1.AddGrokBotRoomPeopleResponse"
   },
   {
-    "jsKey": "removeGrokBotRoomPeople",
     "name": "RemoveGrokBotRoomPeople",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RemoveGrokBotRoomPeopleRequest",
+    "output": "aiserver.v1.RemoveGrokBotRoomPeopleResponse"
   },
   {
-    "jsKey": "ensureGrokBotPullRequestChat",
     "name": "EnsureGrokBotPullRequestChat",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.EnsureGrokBotPullRequestChatRequest",
+    "output": "aiserver.v1.EnsureGrokBotPullRequestChatResponse"
   },
   {
-    "jsKey": "listGrokBotPullRequestChatEntries",
     "name": "ListGrokBotPullRequestChatEntries",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotPullRequestChatEntriesRequest",
+    "output": "aiserver.v1.ListGrokBotTranscriptEntriesResponse"
   },
   {
-    "jsKey": "sendGrokBotPullRequestChatMessage",
     "name": "SendGrokBotPullRequestChatMessage",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SendGrokBotPullRequestChatMessageRequest",
+    "output": "aiserver.v1.SendGrokBotPullRequestChatMessageResponse"
   },
   {
-    "jsKey": "getGrokBotSlackInstallState",
     "name": "GetGrokBotSlackInstallState",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotSlackInstallStateRequest",
+    "output": "aiserver.v1.GetGrokBotSlackInstallStateResponse"
   },
   {
-    "jsKey": "startGrokBotSlackConnect",
     "name": "StartGrokBotSlackConnect",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartGrokBotSlackConnectRequest",
+    "output": "aiserver.v1.StartGrokBotSlackConnectResponse"
   },
   {
-    "jsKey": "claimGrokBotSlackConnect",
     "name": "ClaimGrokBotSlackConnect",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ClaimGrokBotSlackConnectRequest",
+    "output": "aiserver.v1.ClaimGrokBotSlackConnectResponse"
   },
   {
-    "jsKey": "installGrokBotSlackApp",
     "name": "InstallGrokBotSlackApp",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.InstallGrokBotSlackAppRequest",
+    "output": "aiserver.v1.InstallGrokBotSlackAppResponse"
   },
   {
-    "jsKey": "reinstallGrokBotSlackApp",
     "name": "ReinstallGrokBotSlackApp",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReinstallGrokBotSlackAppRequest",
+    "output": "aiserver.v1.ReinstallGrokBotSlackAppResponse"
   },
   {
-    "jsKey": "uninstallGrokBotSlackApp",
     "name": "UninstallGrokBotSlackApp",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UninstallGrokBotSlackAppRequest",
+    "output": "aiserver.v1.UninstallGrokBotSlackAppResponse"
   },
   {
-    "jsKey": "getGrokBotTeamsInstallState",
     "name": "GetGrokBotTeamsInstallState",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotTeamsInstallStateRequest",
+    "output": "aiserver.v1.GetGrokBotTeamsInstallStateResponse"
   },
   {
-    "jsKey": "startGrokBotTeamsConnect",
     "name": "StartGrokBotTeamsConnect",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartGrokBotTeamsConnectRequest",
+    "output": "aiserver.v1.StartGrokBotTeamsConnectResponse"
   },
   {
-    "jsKey": "installGrokBotTeamsApp",
     "name": "InstallGrokBotTeamsApp",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.InstallGrokBotTeamsAppRequest",
+    "output": "aiserver.v1.InstallGrokBotTeamsAppResponse"
   },
   {
-    "jsKey": "reinstallGrokBotTeamsApp",
     "name": "ReinstallGrokBotTeamsApp",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReinstallGrokBotTeamsAppRequest",
+    "output": "aiserver.v1.ReinstallGrokBotTeamsAppResponse"
   },
   {
-    "jsKey": "refreshGrokBotTeamsApp",
     "name": "RefreshGrokBotTeamsApp",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RefreshGrokBotTeamsAppRequest",
+    "output": "aiserver.v1.RefreshGrokBotTeamsAppResponse"
   },
   {
-    "jsKey": "uninstallGrokBotTeamsApp",
     "name": "UninstallGrokBotTeamsApp",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UninstallGrokBotTeamsAppRequest",
+    "output": "aiserver.v1.UninstallGrokBotTeamsAppResponse"
   },
   {
-    "jsKey": "addGrokBotTeamsAppToTeam",
     "name": "AddGrokBotTeamsAppToTeam",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AddGrokBotTeamsAppToTeamRequest",
+    "output": "aiserver.v1.AddGrokBotTeamsAppToTeamResponse"
   },
   {
-    "jsKey": "listGrokBotTeamsJoinedTeams",
     "name": "ListGrokBotTeamsJoinedTeams",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotTeamsJoinedTeamsRequest",
+    "output": "aiserver.v1.ListGrokBotTeamsJoinedTeamsResponse"
   },
   {
-    "jsKey": "disconnectGrokBotTeamsAccount",
     "name": "DisconnectGrokBotTeamsAccount",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DisconnectGrokBotTeamsAccountRequest",
+    "output": "aiserver.v1.DisconnectGrokBotTeamsAccountResponse"
   },
   {
-    "jsKey": "getMicrosoftTeamsAccountLinkStatus",
     "name": "GetMicrosoftTeamsAccountLinkStatus",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetMicrosoftTeamsAccountLinkStatusRequest",
+    "output": "aiserver.v1.GetMicrosoftTeamsAccountLinkStatusResponse"
   },
   {
-    "jsKey": "startMicrosoftTeamsAccountLink",
     "name": "StartMicrosoftTeamsAccountLink",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartMicrosoftTeamsAccountLinkRequest",
+    "output": "aiserver.v1.StartMicrosoftTeamsAccountLinkResponse"
   },
   {
-    "jsKey": "finishMicrosoftTeamsAccountLink",
     "name": "FinishMicrosoftTeamsAccountLink",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.FinishMicrosoftTeamsAccountLinkRequest",
+    "output": "aiserver.v1.FinishMicrosoftTeamsAccountLinkResponse"
   },
   {
-    "jsKey": "unlinkMicrosoftTeamsAccount",
     "name": "UnlinkMicrosoftTeamsAccount",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UnlinkMicrosoftTeamsAccountRequest",
+    "output": "aiserver.v1.UnlinkMicrosoftTeamsAccountResponse"
   },
   {
-    "jsKey": "createGrokBotMarketplaceListingInternal",
     "name": "CreateGrokBotMarketplaceListingInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotMarketplaceListingInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceListing"
   },
   {
-    "jsKey": "listGrokBotMarketplaceListingsInternal",
     "name": "ListGrokBotMarketplaceListingsInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotMarketplaceListingsInternalRequest",
+    "output": "aiserver.v1.ListGrokBotMarketplaceListingsInternalResponse"
   },
   {
-    "jsKey": "getGrokBotMarketplaceListingInternal",
     "name": "GetGrokBotMarketplaceListingInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotMarketplaceListingInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceListing"
   },
   {
-    "jsKey": "updateGrokBotMarketplaceListingInternal",
     "name": "UpdateGrokBotMarketplaceListingInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotMarketplaceListingInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceListing"
   },
   {
-    "jsKey": "setGrokBotMarketplaceListingStatusInternal",
     "name": "SetGrokBotMarketplaceListingStatusInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotMarketplaceListingStatusInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceListing"
   },
   {
-    "jsKey": "presignGrokBotMarketplaceImageUploadInternal",
     "name": "PresignGrokBotMarketplaceImageUploadInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PresignGrokBotMarketplaceImageUploadInternalRequest",
+    "output": "aiserver.v1.PresignGrokBotMarketplaceImageUploadInternalResponse"
   },
   {
-    "jsKey": "createGrokBotMarketplaceCreatorInternal",
     "name": "CreateGrokBotMarketplaceCreatorInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotMarketplaceCreatorInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceCreator"
   },
   {
-    "jsKey": "listGrokBotMarketplaceCreatorsInternal",
     "name": "ListGrokBotMarketplaceCreatorsInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotMarketplaceCreatorsInternalRequest",
+    "output": "aiserver.v1.ListGrokBotMarketplaceCreatorsInternalResponse"
   },
   {
-    "jsKey": "getGrokBotMarketplaceCreatorInternal",
     "name": "GetGrokBotMarketplaceCreatorInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotMarketplaceCreatorInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceCreator"
   },
   {
-    "jsKey": "updateGrokBotMarketplaceCreatorInternal",
     "name": "UpdateGrokBotMarketplaceCreatorInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotMarketplaceCreatorInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceCreator"
   },
   {
-    "jsKey": "presignGrokBotMarketplaceCreatorProfileUploadInternal",
     "name": "PresignGrokBotMarketplaceCreatorProfileUploadInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PresignGrokBotMarketplaceCreatorProfileUploadInternalRequest",
+    "output": "aiserver.v1.PresignGrokBotMarketplaceImageUploadInternalResponse"
   },
   {
-    "jsKey": "previewGrokBotMarketplaceSourceInternal",
     "name": "PreviewGrokBotMarketplaceSourceInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PreviewGrokBotMarketplaceSourceInternalRequest",
+    "output": "aiserver.v1.PreviewGrokBotMarketplaceSourceInternalResponse"
   },
   {
-    "jsKey": "createGrokBotMarketplaceCategoryInternal",
     "name": "CreateGrokBotMarketplaceCategoryInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotMarketplaceCategoryInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceCategory"
   },
   {
-    "jsKey": "listGrokBotMarketplaceCategoriesInternal",
     "name": "ListGrokBotMarketplaceCategoriesInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotMarketplaceCategoriesInternalRequest",
+    "output": "aiserver.v1.ListGrokBotMarketplaceCategoriesInternalResponse"
   },
   {
-    "jsKey": "getGrokBotMarketplaceCategoryInternal",
     "name": "GetGrokBotMarketplaceCategoryInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotMarketplaceCategoryInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceCategory"
   },
   {
-    "jsKey": "updateGrokBotMarketplaceCategoryInternal",
     "name": "UpdateGrokBotMarketplaceCategoryInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotMarketplaceCategoryInternalRequest",
+    "output": "aiserver.v1.GrokBotMarketplaceCategory"
   },
   {
-    "jsKey": "getGrokBotMarketplaceListingTemplateInternal",
     "name": "GetGrokBotMarketplaceListingTemplateInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotMarketplaceListingTemplateInternalRequest",
+    "output": "aiserver.v1.GetGrokBotMarketplaceListingTemplateInternalResponse"
   },
   {
-    "jsKey": "getGrokBotMarketplaceListingSourceTemplateInternal",
     "name": "GetGrokBotMarketplaceListingSourceTemplateInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotMarketplaceListingSourceTemplateInternalRequest",
+    "output": "aiserver.v1.GetGrokBotMarketplaceListingSourceTemplateInternalResponse"
   },
   {
-    "jsKey": "deleteGrokBotMarketplaceListingInternal",
     "name": "DeleteGrokBotMarketplaceListingInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotMarketplaceListingInternalRequest",
+    "output": "aiserver.v1.DeleteGrokBotMarketplaceListingInternalResponse"
   },
   {
-    "jsKey": "updateGrokBotMarketplaceListingTemplateInternal",
     "name": "UpdateGrokBotMarketplaceListingTemplateInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotMarketplaceListingTemplateInternalRequest",
+    "output": "aiserver.v1.GetGrokBotMarketplaceListingTemplateInternalResponse"
   },
   {
-    "jsKey": "getGrokBotTemplateForOperatorInternal",
     "name": "GetGrokBotTemplateForOperatorInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotTemplateForOperatorInternalRequest",
+    "output": "aiserver.v1.GrokBotTemplateOperatorView"
   },
   {
-    "jsKey": "setGrokBotTemplateCreatorAttributionInternal",
     "name": "SetGrokBotTemplateCreatorAttributionInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotTemplateCreatorAttributionInternalRequest",
+    "output": "aiserver.v1.GrokBotTemplateOperatorView"
   },
   {
-    "jsKey": "getGrokBotHarnessMigrationStatusInternal",
     "name": "GetGrokBotHarnessMigrationStatusInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotHarnessMigrationStatusInternalRequest",
+    "output": "aiserver.v1.GetGrokBotHarnessMigrationStatusInternalResponse"
   },
   {
-    "jsKey": "clearGrokBotHarnessMigrationHoldInternal",
     "name": "ClearGrokBotHarnessMigrationHoldInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ClearGrokBotHarnessMigrationHoldInternalRequest",
+    "output": "aiserver.v1.ClearGrokBotHarnessMigrationHoldInternalResponse"
   },
   {
-    "jsKey": "listGrokBotAgentsForOperatorInternal",
     "name": "ListGrokBotAgentsForOperatorInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotAgentsForOperatorInternalRequest",
+    "output": "aiserver.v1.ListGrokBotAgentsForOperatorInternalResponse"
   },
   {
-    "jsKey": "startGrokBotSilentSubagentInternal",
     "name": "StartGrokBotSilentSubagentInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartGrokBotSilentSubagentInternalRequest",
+    "output": "aiserver.v1.StartGrokBotSilentSubagentInternalResponse"
   },
   {
-    "jsKey": "previewInternalPrimaryBotMigration",
     "name": "PreviewInternalPrimaryBotMigration",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PreviewInternalPrimaryBotMigrationRequest",
+    "output": "aiserver.v1.PreviewInternalPrimaryBotMigrationResponse"
   },
   {
-    "jsKey": "executeInternalPrimaryBotMigration",
     "name": "ExecuteInternalPrimaryBotMigration",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ExecuteInternalPrimaryBotMigrationRequest",
+    "output": "aiserver.v1.ExecuteInternalPrimaryBotMigrationResponse"
   },
   {
-    "jsKey": "listGrokBotUserFormVaultEntries",
     "name": "ListGrokBotUserFormVaultEntries",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotUserFormVaultEntriesRequest",
+    "output": "aiserver.v1.ListGrokBotUserFormVaultEntriesResponse"
   },
   {
-    "jsKey": "upsertGrokBotUserFormVaultEntry",
     "name": "UpsertGrokBotUserFormVaultEntry",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpsertGrokBotUserFormVaultEntryRequest",
+    "output": "aiserver.v1.UpsertGrokBotUserFormVaultEntryResponse"
   },
   {
-    "jsKey": "deleteGrokBotUserFormVaultEntry",
     "name": "DeleteGrokBotUserFormVaultEntry",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteGrokBotUserFormVaultEntryRequest",
+    "output": "aiserver.v1.DeleteGrokBotUserFormVaultEntryResponse"
   },
   {
-    "jsKey": "listGrokBotUserFormVaultKeys",
     "name": "ListGrokBotUserFormVaultKeys",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotUserFormVaultKeysRequest",
+    "output": "aiserver.v1.ListGrokBotUserFormVaultKeysResponse"
   },
   {
-    "jsKey": "publishGrokBotUserSkillsSnapshot",
     "name": "PublishGrokBotUserSkillsSnapshot",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PublishGrokBotUserSkillsSnapshotRequest",
+    "output": "aiserver.v1.PublishGrokBotUserSkillsSnapshotResponse"
   },
   {
-    "jsKey": "invalidateGrokBotUserSkillsCache",
     "name": "InvalidateGrokBotUserSkillsCache",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.InvalidateGrokBotUserSkillsCacheRequest",
+    "output": "aiserver.v1.InvalidateGrokBotUserSkillsCacheResponse"
   },
   {
-    "jsKey": "getGrokBotOnePasswordExtensionDownload",
     "name": "GetGrokBotOnePasswordExtensionDownload",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotOnePasswordExtensionDownloadRequest",
+    "output": "aiserver.v1.GetGrokBotOnePasswordExtensionDownloadResponse"
   },
   {
-    "jsKey": "nudgeOnePasswordAccessRequest",
     "name": "NudgeOnePasswordAccessRequest",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.NudgeOnePasswordAccessRequestRequest",
+    "output": "aiserver.v1.NudgeOnePasswordAccessRequestResponse"
   },
   {
-    "jsKey": "adminListGrokBotSessionBoxes",
     "name": "AdminListGrokBotSessionBoxes",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotSessionBoxesRequest",
+    "output": "aiserver.v1.AdminListGrokBotSessionBoxesResponse"
   },
   {
-    "jsKey": "adminGetGrokBotSessionBox",
     "name": "AdminGetGrokBotSessionBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotSessionBoxRequest",
+    "output": "aiserver.v1.AdminGetGrokBotSessionBoxResponse"
   },
   {
-    "jsKey": "adminReapGrokBotSessionBoxNow",
     "name": "AdminReapGrokBotSessionBoxNow",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminReapGrokBotSessionBoxNowRequest",
+    "output": "aiserver.v1.AdminReapGrokBotSessionBoxNowResponse"
   },
   {
-    "jsKey": "adminHibernateGrokBotSessionBox",
     "name": "AdminHibernateGrokBotSessionBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminHibernateGrokBotSessionBoxRequest",
+    "output": "aiserver.v1.AdminHibernateGrokBotSessionBoxResponse"
   },
   {
-    "jsKey": "adminForceDeleteGrokBotSessionBox",
     "name": "AdminForceDeleteGrokBotSessionBox",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminForceDeleteGrokBotSessionBoxRequest",
+    "output": "aiserver.v1.AdminForceDeleteGrokBotSessionBoxResponse"
   },
   {
-    "jsKey": "adminGetGrokBotAgentDefinition",
+    "name": "AdminGetSandBoxActiveVm",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetSandBoxActiveVmRequest",
+    "output": "aiserver.v1.AdminGetSandBoxActiveVmResponse"
+  },
+  {
     "name": "AdminGetGrokBotAgentDefinition",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotAgentDefinitionRequest",
+    "output": "aiserver.v1.AdminGetGrokBotAgentDefinitionResponse"
   },
   {
-    "jsKey": "adminResolveGrokBotAttachmentReads",
+    "name": "AdminStartGrokBotDream",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminStartGrokBotDreamRequest",
+    "output": "aiserver.v1.AdminStartGrokBotDreamResponse"
+  },
+  {
     "name": "AdminResolveGrokBotAttachmentReads",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminResolveGrokBotAttachmentReadsRequest",
+    "output": "aiserver.v1.ResolveGrokBotAttachmentReadsResponse"
   },
   {
-    "jsKey": "adminGetGrokBotAgentStoreContents",
     "name": "AdminGetGrokBotAgentStoreContents",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotAgentStoreContentsRequest",
+    "output": "aiserver.v1.AdminGetGrokBotAgentStoreContentsResponse"
   },
   {
-    "jsKey": "adminListGrokBotUserStoreFiles",
     "name": "AdminListGrokBotUserStoreFiles",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotUserStoreFilesRequest",
+    "output": "aiserver.v1.AdminListGrokBotUserStoreFilesResponse"
   },
   {
-    "jsKey": "adminListGrokBotAgentAccessGrants",
     "name": "AdminListGrokBotAgentAccessGrants",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotAgentAccessGrantsRequest",
+    "output": "aiserver.v1.AdminListGrokBotAgentAccessGrantsResponse"
   },
   {
-    "jsKey": "adminMintGrokBotInvite",
     "name": "AdminMintGrokBotInvite",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminMintGrokBotInviteRequest",
+    "output": "aiserver.v1.AdminMintGrokBotInviteResponse"
   },
   {
-    "jsKey": "adminListGrokBotTeamAgents",
     "name": "AdminListGrokBotTeamAgents",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotTeamAgentsRequest",
+    "output": "aiserver.v1.AdminListGrokBotTeamAgentsResponse"
   },
   {
-    "jsKey": "adminListTeamLiveGrokBotAgents",
     "name": "AdminListTeamLiveGrokBotAgents",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListTeamLiveGrokBotAgentsRequest",
+    "output": "aiserver.v1.AdminListTeamLiveGrokBotAgentsResponse"
   },
   {
-    "jsKey": "adminListGrokBotServiceAccountSessions",
     "name": "AdminListGrokBotServiceAccountSessions",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotServiceAccountSessionsRequest",
+    "output": "aiserver.v1.AdminListGrokBotServiceAccountSessionsResponse"
   },
   {
-    "jsKey": "adminEnqueueGrokBotServiceAccountMessage",
     "name": "AdminEnqueueGrokBotServiceAccountMessage",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminEnqueueGrokBotServiceAccountMessageRequest",
+    "output": "aiserver.v1.AdminEnqueueGrokBotServiceAccountMessageResponse"
   },
   {
-    "jsKey": "adminReadGrokBotServiceAccountConversation",
     "name": "AdminReadGrokBotServiceAccountConversation",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminReadGrokBotServiceAccountConversationRequest",
+    "output": "aiserver.v1.AdminReadGrokBotServiceAccountConversationResponse"
   },
   {
-    "jsKey": "adminDeleteGrokBotAgent",
     "name": "AdminDeleteGrokBotAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminDeleteGrokBotAgentRequest",
+    "output": "aiserver.v1.AdminDeleteGrokBotAgentResponse"
   },
   {
-    "jsKey": "adminRetryGrokBotSlackAppRemoval",
     "name": "AdminRetryGrokBotSlackAppRemoval",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminRetryGrokBotSlackAppRemovalRequest",
+    "output": "aiserver.v1.AdminRetryGrokBotSlackAppRemovalResponse"
   },
   {
-    "jsKey": "adminGetGrokBotTeamAgentSharedState",
     "name": "AdminGetGrokBotTeamAgentSharedState",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotTeamAgentSharedStateRequest",
+    "output": "aiserver.v1.AdminGetGrokBotTeamAgentSharedStateResponse"
   },
   {
-    "jsKey": "adminListSlackAppAudit",
+    "name": "AdminGetGrokBotAgentResources",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotAgentResourcesRequest",
+    "output": "aiserver.v1.AdminGetGrokBotAgentResourcesResponse"
+  },
+  {
     "name": "AdminListSlackAppAudit",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListSlackAppAuditRequest",
+    "output": "aiserver.v1.AdminListSlackAppAuditResponse"
   },
   {
-    "jsKey": "adminListGrokBotTransferDestinations",
     "name": "AdminListGrokBotTransferDestinations",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotTransferDestinationsRequest",
+    "output": "aiserver.v1.AdminListGrokBotTransferDestinationsResponse"
   },
   {
-    "jsKey": "adminPreviewGrokBotAgentTransfer",
     "name": "AdminPreviewGrokBotAgentTransfer",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminPreviewGrokBotAgentTransferRequest",
+    "output": "aiserver.v1.AdminPreviewGrokBotAgentTransferResponse"
   },
   {
-    "jsKey": "adminTransferGrokBotAgents",
     "name": "AdminTransferGrokBotAgents",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminTransferGrokBotAgentsRequest",
+    "output": "aiserver.v1.AdminTransferGrokBotAgentsResponse"
   },
   {
-    "jsKey": "adminGetGrokBotAgentTransfers",
     "name": "AdminGetGrokBotAgentTransfers",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotAgentTransfersRequest",
+    "output": "aiserver.v1.AdminGetGrokBotAgentTransfersResponse"
   },
   {
-    "jsKey": "adminResumeGrokBotAgentTransfer",
     "name": "AdminResumeGrokBotAgentTransfer",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminResumeGrokBotAgentTransferRequest",
+    "output": "aiserver.v1.AdminResumeGrokBotAgentTransferResponse"
   },
   {
-    "jsKey": "adminListGrokBotEmailInboxes",
+    "name": "AdminResolveGrokBotAccountMigrationPairs",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminResolveGrokBotAccountMigrationPairsRequest",
+    "output": "aiserver.v1.AdminResolveGrokBotAccountMigrationPairsResponse"
+  },
+  {
+    "name": "AdminProposeGrokBotAccountMigrationPairs",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminProposeGrokBotAccountMigrationPairsRequest",
+    "output": "aiserver.v1.AdminProposeGrokBotAccountMigrationPairsResponse"
+  },
+  {
+    "name": "AdminSubmitGrokBotAccountMigrations",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSubmitGrokBotAccountMigrationsRequest",
+    "output": "aiserver.v1.AdminSubmitGrokBotAccountMigrationsResponse"
+  },
+  {
+    "name": "AdminListGrokBotAccountMigrations",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotAccountMigrationsRequest",
+    "output": "aiserver.v1.AdminListGrokBotAccountMigrationsResponse"
+  },
+  {
+    "name": "AdminGetGrokBotAccountMigration",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotAccountMigrationRequest",
+    "output": "aiserver.v1.AdminGetGrokBotAccountMigrationResponse"
+  },
+  {
+    "name": "AdminListGrokBotAccountMigrationLedger",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotAccountMigrationLedgerRequest",
+    "output": "aiserver.v1.AdminListGrokBotAccountMigrationLedgerResponse"
+  },
+  {
+    "name": "AdminApplyGrokBotAccountMigration",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminApplyGrokBotAccountMigrationRequest",
+    "output": "aiserver.v1.AdminApplyGrokBotAccountMigrationResponse"
+  },
+  {
+    "name": "AdminCancelGrokBotAccountMigrations",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminCancelGrokBotAccountMigrationsRequest",
+    "output": "aiserver.v1.AdminCancelGrokBotAccountMigrationsResponse"
+  },
+  {
+    "name": "AdminRetryGrokBotAccountMigrations",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminRetryGrokBotAccountMigrationsRequest",
+    "output": "aiserver.v1.AdminRetryGrokBotAccountMigrationsResponse"
+  },
+  {
+    "name": "AdminOverrideGrokBotAccountMigrationItem",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminOverrideGrokBotAccountMigrationItemRequest",
+    "output": "aiserver.v1.AdminOverrideGrokBotAccountMigrationItemResponse"
+  },
+  {
+    "name": "AdminGetGrokBotAccountMigrationHeldSummary",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotAccountMigrationHeldSummaryRequest",
+    "output": "aiserver.v1.AdminGetGrokBotAccountMigrationHeldSummaryResponse"
+  },
+  {
+    "name": "AdminFailGrokBotAccountMigrationExportStart",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminFailGrokBotAccountMigrationExportStartRequest",
+    "output": "aiserver.v1.AdminFailGrokBotAccountMigrationExportStartResponse"
+  },
+  {
+    "name": "AdminCleanGrokBotAccountMigration",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminCleanGrokBotAccountMigrationRequest",
+    "output": "aiserver.v1.AdminCleanGrokBotAccountMigrationResponse"
+  },
+  {
     "name": "AdminListGrokBotEmailInboxes",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotEmailInboxesRequest",
+    "output": "aiserver.v1.AdminListGrokBotEmailInboxesResponse"
   },
   {
-    "jsKey": "adminListGrokBotEmailMessages",
     "name": "AdminListGrokBotEmailMessages",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotEmailMessagesRequest",
+    "output": "aiserver.v1.AdminListGrokBotEmailMessagesResponse"
   },
   {
-    "jsKey": "adminSendGrokBotTestEmail",
     "name": "AdminSendGrokBotTestEmail",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSendGrokBotTestEmailRequest",
+    "output": "aiserver.v1.AdminSendGrokBotTestEmailResponse"
   },
   {
-    "jsKey": "adminGetGrokBotEmailSendingState",
     "name": "AdminGetGrokBotEmailSendingState",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotEmailSendingStateRequest",
+    "output": "aiserver.v1.AdminGrokBotEmailSendingStateResponse"
   },
   {
-    "jsKey": "adminSetGrokBotEmailSendingState",
     "name": "AdminSetGrokBotEmailSendingState",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSetGrokBotEmailSendingStateRequest",
+    "output": "aiserver.v1.AdminGrokBotEmailSendingStateResponse"
   },
   {
-    "jsKey": "adminGetGrokBotEmailLimits",
     "name": "AdminGetGrokBotEmailLimits",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotEmailLimitsRequest",
+    "output": "aiserver.v1.AdminGrokBotEmailLimitsResponse"
   },
   {
-    "jsKey": "adminSetGrokBotEmailThresholds",
     "name": "AdminSetGrokBotEmailThresholds",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSetGrokBotEmailThresholdsRequest",
+    "output": "aiserver.v1.AdminGrokBotEmailLimitsResponse"
   },
   {
-    "jsKey": "adminListGrokBotEmailSuppressions",
     "name": "AdminListGrokBotEmailSuppressions",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotEmailSuppressionsRequest",
+    "output": "aiserver.v1.AdminListGrokBotEmailSuppressionsResponse"
   },
   {
-    "jsKey": "adminAddGrokBotEmailSuppression",
     "name": "AdminAddGrokBotEmailSuppression",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminAddGrokBotEmailSuppressionRequest",
+    "output": "aiserver.v1.AdminAddGrokBotEmailSuppressionResponse"
   },
   {
-    "jsKey": "adminRemoveGrokBotEmailSuppressions",
     "name": "AdminRemoveGrokBotEmailSuppressions",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminRemoveGrokBotEmailSuppressionsRequest",
+    "output": "aiserver.v1.AdminRemoveGrokBotEmailSuppressionsResponse"
   },
   {
-    "jsKey": "adminListGrokBotEmailDeadLetterQueues",
     "name": "AdminListGrokBotEmailDeadLetterQueues",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotEmailDeadLetterQueuesRequest",
+    "output": "aiserver.v1.AdminListGrokBotEmailDeadLetterQueuesResponse"
   },
   {
-    "jsKey": "adminListGrokBotEmailDeadLetters",
     "name": "AdminListGrokBotEmailDeadLetters",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotEmailDeadLettersRequest",
+    "output": "aiserver.v1.AdminListGrokBotEmailDeadLettersResponse"
   },
   {
-    "jsKey": "adminRequeueGrokBotEmailDeadLetter",
     "name": "AdminRequeueGrokBotEmailDeadLetter",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGrokBotEmailDeadLetterActionRequest",
+    "output": "aiserver.v1.AdminGrokBotEmailDeadLetterActionResponse"
   },
   {
-    "jsKey": "adminDropGrokBotEmailDeadLetter",
     "name": "AdminDropGrokBotEmailDeadLetter",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGrokBotEmailDeadLetterActionRequest",
+    "output": "aiserver.v1.AdminGrokBotEmailDeadLetterActionResponse"
   },
   {
-    "jsKey": "adminPurgeGrokBotEmailDeadLetters",
     "name": "AdminPurgeGrokBotEmailDeadLetters",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGrokBotEmailDeadLetterQueueActionRequest",
+    "output": "aiserver.v1.AdminGrokBotEmailDeadLetterQueueActionResponse"
   },
   {
-    "jsKey": "adminRequeueAllGrokBotEmailDeadLetters",
     "name": "AdminRequeueAllGrokBotEmailDeadLetters",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGrokBotEmailDeadLetterQueueActionRequest",
+    "output": "aiserver.v1.AdminGrokBotEmailDeadLetterQueueActionResponse"
   },
   {
-    "jsKey": "adminMoveGrokBotEmailInboxes",
     "name": "AdminMoveGrokBotEmailInboxes",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminMoveGrokBotEmailInboxesRequest",
+    "output": "aiserver.v1.AdminMoveGrokBotEmailInboxesResponse"
   },
   {
-    "jsKey": "adminLookupGrokBotMeetings",
     "name": "AdminLookupGrokBotMeetings",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminLookupGrokBotMeetingsRequest",
+    "output": "aiserver.v1.AdminLookupGrokBotMeetingsResponse"
   },
   {
-    "jsKey": "adminLookupGrokBotMeetingsByAgent",
     "name": "AdminLookupGrokBotMeetingsByAgent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminLookupGrokBotMeetingsByAgentRequest",
+    "output": "aiserver.v1.AdminLookupGrokBotMeetingsByAgentResponse"
   },
   {
-    "jsKey": "adminGetGrokBotMeetingJoinConsent",
     "name": "AdminGetGrokBotMeetingJoinConsent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotMeetingJoinConsentRequest",
+    "output": "aiserver.v1.AdminGetGrokBotMeetingJoinConsentResponse"
   },
   {
-    "jsKey": "adminLookupGrokBotMeetingJoinConsentUsers",
     "name": "AdminLookupGrokBotMeetingJoinConsentUsers",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminLookupGrokBotMeetingJoinConsentUsersRequest",
+    "output": "aiserver.v1.AdminLookupGrokBotMeetingJoinConsentUsersResponse"
   },
   {
-    "jsKey": "adminUnsetGrokBotMeetingJoinConsent",
     "name": "AdminUnsetGrokBotMeetingJoinConsent",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminUnsetGrokBotMeetingJoinConsentRequest",
+    "output": "aiserver.v1.AdminUnsetGrokBotMeetingJoinConsentResponse"
   },
   {
-    "jsKey": "adminGetGrokBotMeetingTranscript",
     "name": "AdminGetGrokBotMeetingTranscript",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotMeetingTranscriptRequest",
+    "output": "aiserver.v1.AdminGetGrokBotMeetingTranscriptResponse"
   },
   {
-    "jsKey": "adminListGrokBotTranscriptRequestRows",
     "name": "AdminListGrokBotTranscriptRequestRows",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotTranscriptRequestRowsRequest",
+    "output": "aiserver.v1.AdminListGrokBotTranscriptRequestRowsResponse"
   },
   {
-    "jsKey": "adminMintGrokBotMeetingAvatarLinks",
     "name": "AdminMintGrokBotMeetingAvatarLinks",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminMintGrokBotMeetingAvatarLinksRequest",
+    "output": "aiserver.v1.AdminMintGrokBotMeetingAvatarLinksResponse"
   },
   {
-    "jsKey": "adminGetGrokBotMeetingSummaryVersions",
     "name": "AdminGetGrokBotMeetingSummaryVersions",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetGrokBotMeetingSummaryVersionsRequest",
+    "output": "aiserver.v1.AdminGetGrokBotMeetingSummaryVersionsResponse"
   },
   {
-    "jsKey": "adminListGrokBotMeetingRequestAgentRuns",
     "name": "AdminListGrokBotMeetingRequestAgentRuns",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListGrokBotMeetingRequestAgentRunsRequest",
+    "output": "aiserver.v1.AdminListGrokBotMeetingRequestAgentRunsResponse"
   },
   {
-    "jsKey": "getGrokBotEgressPolicy",
     "name": "GetGrokBotEgressPolicy",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotEgressPolicyRequest",
+    "output": "aiserver.v1.GetGrokBotEgressPolicyResponse"
   },
   {
-    "jsKey": "voiceCallHarnessSession",
     "name": "VoiceCallHarnessSession",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.VoiceCallHarnessSessionRequest",
+    "output": "aiserver.v1.VoiceCallHarnessSessionResponse"
   },
   {
-    "jsKey": "voiceCallHarnessTool",
     "name": "VoiceCallHarnessTool",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.VoiceCallHarnessToolRequest",
+    "output": "aiserver.v1.VoiceCallHarnessToolResponse"
   },
   {
-    "jsKey": "recordGrokBotVoiceCall",
     "name": "RecordGrokBotVoiceCall",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RecordGrokBotVoiceCallRequest",
+    "output": "aiserver.v1.RecordGrokBotVoiceCallResponse"
   },
   {
-    "jsKey": "getGrokBotVoiceCall",
     "name": "GetGrokBotVoiceCall",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotVoiceCallRequest",
+    "output": "aiserver.v1.GetGrokBotVoiceCallResponse"
   },
   {
-    "jsKey": "createGrokBotChangelogInternal",
     "name": "CreateGrokBotChangelogInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotChangelogInternalRequest",
+    "output": "aiserver.v1.GrokBotChangelog"
   },
   {
-    "jsKey": "listGrokBotChangelogsInternal",
     "name": "ListGrokBotChangelogsInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotChangelogsInternalRequest",
+    "output": "aiserver.v1.ListGrokBotChangelogsInternalResponse"
   },
   {
-    "jsKey": "getGrokBotChangelogInternal",
     "name": "GetGrokBotChangelogInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotChangelogInternalRequest",
+    "output": "aiserver.v1.GrokBotChangelog"
   },
   {
-    "jsKey": "updateGrokBotChangelogInternal",
     "name": "UpdateGrokBotChangelogInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotChangelogInternalRequest",
+    "output": "aiserver.v1.GrokBotChangelog"
   },
   {
-    "jsKey": "setGrokBotChangelogStatusInternal",
     "name": "SetGrokBotChangelogStatusInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotChangelogStatusInternalRequest",
+    "output": "aiserver.v1.GrokBotChangelog"
   },
   {
-    "jsKey": "createGrokBotOnboardingDripInternal",
     "name": "CreateGrokBotOnboardingDripInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotOnboardingDripInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDrip"
   },
   {
-    "jsKey": "updateGrokBotOnboardingDripInternal",
     "name": "UpdateGrokBotOnboardingDripInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotOnboardingDripInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDrip"
   },
   {
-    "jsKey": "setGrokBotOnboardingDripStatusInternal",
     "name": "SetGrokBotOnboardingDripStatusInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotOnboardingDripStatusInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDrip"
   },
   {
-    "jsKey": "listGrokBotOnboardingDripsInternal",
     "name": "ListGrokBotOnboardingDripsInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListGrokBotOnboardingDripsInternalRequest",
+    "output": "aiserver.v1.ListGrokBotOnboardingDripsInternalResponse"
   },
   {
-    "jsKey": "getGrokBotOnboardingDripInternal",
     "name": "GetGrokBotOnboardingDripInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetGrokBotOnboardingDripInternalRequest",
+    "output": "aiserver.v1.GetGrokBotOnboardingDripInternalResponse"
   },
   {
-    "jsKey": "createGrokBotOnboardingDripStepInternal",
     "name": "CreateGrokBotOnboardingDripStepInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotOnboardingDripStepInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDripStep"
   },
   {
-    "jsKey": "updateGrokBotOnboardingDripStepInternal",
     "name": "UpdateGrokBotOnboardingDripStepInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotOnboardingDripStepInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDripStep"
   },
   {
-    "jsKey": "reorderGrokBotOnboardingDripStepsInternal",
     "name": "ReorderGrokBotOnboardingDripStepsInternal",
-    "kind": "Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReorderGrokBotOnboardingDripStepsInternalRequest",
+    "output": "aiserver.v1.ReorderGrokBotOnboardingDripStepsInternalResponse"
+  },
+  {
+    "name": "SendGrokBotOnboardingDripStepNowInternal",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SendGrokBotOnboardingDripStepNowInternalRequest",
+    "output": "aiserver.v1.SendGrokBotOnboardingDripStepNowInternalResponse"
+  },
+  {
+    "name": "CreateGrokBotOnboardingDripRouteInternal",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CreateGrokBotOnboardingDripRouteInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDripRouter"
+  },
+  {
+    "name": "UpdateGrokBotOnboardingDripRouteInternal",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.UpdateGrokBotOnboardingDripRouteInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDripRouter"
+  },
+  {
+    "name": "RemoveGrokBotOnboardingDripRouteInternal",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RemoveGrokBotOnboardingDripRouteInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDripRouter"
+  },
+  {
+    "name": "ReorderGrokBotOnboardingDripRoutesInternal",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ReorderGrokBotOnboardingDripRoutesInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDripRouter"
+  },
+  {
+    "name": "SetGrokBotOnboardingDripRouterStatusInternal",
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SetGrokBotOnboardingDripRouterStatusInternalRequest",
+    "output": "aiserver.v1.GrokBotOnboardingDripRouter"
   }
 ]

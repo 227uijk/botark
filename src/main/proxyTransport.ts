@@ -1,4 +1,5 @@
 import type { Agent } from 'node:http'
+import * as electron from 'electron'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { fetch as undiciFetch, ProxyAgent, Socks5ProxyAgent, type Dispatcher } from 'undici'
@@ -7,6 +8,8 @@ import { normalizeProxyUrl, proxyKind, remoteDnsProxyUrl, undiciProxyUrl } from 
 /**
  * Node-side requests (fetch / ws) through a per-account proxy URL.
  * A configured but unusable proxy throws instead of silently going direct.
+ * When no per-account proxy is configured, prefers Electron's Chromium `net.fetch`
+ * so OS-level system proxies (e.g. macOS Clash / Surge) are automatically honored.
  */
 const dispatchers = new Map<string, Dispatcher>()
 
@@ -27,8 +30,25 @@ function dispatcherFor(raw: string): Dispatcher {
   return d
 }
 
+function systemAwareFetch(input: string, init?: RequestInit): Promise<Response> {
+  try {
+    if (
+      electron?.app &&
+      typeof electron.app.isReady === 'function' &&
+      electron.app.isReady() &&
+      electron.net &&
+      typeof electron.net.fetch === 'function'
+    ) {
+      return electron.net.fetch(input, init as never) as unknown as Promise<Response>
+    }
+  } catch {
+    /* fallback to global fetch in plain Node / unit tests */
+  }
+  return fetch(input, init)
+}
+
 export function proxyFetch(proxyUrl: string | undefined, input: string, init?: RequestInit): Promise<Response> {
-  if (!proxyUrl?.trim()) return fetch(input, init)
+  if (!proxyUrl?.trim()) return systemAwareFetch(input, init)
   return undiciFetch(input, { ...(init as object), dispatcher: dispatcherFor(proxyUrl) } as never) as unknown as Promise<Response>
 }
 

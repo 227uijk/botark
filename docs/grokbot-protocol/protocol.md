@@ -1,11 +1,8 @@
 # Grok Bot（xAI / Anysphere `sand`）协议分析
 
-> 来源：Antigravity 会话 `00000000-0000-4000-8000-000000000001`（Migrate Grok Bot Configuration，2026-11-02）对  
-> `/Applications/Grok Bot.app`（Electron，版本约 `0.78.1`，内部代号 **sand**，Anysphere/Cursor 出品）的静态逆向 + 本机  
-> `~/Library/Application Support/Grok Bot/sand-client-persistence` Base32 `.blob` 缓存分析 + 跨账号迁移脚本。  
-> **未做完整 net-export 抓包**；ConnectRPC 方法名与消息字段来自 `app.asar` 内 `/dist/electron-main/proto.cjs`。  
-> **所有 token / cookie / refresh / machine-id / 账号 UUID 已脱敏为 `REDACTED`。**  
-> 解析产物在 `samples/`；迁移参考在 `from-mac/MASTER_MIGRATION.md`（勿把真实记忆内容再扩散）。
+> 来源：Antigravity 会话（2026-11-02，`0.78.1`）+ BotHub 二次深度逆向（2026-11-11，针对 `/Applications/Grok Bot.app` **`0.79.3`**，Electron `42.11.16`，内部代号 **sand**）。  
+> ConnectRPC 服务与消息字段直接提取自 `0.79.3` `app.asar` 内 `/dist/electron-main/proto.cjs`（共 **7 个 ConnectRPC Service**，其中 `aiserver.v1.GrokBotService` 已扩展至 **464 个 RPC**，`SandBoxService` **55 个 RPC**，`AgentStoreService` **25 个 RPC**，`DashboardService` **92 个 RPC**）。  
+> **所有 token / cookie / refresh / machine-id / 账号 UUID 已脱敏为 `REDACTED`。**
 
 ---
 
@@ -355,12 +352,31 @@ Host capabilities 缓存示例：
 
 ---
 
-## 10. 证据索引
+## 10. `0.79.3` 全协议升级与 BotHub 落地清单（2026-11-11）
+
+1. **真实请求头与双轨鉴权**：
+   - 真实 `User-Agent`: `Mozilla/5.0 ... AppleWebKit/537.36 (KHTML, like Gecko) Sand/0.79.3 Safari/537.36`（无 `Chrome/` / `Electron/` 伪装，无 `sec-fetch-*`）。
+   - 必带请求头：`x-cursor-client-type: "sand"`、`x-cursor-client-version: "0.79.3"`、`x-sand-box-namespace: "prod"`、`x-cursor-checksum`、`x-cursor-timezone`、`x-request-id`、`x-ghost-mode`。
+   - 支持 WorkOS Sand PKCE 轮询（`/auth/poll` + `/oauth/token`）、**xAI Identity OAuth2**（`xaiAccessToken` + `${xaiIssuer}/oauth2/token`）以及 **API Key 兑换**（`POST /auth/exchange_user_api_key`）。
+   - 全链路走单账号 `proxyFetch`，Bearer Token 严格隔离在 Electron 主进程 `safeStorage`，不再向 Renderer 暴露。
+2. **账号级常驻 `WatchGrokBotTranscripts` 多路复用流（12 种帧）**：
+   - 完整解析 `rows`（多气泡流式与撤回 `deletes`）、`agent_state`（运行/输入中/工具进度/子代理数/等待原因）、`turn_failed`、`roster_changed`、`computer_actions`、`box_state`、`page_title_changed`、`cursor_too_old`（自动回拉 `ListGrokBotTranscriptEntries` 补洞）、`cleared`（世代重置）与 `absolute_lifetime_ms` 无感续接。
+3. **三段式多模态附件上传与预签名读取**：
+   - 上传：`BeginGrokBotAttachmentUpload`（支持 `SINGLE_PUT` 与 `MULTIPART`）→ `PresignGrokBotAttachmentUploadParts` + PUT → `CompleteGrokBotAttachmentUpload` 返回 `alias` 填入 `SendGrokBotUserMessage.attachment_paths`。
+   - 读取：`ResolveGrokBotAttachmentReads` 预签名 URL 缓存 + 主进程代理下载；右侧文件库支持 `BeginGrokBotAgentFileUpload` / `FinishGrokBotAgentFileUpload` 以及 `AgentStoreService.ReadAgentStoreFile` 分屏画布预览。
+4. **统一交互卡片 `GrokBotMessagingCard` + Widget + 四类审批**：
+   - 支持 `0.79.3` 新增的 `GetGrokBotMessagingCard` / **`AnswerGrokBotMessagingCard`**（覆盖 `APPROVAL / CHOICE / FORM / PAGE / PAYMENT`），以及 `RespondGrokBotWidget`、`SubmitGrokBotUserForm`、`SubmitGrokBotSecret`、`ResolveGrokBotAutoReviewApproval`、`ResolveGrokBotLocalToolPermission`、`ResolveGrokBotConnectorGrant`、`ResolveGrokBotVirtualCardApproval`、`ReactToGrokBotMessage`、`SearchGrokBotTranscripts`。
+5. **Agent / Room / Recipe / SandBox VM 全栈管理**：
+   - 支持新建/克隆/删除 Agent、创建多 Bot 群聊 `CreateGrokBotRoom`、Template Recipe 导入导出、后台 `Tasks` 与 `Subagents`、MCP / Email Inbox 连接器，以及 `SandBoxService`（`GetSandBoxRunState` / `EnsureSandBox` / `RecreateSandBox` + VNC 远程桌面预览）。
+
+---
+
+## 11. 证据索引
 
 | 材料 | 路径 |
 |---|---|
 | 本协议 | `protocol.md` |
-| RPC 全表 | `samples/grokbot_service_methods_full.json` 等 |
+| RPC 全表（464 + 55 + 25） | `samples/grokbot_service_methods_full.json`、`samples/sandbox_service_methods_full.json`、`samples/agentstore_service_methods_full.json` |
 | 字段 schema | `samples/rpc_schemas_core.json` |
 | 缓存样例 | `samples/roster_*.json`、`transcript_replica.sample.json` |
 | 迁移总控（参考） | `from-mac/MASTER_MIGRATION.md` |

@@ -1,29 +1,59 @@
-import { BrowserWindow, session as electronSession, shell } from "electron"
-import { partitionForAccount } from "../webContentsViewManager"
-import { setGrokMainAuth } from "./grokAuthStore"
-import { getOrCreateGrokMachineId } from "./grokMachineId"
-import { createPkce, persistSandTokens, pollSandAuth, sandLoginUrl } from "./grokSandAuth"
-
-const ALLOWED =
-  /^(authenticator\.cursor\.sh|prod\.authentication\.cursor\.sh|cursor\.com|www\.cursor\.com|x\.ai|accounts\.x\.ai|api2\.cursor\.sh)$/i
+import { BrowserWindow, session as electronSession, shell, type WebContents } from 'electron'
+import { applyProxyToPartition } from '../muse/accountProxy'
+import { partitionForAccount } from '../webContentsViewManager'
+import { setGrokMainAuth } from './grokAuthStore'
+import { getOrCreateGrokMachineId } from './grokMachineId'
+import {
+  createPkce,
+  createSandPollWake,
+  extractAccountHandleFromJwt,
+  parseWorkosCookieOrToken,
+  persistSandTokens,
+  pollSandAuth,
+  sandLoginUrl
+} from './grokSandAuth'
 
 const TOKEN_COOKIE_NAMES = new Set([
-  "WorkosCursorSessionToken",
-  "workos_cursor_session_token",
-  "WorkosCursorSessionToken.sig"
+  'WorkosCursorSessionToken',
+  'workos_cursor_session_token',
+  'WorkosCursorSessionToken.sig'
 ])
 
-const loginWindows = new Map<string, BrowserWindow>()
+const DEEP_LINK_SCHEME = /^(sand|grokbot|cursor):/i
+
+const CONFIRM_SELECTORS = [
+  'Yes, log in',
+  'Yes, Log In',
+  'Yes, sign in',
+  'Confirm',
+  'Authorize'
+]
+
+interface ActiveLoginFlight {
+  win?: BrowserWindow
+  cancel: (silent?: boolean) => void
+  wake: () => void
+}
+
+const activeLogins = new Map<string, ActiveLoginFlight>()
 
 export type GrokAuthCaptured = {
   accountId: string
-  accessToken: string
+  signedIn: true
   accountSlot?: string
   teamId?: string
   machineId: string
+  authKind?: 'cursor' | 'xai' | 'web'
 }
 
-export type GrokAuthCaptureListener = (auth: GrokAuthCaptured) => void
+export type GrokLoginClosedWithoutAuth = {
+  accountId: string
+  signedIn: false
+  windowClosed: true
+}
+
+export type GrokAuthCaptureEvent = GrokAuthCaptured | GrokLoginClosedWithoutAuth
+export type GrokAuthCaptureListener = (event: GrokAuthCaptureEvent) => void
 
 let captureListener: GrokAuthCaptureListener | undefined
 
@@ -34,71 +64,206 @@ export function onGrokAuthCaptured(listener: GrokAuthCaptureListener): () => voi
   }
 }
 
-function hostAllowed(url: string): boolean {
-  try {
-    const host = new URL(url).hostname
-    return (
-      ALLOWED.test(host) ||
-      host.endsWith(".cursor.sh") ||
-      host.endsWith(".cursor.com") ||
-      host.endsWith(".x.ai")
-    )
-  } catch {
-    return false
-  }
+/** Decode WorkosCursorSessionToken → JWT (Bearer accessToken). */
+export function accessTokenFromWorkosCookie(
+  raw: string
+): { accessToken: string; accountSlot?: string } | null {
+  return parseWorkosCookieOrToken(raw)
 }
 
-/** Decode WorkosCursorSessionToken → JWT (Bearer accessToken). */
-export function accessTokenFromWorkosCookie(raw: string): { accessToken: string; accountSlot?: string } | null {
-  if (!raw || !raw.trim()) return null
-  let value = raw.trim()
-  try {
-    value = decodeURIComponent(value)
-  } catch {
-    /* keep raw */
-  }
-  const parts = value.split("::")
-  if (parts.length >= 2) {
-    const slot = parts[0]?.trim()
-    const jwt = parts.slice(1).join("::").trim()
-    if (jwt.startsWith("eyJ") && jwt.length > 40) {
-      return { accessToken: jwt, accountSlot: slot || undefined }
-    }
-  }
-  if (value.startsWith("eyJ") && value.length > 40) {
-    return { accessToken: value }
-  }
-  return null
+function cleanChromeUserAgent(rawUa: string): string {
+  return rawUa
+    .replace(/\s*Electron\/[^\s]+/gi, '')
+    .replace(/\s*BotHub\/[^\s]+/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+export function cancelGrokLogin(accountId: string): void {
+  const flight = activeLogins.get(accountId)
+  if (!flight) return
+  activeLogins.delete(accountId)
+  flight.cancel(true)
 }
 
 /**
- * Open Cursor/Grok official PKCE `loginDeepControl?redirectTarget=sand` in a
- * BrowserWindow sharing the account partition, and poll `api2.cursor.sh/auth/poll`
- * for the write-capable sand `{accessToken, refreshToken}` pair (persisted via
- * Electron safeStorage). Also keeps cookie/header fallback if user closes early
- * after signing in on web.
+ * Open Grok Bot official PKCE login (`loginDeepControl?redirectTarget=sand`) and poll
+ * `api2.cursor.sh/auth/poll` via `proxyFetch` (system-proxy & per-account-proxy aware).
+ *
+ * - Default (`openInBrowser: false`): opens a clean, zero-bounce BrowserWindow sharing
+ *   the account's partition, keeps OAuth popups (Google / X / GitHub / Apple) inside
+ *   the same partition without jumping to external browsers, blocks `sand://` / `grokbot://`
+ *   from launching external apps, and auto-clicks "Yes, log in" once authenticated.
+ * - Optional (`openInBrowser: true`): opens the PKCE URL in the user's default system
+ *   browser (ideal when already signed in on Safari/Chrome) while polling `/auth/poll`.
  */
-export async function openGrokLoginWindow(accountId: string, parent?: BrowserWindow): Promise<void> {
-  const existing = loginWindows.get(accountId)
-  if (existing && !existing.isDestroyed()) {
-    existing.show()
-    existing.focus()
+export async function openGrokLoginWindow(
+  accountId: string,
+  parent?: BrowserWindow,
+  opts: { openInBrowser?: boolean } = {}
+): Promise<void> {
+  const existing = activeLogins.get(accountId)
+  if (existing && !opts.openInBrowser && existing.win && !existing.win.isDestroyed()) {
+    existing.win.show()
+    existing.win.focus()
+    existing.wake()
     return
   }
+  if (existing) {
+    existing.cancel(true)
+    activeLogins.delete(accountId)
+  }
 
-  const partition = partitionForAccount(`grok-${accountId}`)
+  // Enforce per-account proxy (or system proxy mode) BEFORE loading any network URL.
+  await applyProxyToPartition(accountId)
+
+  const partition = partitionForAccount(accountId)
   const ses = electronSession.fromPartition(partition)
   const machineId = getOrCreateGrokMachineId(accountId)
   const { verifier, challenge, uuid } = createPkce()
   const deepUrl = sandLoginUrl(challenge, uuid)
+  const pollWake = createSandPollWake()
 
-  const win = new BrowserWindow({
-    width: 980,
-    height: 760,
-    minWidth: 720,
-    minHeight: 560,
-    title: "使用 Grok Bot 登录 (Sand PKCE)",
-    backgroundColor: "#f5f5f5",
+  let settling = false
+  let aborted = false
+  let silentAbort = false
+  let fallbackCookieToken: { accessToken: string; accountSlot?: string } | null = null
+  const childPopups = new Set<BrowserWindow>()
+  let autoConfirmTimer: ReturnType<typeof setInterval> | undefined
+
+  let win: BrowserWindow | undefined
+
+  const cleanupTimersAndPopups = () => {
+    if (autoConfirmTimer) {
+      clearInterval(autoConfirmTimer)
+      autoConfirmTimer = undefined
+    }
+    for (const child of childPopups) {
+      if (!child.isDestroyed()) child.close()
+    }
+    childPopups.clear()
+  }
+
+  const finish = (
+    accessToken: string,
+    finishOpts: {
+      refreshToken?: string
+      accountSlot?: string
+      teamId?: string
+      xaiIssuer?: string
+      xaiClientId?: string
+      expiresAtMs?: number
+      authKind?: 'cursor' | 'xai' | 'web'
+      fromPkce?: boolean
+    } = {}
+  ): void => {
+    if (settling || aborted) return
+    if (!accessToken || accessToken.length < 20) return
+    settling = true
+    activeLogins.delete(accountId)
+    cleanupTimersAndPopups()
+
+    const resolvedSlot =
+      extractAccountHandleFromJwt(accessToken) ?? finishOpts.accountSlot
+
+    setGrokMainAuth({
+      accountId,
+      accessToken,
+      accountSlot: resolvedSlot,
+      teamId: finishOpts.teamId,
+      machineId
+    })
+    if (finishOpts.fromPkce || finishOpts.refreshToken || finishOpts.authKind) {
+      void persistSandTokens(accountId, {
+        accessToken,
+        refreshToken: finishOpts.refreshToken,
+        authId: resolvedSlot,
+        selectedTeamId: finishOpts.teamId,
+        xaiIssuer: finishOpts.xaiIssuer,
+        xaiClientId: finishOpts.xaiClientId,
+        expiresAtMs: finishOpts.expiresAtMs,
+        authKind: finishOpts.authKind ?? 'cursor'
+      }).catch((err) => console.warn('[grok] safeStorage persist failed', err))
+    }
+
+    const payload: GrokAuthCaptured = {
+      accountId,
+      signedIn: true,
+      accountSlot: resolvedSlot,
+      teamId: finishOpts.teamId,
+      machineId,
+      authKind: finishOpts.authKind ?? (finishOpts.fromPkce ? 'cursor' : 'web')
+    }
+    try {
+      captureListener?.(payload)
+    } catch (error) {
+      console.error('[grok] auth capture listener failed', error)
+    }
+    if (win && !win.isDestroyed()) win.close()
+  }
+
+  const cancel = (silent = false) => {
+    if (aborted || settling) return
+    silentAbort = silent
+    aborted = true
+    pollWake.wake()
+    cleanupTimersAndPopups()
+    if (win && !win.isDestroyed()) {
+      win.close()
+    } else if (!silent) {
+      try {
+        captureListener?.({ accountId, signedIn: false, windowClosed: true })
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  // Primary path: official PKCE /auth/poll via account/system proxy
+  void pollSandAuth(uuid, verifier, {
+    accountId,
+    isAborted: () => aborted || settling,
+    maxAttempts: 180,
+    wake: pollWake
+  })
+    .then((tokens) => {
+      finish(tokens.accessToken, {
+        refreshToken: tokens.refreshToken,
+        accountSlot: tokens.authId,
+        teamId: tokens.selectedTeamId,
+        xaiIssuer: tokens.xaiIssuer,
+        xaiClientId: tokens.xaiClientId,
+        expiresAtMs: tokens.expiresAtMs,
+        authKind: tokens.authKind ?? 'cursor',
+        fromPkce: true
+      })
+    })
+    .catch(() => {
+      if (!settling && !silentAbort && fallbackCookieToken) {
+        finish(fallbackCookieToken.accessToken, {
+          accountSlot: fallbackCookieToken.accountSlot,
+          authKind: 'web'
+        })
+      }
+    })
+
+  // System default browser mode: open external browser + poll in background
+  if (opts.openInBrowser) {
+    activeLogins.set(accountId, {
+      cancel,
+      wake: () => pollWake.wake()
+    })
+    await shell.openExternal(deepUrl)
+    return
+  }
+
+  win = new BrowserWindow({
+    width: 920,
+    height: 720,
+    minWidth: 680,
+    minHeight: 540,
+    title: '登录 Grok Bot',
+    backgroundColor: '#f7f7f8',
     autoHideMenuBar: true,
     parent: parent && !parent.isDestroyed() ? parent : undefined,
     webPreferences: {
@@ -109,88 +274,80 @@ export async function openGrokLoginWindow(accountId: string, parent?: BrowserWin
       backgroundThrottling: false
     }
   })
-  loginWindows.set(accountId, win)
 
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (hostAllowed(url)) {
-      void win.webContents.loadURL(url)
-      return { action: "deny" }
-    }
-    if (/^https?:\/\//.test(url)) void shell.openExternal(url)
-    return { action: "deny" }
+  const cleanUa = cleanChromeUserAgent(win.webContents.getUserAgent())
+  win.webContents.setUserAgent(cleanUa)
+
+  activeLogins.set(accountId, {
+    win,
+    cancel,
+    wake: () => pollWake.wake()
   })
 
-  let settling = false
-  let closed = false
-  let fallbackCookieToken: { accessToken: string; accountSlot?: string } | null = null
-
-  const finish = (
-    accessToken: string,
-    opts: { refreshToken?: string; accountSlot?: string; teamId?: string; fromPkce?: boolean } = {}
-  ): void => {
-    if (settling) return
-    if (!accessToken || accessToken.length < 20) return
-    settling = true
-    setGrokMainAuth({
-      accountId,
-      accessToken,
-      accountSlot: opts.accountSlot,
-      teamId: opts.teamId,
-      machineId
-    })
-    if (opts.fromPkce || opts.refreshToken) {
-      void persistSandTokens(accountId, {
-        accessToken,
-        refreshToken: opts.refreshToken,
-        authId: opts.accountSlot,
-        selectedTeamId: opts.teamId
-      }).catch((err) => console.warn("[grok] safeStorage persist failed", err))
+  const guardDeepLinks = (wc: WebContents): void => {
+    const intercept = (event: Electron.Event, url: string) => {
+      if (DEEP_LINK_SCHEME.test(url)) {
+        // Prevent macOS from launching external Grok Bot.app / Cursor.app!
+        event.preventDefault()
+        pollWake.wake()
+      }
     }
-    const payload: GrokAuthCaptured = {
-      accountId,
-      accessToken,
-      accountSlot: opts.accountSlot,
-      teamId: opts.teamId,
-      machineId
-    }
-    try {
-      captureListener?.(payload)
-    } catch (error) {
-      console.error("[grok] auth capture listener failed", error)
-    }
-    if (!win.isDestroyed()) win.close()
+    wc.on('will-navigate', intercept)
+    wc.on('will-redirect', intercept)
   }
 
-  // Primary path: official Sand PKCE /auth/poll
-  void pollSandAuth(uuid, verifier, {
-    isAborted: () => closed || settling,
-    maxAttempts: 150
-  })
-    .then((tokens) => {
-      finish(tokens.accessToken, {
-        refreshToken: tokens.refreshToken,
-        accountSlot: tokens.authId,
-        teamId: tokens.selectedTeamId,
-        fromPkce: true
-      })
-    })
-    .catch(() => {
-      /* if window closed after web login but before confirm click, use fallback cookie if available */
-      if (!settling && fallbackCookieToken) {
-        finish(fallbackCookieToken.accessToken, { accountSlot: fallbackCookieToken.accountSlot })
-      }
-    })
+  guardDeepLinks(win.webContents)
 
-  // Record fallback web cookie in case user closes window right after login without clicking "Yes, log in"
-  const checkCookiesForFallback = async (): Promise<void> => {
-    if (settling || win.isDestroyed()) return
+  // Keep OAuth popups (Google, X, Apple, GitHub, WorkOS) inside the same partition
+  // as clean child windows so `window.opener` works natively without external browser bounces.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (DEEP_LINK_SCHEME.test(url)) {
+      pollWake.wake()
+      return { action: 'deny' }
+    }
+    if (/^https?:\/\//i.test(url)) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 520,
+          height: 680,
+          title: '安全授权',
+          parent: win && !win.isDestroyed() ? win : undefined,
+          autoHideMenuBar: true,
+          webPreferences: {
+            partition,
+            sandbox: true,
+            contextIsolation: true,
+            nodeIntegration: false
+          }
+        }
+      }
+    }
+    return { action: 'deny' }
+  })
+
+  win.webContents.on('did-create-window', (childWin) => {
+    childPopups.add(childWin)
+    childWin.webContents.setUserAgent(cleanUa)
+    guardDeepLinks(childWin.webContents)
+    childWin.on('closed', () => {
+      childPopups.delete(childWin)
+      pollWake.wake()
+    })
+  })
+
+  const checkCookiesAndAutoConfirm = async (): Promise<void> => {
+    if (settling || aborted || !win || win.isDestroyed()) return
     try {
       const cookies = await ses.cookies.get({})
       for (const cookie of cookies) {
-        if (!TOKEN_COOKIE_NAMES.has(cookie.name) && !/workos.*session|cursor.*session/i.test(cookie.name)) {
+        if (
+          !TOKEN_COOKIE_NAMES.has(cookie.name) &&
+          !/workos.*session|cursor.*session/i.test(cookie.name)
+        ) {
           continue
         }
-        if (cookie.name.endsWith(".sig")) continue
+        if (cookie.name.endsWith('.sig')) continue
         const parsed = accessTokenFromWorkosCookie(cookie.value)
         if (parsed) {
           fallbackCookieToken = parsed
@@ -200,16 +357,81 @@ export async function openGrokLoginWindow(accountId: string, parent?: BrowserWin
     } catch {
       /* ignore */
     }
+
+    // Auto-click "Yes, log in" when landing on loginDeepControl confirmation page
+    try {
+      const currentUrl = win.webContents.getURL()
+      if (/\/loginDeepControl/i.test(currentUrl)) {
+        const clicked = (await win.webContents.executeJavaScript(
+          `(() => {
+            const wanted = ${JSON.stringify(CONFIRM_SELECTORS)};
+            const els = Array.from(document.querySelectorAll('button, a, [role=button], input[type=submit]'));
+            for (const el of els) {
+              if (el.disabled || el.getAttribute('aria-disabled') === 'true') continue;
+              const txt = (el.innerText || el.value || el.textContent || '').trim();
+              if (!txt) continue;
+              const lower = txt.toLowerCase();
+              if (
+                lower.includes('yes, log in') ||
+                lower.includes('yes, sign in') ||
+                wanted.some((w) => lower === w.toLowerCase())
+              ) {
+                if (el.dataset.bothubClicked === '1') return '';
+                el.dataset.bothubClicked = '1';
+                el.click();
+                return txt;
+              }
+            }
+            return '';
+          })()`,
+          true
+        )) as string
+        if (clicked) {
+          setTimeout(() => pollWake.wake(), 250)
+          setTimeout(() => pollWake.wake(), 900)
+        }
+      }
+    } catch {
+      /* page still loading */
+    }
   }
 
-  win.webContents.on("did-finish-load", () => void checkCookiesForFallback())
-  win.webContents.on("did-navigate", () => void checkCookiesForFallback())
+  win.webContents.on('did-finish-load', () => {
+    pollWake.wake()
+    void checkCookiesAndAutoConfirm()
+  })
+  win.webContents.on('did-navigate', () => {
+    pollWake.wake()
+    void checkCookiesAndAutoConfirm()
+  })
 
-  win.on("closed", () => {
-    closed = true
-    loginWindows.delete(accountId)
-    if (!settling && fallbackCookieToken) {
-      finish(fallbackCookieToken.accessToken, { accountSlot: fallbackCookieToken.accountSlot })
+  autoConfirmTimer = setInterval(() => {
+    void checkCookiesAndAutoConfirm()
+  }, 900)
+
+  win.on('closed', () => {
+    const wasSettling = settling
+    const wasSilent = silentAbort
+    aborted = true
+    activeLogins.delete(accountId)
+    cleanupTimersAndPopups()
+    pollWake.wake()
+
+    if (!wasSettling && !wasSilent && fallbackCookieToken) {
+      // Allow fallback cookie token when user logged in and closed window manually
+      aborted = false
+      finish(fallbackCookieToken.accessToken, {
+        accountSlot: fallbackCookieToken.accountSlot,
+        authKind: 'web'
+      })
+      return
+    }
+    if (!wasSettling && !wasSilent) {
+      try {
+        captureListener?.({ accountId, signedIn: false, windowClosed: true })
+      } catch (err) {
+        console.error('[grok] auth close listener failed', err)
+      }
     }
   })
 

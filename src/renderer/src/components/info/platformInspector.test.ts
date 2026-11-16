@@ -1,0 +1,50 @@
+import { describe, expect, it } from 'vitest'
+import {
+  getPlatformInspector,
+  PLATFORM_INSPECTORS,
+  resolveInspectorTab
+} from './platformInspector'
+
+describe('platformInspector', () => {
+  it('defines distinct, authentic inspector tabs for each platform', () => {
+    expect(PLATFORM_INSPECTORS['meta-muse'].tabs.map((t) => t.id)).toEqual([
+      'overview',
+      'library',
+      'computer',
+      'members'
+    ])
+    expect(PLATFORM_INSPECTORS.grok.tabs.map((t) => t.label)).toEqual([
+      'Overview',
+      'Library',
+      'Sandbox',
+      'Agents'
+    ])
+    expect(PLATFORM_INSPECTORS.hark.tabs.map((t) => t.label)).toEqual([
+      'Overview',
+      'Library',
+      'Computer',
+      'Devices'
+    ])
+    // Dot has no Cloud VM or multi-user room sharing — only Overview, Memory, and Pages.
+    expect(PLATFORM_INSPECTORS.dot.tabs.map((t) => t.id)).toEqual([
+      'overview',
+      'memory',
+      'library'
+    ])
+  })
+
+  it('disables web session pane for Grok Bot desktop Connect-RPC while keeping it on web-backed platforms', () => {
+    expect(getPlatformInspector('grok').supportsWebSession).toBe(false)
+    expect(getPlatformInspector('meta-muse').supportsWebSession).toBe(true)
+    expect(getPlatformInspector('hark').supportsWebSession).toBe(true)
+    expect(getPlatformInspector('dot').supportsWebSession).toBe(true)
+  })
+
+  it('falls back to overview when switching to a platform without the previously selected tab', () => {
+    expect(resolveInspectorTab('dot', 'computer')).toBe('overview')
+    expect(resolveInspectorTab('dot', 'members')).toBe('overview')
+    expect(resolveInspectorTab('dot', 'memory')).toBe('memory')
+    expect(resolveInspectorTab('meta-muse', 'memory')).toBe('overview')
+    expect(resolveInspectorTab('grok', 'computer')).toBe('computer')
+  })
+})

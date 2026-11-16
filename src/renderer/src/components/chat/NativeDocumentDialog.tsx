@@ -68,6 +68,48 @@ function useDocumentContent(target: NativeDocumentTarget | null) {
         /^(harkatt:\/\/|harkfile:\/\/)/i.test(rawPath) ||
         /hark\.com|hark\.ai/i.test(rawPath)
 
+      const isGrokFile =
+        target.platformId === 'grok' ||
+        /^(grokstore:\/\/|grokatt:\/\/|grokdoc:\/\/)/i.test(rawPath)
+
+      if (isGrokFile && bridge?.grok?.rpc) {
+        let groupChatId: string | undefined
+        let storeId: string | undefined
+        let documentId: string | undefined
+        if (rawPath.startsWith('grokdoc://')) {
+          // grokdoc://<groupChatId>/<storeId>/<documentId>
+          const parts = rawPath.slice('grokdoc://'.length).split('/')
+          groupChatId = parts[0]
+          storeId = parts[1]
+          documentId = parts.slice(2).join('/')
+        }
+        const grokRes = await bridge.grok.rpc({
+          accountId: target.accountId,
+          op: 'downloadAttachment',
+          agentId: target.agentId,
+          path: !groupChatId && !isHttpUrl ? rawPath : undefined,
+          url: isHttpUrl ? rawPath : undefined,
+          groupChatId,
+          storeId,
+          documentId,
+          name: target.title
+        })
+        if (grokRes.ok && grokRes.data && typeof grokRes.data === 'object') {
+          const d = grokRes.data as {
+            dataBase64: string
+            mimeType: string
+            text?: string
+          }
+          setRawBase64(d.dataBase64)
+          setMime(d.mimeType || target.mimeType || 'text/markdown')
+          setContent(d.text ?? decodeBase64Utf8(d.dataBase64))
+          return
+        }
+        if (!grokRes.ok) {
+          throw new Error(grokRes.message || `Grok document load failed (${grokRes.status})`)
+        }
+      }
+
       if (isHarkFile && bridge?.hark?.rpc) {
         const cleanRef = rawPath.replace(/^(harkatt|harkfile):\/\//i, '')
         const harkRes = await bridge.hark.rpc({

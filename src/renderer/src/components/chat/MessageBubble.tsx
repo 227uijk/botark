@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from 'react'
-import { AlertCircle, Check, Clock3, Copy, Download, ExternalLink, FileText, Image as ImageIcon, Loader2, Maximize2, RotateCw, Wrench } from 'lucide-react'
+import { AlertCircle, Check, Clock3, Copy, CornerDownRight, Download, ExternalLink, FileText, Image as ImageIcon, KeyRound, Loader2, Maximize2, RotateCw, Wrench } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { formatBytes, formatClock } from '@/lib/format'
 import { useBotStore } from '@/store/botStore'
@@ -150,25 +150,47 @@ function WorkspaceImage({
 
   useEffect(() => {
     if (src || failed || !accountId) return
-    if (!part.path.startsWith('workspace/')) {
-      setFailed(true)
-      return
-    }
     let cancelled = false
     void (async () => {
       try {
-        const muse = getBridge()?.muse
-        if (!muse?.previewWorkspaceFile) {
-          if (!cancelled) setFailed(true)
+        if (part.path.startsWith('workspace/')) {
+          const muse = getBridge()?.muse
+          if (!muse?.previewWorkspaceFile) {
+            if (!cancelled) setFailed(true)
+            return
+          }
+          const preview = await muse.previewWorkspaceFile(accountId, part.path)
+          if (cancelled) return
+          if (!preview.mimeType.startsWith('image/') || !preview.dataBase64) {
+            setFailed(true)
+            return
+          }
+          setSrc(`data:${preview.mimeType};base64,${preview.dataBase64}`)
           return
         }
-        const preview = await muse.previewWorkspaceFile(accountId, part.path)
-        if (cancelled) return
-        if (!preview.mimeType.startsWith('image/') || !preview.dataBase64) {
-          setFailed(true)
-          return
+        // Grok Bot attachment path fallback (`ResolveGrokBotAttachmentReads` + fetch via main)
+        const grok = getBridge()?.grok
+        const storeState = useBotStore.getState()
+        const acc = storeState.accounts[accountId]
+        if (acc?.platformId === 'grok' && grok?.rpc) {
+          const ownerBot = storeState.bots.find((b) => b.accountIds.includes(accountId))
+          const dl = await grok.rpc({
+            accountId,
+            op: 'downloadAttachment',
+            agentId: ownerBot?.selectedAgentId,
+            path: part.path,
+            name: part.name
+          })
+          if (cancelled) return
+          if (dl.ok && dl.data && typeof dl.data === 'object') {
+            const d = dl.data as { dataBase64: string; mimeType: string }
+            if (d.dataBase64) {
+              setSrc(`data:${d.mimeType || part.mimeType || 'image/png'};base64,${d.dataBase64}`)
+              return
+            }
+          }
         }
-        setSrc(`data:${preview.mimeType};base64,${preview.dataBase64}`)
+        if (!cancelled) setFailed(true)
       } catch {
         if (!cancelled) setFailed(true)
       }
@@ -176,7 +198,7 @@ function WorkspaceImage({
     return () => {
       cancelled = true
     }
-  }, [accountId, part.path, src, failed])
+  }, [accountId, part.name, part.mimeType, part.path, src, failed])
 
   if (src) {
     return (
@@ -214,36 +236,68 @@ function WorkspaceAV({
 
   useEffect(() => {
     if (src || failed || !accountId) return
-    if (!part.path.startsWith('workspace/')) {
-      setFailed(true)
-      return
-    }
     let cancelled = false
     let objectUrl: string | null = null
     void (async () => {
       try {
-        const muse = getBridge()?.muse
-        if (!muse?.previewWorkspaceFile) {
-          if (!cancelled) setFailed(true)
+        if (part.path.startsWith('workspace/')) {
+          const muse = getBridge()?.muse
+          if (!muse?.previewWorkspaceFile) {
+            if (!cancelled) setFailed(true)
+            return
+          }
+          const preview = await muse.previewWorkspaceFile(accountId, part.path)
+          if (cancelled) return
+          const mt = (preview.mimeType || part.mimeType || '').toLowerCase()
+          const ok =
+            kind === 'audio'
+              ? mt.startsWith('audio/') || looksLikeAudio(part)
+              : mt.startsWith('video/') || looksLikeVideo(part)
+          if (!preview.dataBase64 || !ok) {
+            setFailed(true)
+            return
+          }
+          const bin = atob(preview.dataBase64)
+          const bytes = new Uint8Array(bin.length)
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+          const blob = new Blob([bytes], { type: preview.mimeType || (kind === 'audio' ? 'audio/*' : 'video/*') })
+          objectUrl = URL.createObjectURL(blob)
+          setSrc(objectUrl)
           return
         }
-        const preview = await muse.previewWorkspaceFile(accountId, part.path)
-        if (cancelled) return
-        const mt = (preview.mimeType || part.mimeType || '').toLowerCase()
-        const ok =
-          kind === 'audio'
-            ? mt.startsWith('audio/') || looksLikeAudio(part)
-            : mt.startsWith('video/') || looksLikeVideo(part)
-        if (!preview.dataBase64 || !ok) {
-          setFailed(true)
-          return
+
+        const grok = getBridge()?.grok
+        const storeState = useBotStore.getState()
+        const acc = storeState.accounts[accountId]
+        if (acc?.platformId === 'grok' && grok?.rpc) {
+          const ownerBot =
+            storeState.bots.find(
+              (b) => b.platformId === 'grok' && b.accountIds.includes(accountId) && b.selectedAgentId
+            ) ?? storeState.bots.find((b) => b.accountIds.includes(accountId))
+          const dl = await grok.rpc({
+            accountId,
+            op: 'downloadAttachment',
+            agentId: ownerBot?.selectedAgentId,
+            path: part.path,
+            name: part.name
+          })
+          if (cancelled) return
+          if (dl.ok && dl.data && typeof dl.data === 'object') {
+            const d = dl.data as { dataBase64: string; mimeType: string }
+            if (d.dataBase64) {
+              const bin = atob(d.dataBase64)
+              const bytes = new Uint8Array(bin.length)
+              for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+              const blob = new Blob([bytes], {
+                type: d.mimeType || part.mimeType || (kind === 'audio' ? 'audio/mpeg' : 'video/mp4')
+              })
+              objectUrl = URL.createObjectURL(blob)
+              setSrc(objectUrl)
+              return
+            }
+          }
         }
-        const bin = atob(preview.dataBase64)
-        const bytes = new Uint8Array(bin.length)
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
-        const blob = new Blob([bytes], { type: preview.mimeType || (kind === 'audio' ? 'audio/*' : 'video/*') })
-        objectUrl = URL.createObjectURL(blob)
-        setSrc(objectUrl)
+        if (!cancelled) setFailed(true)
       } catch {
         if (!cancelled) setFailed(true)
       }
@@ -922,9 +976,203 @@ function RichWidgets({
             </li>
           )
         }
+        if (w.kind === 'grok_form') {
+          return (
+            <GrokFormCard
+              key={w.widgetId}
+              widget={w}
+              botId={botId}
+              accountId={accountId}
+            />
+          )
+        }
         return null
       })}
     </ul>
+  )
+}
+
+function GrokFormCard({
+  widget,
+  botId,
+  accountId
+}: {
+  widget: Extract<ChatRichWidget, { kind: 'grok_form' }>
+  botId: string
+  accountId: string
+}) {
+  const botMeta = useBotStore((s) => s.bots.find((b) => b.id === botId))
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {}
+    for (const f of widget.fields) {
+      init[f.id] = f.options?.[0]?.id ?? ''
+    }
+    return init
+  })
+  const [saveToVault, setSaveToVault] = useState(widget.formKind === 'secret-request')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(Boolean(widget.submitted))
+  const [errMsg, setErrMsg] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (submitting || submitted) return
+    const grok = getBridge()?.grok
+    if (!grok?.rpc) {
+      setErrMsg('Grok IPC 不可用')
+      return
+    }
+    const agentId = botMeta?.selectedAgentId ?? ''
+    const sessionId = botMeta?.activeSessionId ?? ''
+
+    for (const f of widget.fields) {
+      if (f.required && !values[f.id]?.trim()) {
+        setErrMsg(`请填写必填项：${f.label}`)
+        return
+      }
+    }
+
+    setSubmitting(true)
+    setErrMsg(null)
+    try {
+      let res: { ok: boolean; message?: string }
+      if (widget.formKind === 'messaging-card') {
+        res = await grok.rpc({
+          accountId,
+          op: 'answerMessagingCard',
+          cardId: widget.entryId,
+          version: widget.cardVersion ?? 1,
+          answer: 'SUBMIT',
+          values
+        })
+      } else if (widget.formKind === 'secret-request') {
+        const firstField = widget.fields[0]
+        const secretValue = (firstField ? values[firstField.id] : '') ?? ''
+        res = await grok.rpc({
+          accountId,
+          op: 'submitSecret',
+          agentId,
+          entryId: widget.entryId,
+          value: secretValue,
+          sessionId
+        })
+      } else {
+        res = await grok.rpc({
+          accountId,
+          op: 'submitUserForm',
+          agentId,
+          entryId: widget.entryId,
+          values,
+          saveToVault,
+          sessionId
+        })
+      }
+      if (!res.ok) {
+        setErrMsg(res.message || '提交失败')
+        return
+      }
+      setSubmitted(true)
+    } catch (err) {
+      setErrMsg(err instanceof Error ? err.message : '提交出错')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const hasSecretField = widget.formKind === 'secret-request' || widget.fields.some((f) => f.secret)
+
+  return (
+    <li className="rounded-2xl border border-line bg-surface p-3.5 shadow-soft">
+      <div className="mb-2.5 flex items-start gap-2">
+        <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-accent-50 text-accent-600">
+          <KeyRound className="size-3.5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-ink">
+            {widget.title || (widget.formKind === 'secret-request' ? '提供密钥凭据' : '填写表单信息')}
+          </p>
+          {widget.subtitle && (
+            <p className="mt-0.5 text-[11.5px] text-ink-muted">{widget.subtitle}</p>
+          )}
+        </div>
+        {submitted && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-status-online/10 px-2 py-0.5 text-[11px] font-medium text-status-online">
+            <Check className="size-3" /> 已提交
+          </span>
+        )}
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
+        {widget.fields.map((field) => (
+          <label key={field.id} className="flex flex-col gap-1 text-[12px]">
+            <span className="font-medium text-ink-secondary">
+              {field.label}
+              {field.required && <span className="ml-0.5 text-status-error">*</span>}
+            </span>
+            {field.options && field.options.length > 0 ? (
+              <select
+                disabled={submitted || submitting}
+                value={values[field.id] ?? ''}
+                onChange={(e) => setValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
+                className="rounded-lg border border-line bg-canvas px-2.5 py-1.5 text-[12.5px] text-ink outline-none focus:border-accent-600 disabled:opacity-60"
+              >
+                {field.options.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            ) : field.type === 'textarea' ? (
+              <textarea
+                rows={3}
+                disabled={submitted || submitting}
+                value={values[field.id] ?? ''}
+                placeholder={field.placeholder}
+                onChange={(e) => setValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
+                className="rounded-lg border border-line bg-canvas px-2.5 py-1.5 text-[12.5px] text-ink outline-none focus:border-accent-600 disabled:opacity-60"
+              />
+            ) : (
+              <input
+                type={field.secret ? 'password' : 'text'}
+                autoComplete="off"
+                disabled={submitted || submitting}
+                value={values[field.id] ?? ''}
+                placeholder={field.placeholder}
+                onChange={(e) => setValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
+                className="rounded-lg border border-line bg-canvas px-2.5 py-1.5 text-[12.5px] text-ink outline-none focus:border-accent-600 disabled:opacity-60"
+              />
+            )}
+          </label>
+        ))}
+
+        {hasSecretField && widget.formKind === 'user-form' && !submitted && (
+          <label className="flex items-center gap-1.5 text-[11.5px] text-ink-secondary">
+            <input
+              type="checkbox"
+              checked={saveToVault}
+              onChange={(e) => setSaveToVault(e.target.checked)}
+              className="rounded border-line"
+            />
+            保存到 Grok 安全凭据库（Secret Vault）
+          </label>
+        )}
+
+        {errMsg && <p className="text-[11.5px] text-status-error">{errMsg}</p>}
+
+        {!submitted && (
+          <div className="mt-0.5 flex justify-end">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="inline-flex items-center gap-1.5 rounded-full bg-accent-600 px-3.5 py-1.5 text-[12px] font-medium text-white shadow-hairline hover:bg-accent-700 disabled:opacity-50"
+            >
+              {submitting && <Loader2 className="size-3.5 animate-spin" />}
+              {submitting ? '提交中…' : '提交'}
+            </button>
+          </div>
+        )}
+      </form>
+    </li>
   )
 }
 
@@ -1017,12 +1265,37 @@ export const MessageBubble = memo(function MessageBubble({
   const media = (!mine && message.media) || []
   const rich = (!mine && message.richWidgets) || []
   const setActiveDocument = useBotStore((s) => s.setActiveDocument)
+  const setReplyTarget = useBotStore((s) => s.setReplyTarget)
+  const botMeta = useBotStore((s) => s.bots.find((b) => b.id === message.botId))
   const [docTarget, setDocTarget] = useState<NativeDocumentTarget | null>(null)
   const [articleExpanded, setArticleExpanded] = useState(false)
   const [copiedMsg, setCopiedMsg] = useState(false)
+  const [reactedEmoji, setReactedEmoji] = useState<string | null>(null)
 
   const openDocument = (target: NativeDocumentTarget) => {
-    setActiveDocument(target)
+    setActiveDocument({
+      ...target,
+      platformId: target.platformId ?? botMeta?.platformId,
+      agentId: target.agentId ?? botMeta?.selectedAgentId
+    })
+  }
+
+  const reactGrokMessage = (emoji: string) => {
+    if (botMeta?.platformId !== 'grok' || !botMeta.selectedAgentId) return
+    const grok = getBridge()?.grok
+    if (!grok?.rpc) return
+    const entryId = message.id.replace(/^grok_(u_)?/, '')
+    setReactedEmoji(emoji)
+    void grok
+      .rpc({
+        accountId: message.accountId,
+        op: 'reactMessage',
+        agentId: botMeta.selectedAgentId,
+        entryId,
+        emoji,
+        sessionId: botMeta.activeSessionId ?? ''
+      })
+      .catch(() => setReactedEmoji(null))
   }
 
   const isLongMarkdownReport =
@@ -1043,8 +1316,34 @@ export const MessageBubble = memo(function MessageBubble({
     )
   }
 
+  const quoteReplyMessage = () => {
+    const entryId = message.id.replace(/^grok_(u_)?/, '')
+    const rawSnippet = (message.text || '').replace(/\s+/g, ' ').trim()
+    const quote = rawSnippet.length > 140 ? `${rawSnippet.slice(0, 140)}…` : rawSnippet || '引用消息'
+    setReplyTarget(message.botId, {
+      messageId: message.id,
+      entryId,
+      quote,
+      role: message.role
+    })
+    window.dispatchEvent(new CustomEvent('bothub:focus-composer'))
+  }
+
   return (
     <div className={cn('flex flex-col', mine ? 'items-end' : 'items-start')}>
+      {/* 0. Quoted message snippet when user replied to a bubble */}
+      {message.replyQuote && (
+        <div
+          className={cn(
+            'mb-1 flex max-w-[72%] items-center gap-1.5 rounded-xl border border-line bg-sunken/45 px-2.5 py-1 text-[11.5px] text-ink-secondary',
+            mine && 'self-end'
+          )}
+        >
+          <CornerDownRight className="size-3 shrink-0 text-accent-600" aria-hidden />
+          <span className="truncate">{message.replyQuote}</span>
+        </div>
+      )}
+
       {/* 1. Tool execution trace / thinking status above the assistant reply */}
       {!mine && tools.length > 0 && <ToolChips tools={tools} />}
 
@@ -1238,10 +1537,34 @@ export const MessageBubble = memo(function MessageBubble({
             {formatClock(message.createdAt)}
           </time>
           {mine ? (
-            <DeliveryState message={message} onRetry={onRetry} />
+            <div className="flex items-center gap-1.5">
+              {botMeta?.platformId === 'grok' && message.text && (
+                <button
+                  type="button"
+                  onClick={quoteReplyMessage}
+                  title="引用回复"
+                  className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] text-ink-secondary hover:bg-hover hover:text-ink"
+                >
+                  <CornerDownRight className="size-3" />
+                  <span>引用</span>
+                </button>
+              )}
+              <DeliveryState message={message} onRetry={onRetry} />
+            </div>
           ) : (
             message.text && (
               <div className="flex items-center gap-1">
+                {botMeta?.platformId === 'grok' && (
+                  <button
+                    type="button"
+                    onClick={quoteReplyMessage}
+                    title="引用此消息回复"
+                    className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-ink-secondary hover:bg-hover hover:text-ink"
+                  >
+                    <CornerDownRight className="size-3" />
+                    <span>引用</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={copyMessageText}
@@ -1267,6 +1590,24 @@ export const MessageBubble = memo(function MessageBubble({
                   <Maximize2 className="size-3" />
                   <span>右侧阅读</span>
                 </button>
+                {botMeta?.platformId === 'grok' && botMeta.selectedAgentId && (
+                  <div className="ml-0.5 inline-flex items-center gap-0.5">
+                    {(['👍', '❤️', '🔥'] as const).map((emo) => (
+                      <button
+                        key={emo}
+                        type="button"
+                        onClick={() => reactGrokMessage(emo)}
+                        title={`回应 ${emo}`}
+                        className={cn(
+                          'rounded px-1 py-0.5 text-[11px] hover:bg-hover',
+                          reactedEmoji === emo && 'bg-accent-50 ring-1 ring-accent-500/40'
+                        )}
+                      >
+                        {emo}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           )}

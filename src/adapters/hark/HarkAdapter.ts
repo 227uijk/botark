@@ -224,7 +224,7 @@ export class HarkAdapter implements PlatformAdapter {
     if (!bridge?.openLogin) {
       throw new AdapterError('unsupported', 'Hark login needs the Electron app')
     }
-    this.setStatus(accountId, 'busy', '在弹出的窗口里完成 Google 登录')
+    this.setStatus(accountId, 'offline', '在弹出的窗口里完成 Google 登录')
     try {
       const status = await bridge.openLogin({ accountId })
       if (status.signedIn) {

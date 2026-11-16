@@ -36,6 +36,7 @@ import {
   type HarkUploadedAttachment
 } from './harkClient'
 import { cancelHarkLogin, onHarkLoginEvent, openHarkLoginWindow } from './harkLogin'
+import { loadAccountProxyUrl } from '../muse/accountProxy'
 
 function mapHarkTools(msg: HarkChatMessage): MuseToolCallView[] | undefined {
   if (!msg.toolCalls || msg.toolCalls.length === 0) return undefined
@@ -96,20 +97,21 @@ function broadcast(payload: unknown): void {
 }
 
 async function statusFor(accountId: string): Promise<HarkAuthStatus> {
+  const hasProxy = Boolean(await loadAccountProxyUrl(accountId).catch(() => true))
   try {
     const session = await getAuthSession(accountId)
     if (session && (session.user || session.session)) {
       const { handle, displayName } = extractHandle(session)
-      return { accountId, signedIn: true, handle, displayName }
+      return { accountId, signedIn: true, handle, displayName, hasProxy }
     }
   } catch {
     /* fall through */
   }
   const cookies = await listSessionCookieNames(accountId)
   if (cookies.length > 0) {
-    return { accountId, signedIn: true }
+    return { accountId, signedIn: true, hasProxy }
   }
-  return { accountId, signedIn: false }
+  return { accountId, signedIn: false, hasProxy }
 }
 
 async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {

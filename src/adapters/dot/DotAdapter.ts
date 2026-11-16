@@ -270,7 +270,7 @@ export class DotAdapter implements PlatformAdapter {
     if (!bridge?.openLogin) {
       throw new AdapterError('unsupported', 'Dot login needs the Electron app')
     }
-    this.setStatus(accountId, 'busy', '在弹窗完成 ChatGPT 登录，或导入 AT / RT 凭据')
+    this.setStatus(accountId, 'offline', '在弹窗完成 ChatGPT 登录，或导入 AT / RT 凭据')
     try {
       const status = await bridge.openLogin({ accountId })
       if (status.signedIn) {

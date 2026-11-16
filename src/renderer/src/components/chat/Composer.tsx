@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react'
 import type { AttachmentMeta } from '@adapters/types'
 import { createId } from '@shared/id'
-import { ArrowUp, FileText, Loader2, LogIn, Plus, PlugZap, Square, X } from 'lucide-react'
+import { ArrowUp, CornerDownRight, FileText, Loader2, LogIn, Plus, PlugZap, Square, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { IconButton } from '@/components/ui/IconButton'
 import { cn } from '@/lib/cn'
 import { formatBytes } from '@/lib/format'
+import { useBotStore } from '@/store/botStore'
 import type { Bot, BotAccount } from '@/types'
 import { t } from '@/lib/i18n'
 
@@ -159,10 +160,12 @@ export function Composer({ bot, account, typing = false, onSend, onCancel, onCon
   const [dragging, setDragging] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const replyTarget = useBotStore((s) => s.replyingTo[bot.id])
+  const setReplyTarget = useBotStore((s) => s.setReplyTarget)
 
   const connected = account?.status === 'online' || account?.status === 'busy' || account?.status === 'attention'
   const [multiline, setMultiline] = useState(false)
-  const expanded = multiline || attachments.length > 0
+  const expanded = multiline || attachments.length > 0 || Boolean(replyTarget)
   const hasContent = text.trim().length > 0 || attachments.length > 0
   const canSend = connected && hasContent
 
@@ -192,6 +195,11 @@ export function Composer({ bot, account, typing = false, onSend, onCancel, onCon
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Escape' && replyTarget) {
+      event.preventDefault()
+      setReplyTarget(bot.id, null)
+      return
+    }
     // Respect IME composition (e.g. Chinese/Japanese input) before sending.
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault()
@@ -242,6 +250,25 @@ export function Composer({ bot, account, typing = false, onSend, onCancel, onCon
             dragging && 'border-accent-600 ring-4 ring-accent-100'
           )}
         >
+          {replyTarget && (
+            <div className="mb-1.5 flex items-center justify-between gap-2 rounded-xl border border-line bg-sunken/50 px-2.5 py-1.5 text-[12px]">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <CornerDownRight className="size-3.5 shrink-0 text-accent-600" aria-hidden />
+                <span className="shrink-0 font-medium text-ink-secondary">
+                  {replyTarget.role === 'user' ? '引用自己' : `引用 ${bot.name}`}：
+                </span>
+                <span className="truncate text-ink">{replyTarget.quote}</span>
+              </div>
+              <button
+                type="button"
+                aria-label="取消引用"
+                onClick={() => setReplyTarget(bot.id, null)}
+                className="press-icon grid size-5 shrink-0 place-items-center rounded-md text-ink-muted hover:bg-active hover:text-ink"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
+          )}
           {attachments.some((f) => !f.dataBase64) && (
             <p className="px-1 pb-1 text-[12px] text-status-error">
               {t('Some files are too large to send inline (max 12 MB).')}

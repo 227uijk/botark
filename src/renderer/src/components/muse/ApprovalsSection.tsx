@@ -63,7 +63,13 @@ function parseHistory(raw: unknown): HistoryItem[] {
   return out
 }
 
-export function ApprovalsSection({ accountId }: { accountId: string }) {
+export function ApprovalsSection({
+  accountId,
+  platformId = 'meta-muse'
+}: {
+  accountId: string
+  platformId?: 'meta-muse' | 'grok'
+}) {
   const [pending, setPending] = useState<MuseApproval[]>([])
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [showHistory, setShowHistory] = useState(false)
@@ -75,13 +81,13 @@ export function ApprovalsSection({ accountId }: { accountId: string }) {
   const status = useBotStore((s) => s.accounts[accountId]?.status)
 
   const refresh = useCallback(async () => {
-    const adapter = adapterRegistry.get('meta-muse')
+    const adapter = adapterRegistry.get(platformId)
     if (!adapter?.listApprovals) return
     setLoading(true)
     setError(undefined)
     try {
       setPending(await adapter.listApprovals(accountId))
-      if (showHistory) {
+      if (showHistory && platformId === 'meta-muse') {
         const muse = getBridge()?.muse
         if (muse?.rpc) {
           const histRaw = await muse.rpc({ accountId, method: 'egress.approval.history', params: {} }).catch(() => null)
@@ -93,21 +99,21 @@ export function ApprovalsSection({ accountId }: { accountId: string }) {
     } finally {
       setLoading(false)
     }
-  }, [accountId, showHistory])
+  }, [accountId, platformId, showHistory])
 
   useEffect(() => {
     void refresh()
-    const adapter = adapterRegistry.get('meta-muse')
+    const adapter = adapterRegistry.get(platformId)
     if (!adapter?.subscribe) return
     return adapter.subscribe((event) => {
       if (event.type === 'approvals' && event.accountId === accountId) {
         setPending(event.pending)
       }
     })
-  }, [refresh, status, accountId])
+  }, [refresh, status, accountId, platformId])
 
   const decide = async (approvalId: string, decision: ApprovalDecision) => {
-    const adapter = adapterRegistry.get('meta-muse')
+    const adapter = adapterRegistry.get(platformId)
     if (!adapter?.decideApproval) return
     setBusyId(approvalId)
     try {

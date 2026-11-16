@@ -4,6 +4,7 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { autoUpdater, type UpdateInfo } from 'electron-updater'
 import { UPDATE_CHANNELS, type UpdateStatusEvent } from '@shared/ipc'
 import { checkFailedMessage, interpretLatestRelease } from './updateCheck'
+import { inspectMacCodeSignature } from './securityVault'
 
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000
 const GITHUB_OWNER = 'qybaihe'
@@ -18,13 +19,15 @@ let downloaded = false
 let isManualCheck = false
 
 /**
- * ShipIt (Squirrel.Mac) rejects unsigned / ad-hoc electron-builder artifacts
- * with "Code signature … did not pass validation". Until we ship Developer ID
- * signed + notarized builds, never auto-download or quitAndInstall on darwin —
- * only notify and open the GitHub release page for a manual install.
+ * ShipIt (Squirrel.Mac) requires a valid Developer ID Application signature on macOS.
+ * Unsigned/ad-hoc builds fall back to opening the GitHub Release download page;
+ * Developer ID signed + notarized builds support native Squirrel auto-install.
  */
 function canAutoInstall(): boolean {
-  if (process.platform === 'darwin') return false
+  if (!app.isPackaged) return false
+  if (process.platform === 'darwin') {
+    return inspectMacCodeSignature().codeSigned
+  }
   return true
 }
 
@@ -179,9 +182,9 @@ function configure(): void {
 
 async function check(manual = false): Promise<void> {
   isManualCheck = manual
-  // On macOS or when app-update.yml is not bundled, use the lightweight GitHub Releases API check
-  // so it never throws ENOENT on app-update.yml or 404 on latest-mac.yml.
-  if (!app.isPackaged || process.platform === 'darwin' || !hasAppUpdateConfig()) {
+  // When unpacked, unsigned on macOS, or app-update.yml is not bundled, use the
+  // lightweight GitHub Releases API check so it never throws ENOENT / ShipIt errors.
+  if (!app.isPackaged || !canAutoInstall() || !hasAppUpdateConfig()) {
     await checkViaGitHubApi(manual)
     return
   }

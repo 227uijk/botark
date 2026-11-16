@@ -159,15 +159,45 @@ export type ChatRichWidget =
       widgetId: string
       cards: Array<{ id: string; title: string; subtitle?: string; prompt?: string }>
     }
+  | {
+      kind: 'grok_form'
+      widgetId: string
+      formKind: 'user-form' | 'secret-request' | 'messaging-card'
+      entryId: string
+      cardVersion?: number
+      title?: string
+      subtitle?: string
+      fields: Array<{
+        id: string
+        label: string
+        type?: string
+        required?: boolean
+        placeholder?: string
+        secret?: boolean
+        options?: Array<{ id: string; label: string }>
+      }>
+      submitted?: boolean
+    }
 
 export interface ChatOptionWidget {
   kind: 'option'
   widgetId: string
   options: string[]
+  optionValues?: string[]
+  entryId?: string
+  cardVersion?: number
+  widgetSource?: 'muse' | 'grok-widget' | 'grok-card'
   buttonStyle: 'dotted_lines' | 'center_aligned_filled'
   customInputPlaceholder?: string
   selectedText?: string | null
   baseVersion: number
+}
+
+export interface ChatReplyTarget {
+  messageId: string
+  entryId: string
+  quote: string
+  role: MessageRole
 }
 
 export interface ChatMessage {
@@ -175,15 +205,21 @@ export interface ChatMessage {
   botId: string
   /** Account that sent (user) or received the reply (bot). */
   accountId: string
+  /** Optional Grok agentId scoping this message when multiple agents share one bot/account. */
+  agentId?: string
   role: MessageRole
   text: string
   createdAt: number
   delivery?: MessageDelivery
   error?: string
+  /** Platform id of the quoted message when replying to a specific bubble. */
+  replyToId?: string
+  /** Quoted text snippet displayed above the user's reply. */
+  replyQuote?: string
   attachments?: AttachmentMeta[]
   /** Muse option chips (onboarding name picker, etc.). */
   widgets?: ChatOptionWidget[]
-  /** Read-only shopping/maps/html/slides widgets. */
+  /** Read-only shopping/maps/html/slides or interactive Grok form widgets. */
   richWidgets?: ChatRichWidget[]
   /** Live / completed tool calls for this assistant turn. */
   tools?: ChatToolCall[]
@@ -219,6 +255,9 @@ export interface NewBotInput {
   platformId: PlatformId
   name: string
   avatar?: string
+  avatarShape?: string
+  avatarColor?: string
+  selectedAgentId?: string
   emoji?: string
   description?: string
   /** Local notes (template starter brief). */

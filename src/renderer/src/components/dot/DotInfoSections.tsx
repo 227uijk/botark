@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Download, Eye, FileText, KeyRound, LogIn, Pause, Play, Plus, Sparkles, Target, Trash2 } from 'lucide-react'
+import { Download, Eye, FileText, KeyRound, Lock, LogIn, Pause, Play, Plus, Sparkles, Target, Trash2 } from 'lucide-react'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { Button } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/Field'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { NativeDocumentDialog, type NativeDocumentTarget } from '@/components/chat/NativeDocumentDialog'
 import { getBridge } from '@/lib/bridge'
+import { loadDotMemoryDraft, saveDotMemoryDraft } from '@/lib/vaultClient'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 import type { ChatMessage } from '@/types'
@@ -117,11 +118,7 @@ export function DotCredentialsAndQuotaSection({
           if (d.markdown) {
             priorSnapshot = d.markdown
             priorGoal = d.goal
-            try {
-              window.localStorage.setItem('bothub.dot.memorySnapshot', d.markdown)
-            } catch {
-              /* ignore */
-            }
+            await saveDotMemoryDraft(d.markdown)
           }
         }
       }
@@ -532,15 +529,8 @@ export function DotGoalAndThreadsSection({ accountId }: { accountId: string }) {
   const bots = useBotStore((s) => s.bots)
   const [goal, setGoal] = useState('')
   const [threads, setThreads] = useState<Array<{ id: string; title: string; updatedAt?: string }>>([])
-  const [memorySnapshot, setMemorySnapshot] = useState(() => {
-    try {
-      return typeof window !== 'undefined'
-        ? window.localStorage.getItem('bothub.dot.memorySnapshot') || ''
-        : ''
-    } catch {
-      return ''
-    }
-  })
+  const [memorySnapshot, setMemorySnapshot] = useState('')
+  const [vaultSealed, setVaultSealed] = useState(false)
   const [targetBotId, setTargetBotId] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -551,13 +541,25 @@ export function DotGoalAndThreadsSection({ accountId }: { accountId: string }) {
     (b) => b.platformId === 'dot' && b.activeAccountId && b.activeAccountId !== accountId
   )
 
+  useEffect(() => {
+    let alive = true
+    void loadDotMemoryDraft().then((draft) => {
+      if (!alive) return
+      if (draft) {
+        setMemorySnapshot(draft)
+        setVaultSealed(Boolean(getBridge()?.vault))
+      }
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+
   const updateSnapshotText = (val: string) => {
     setMemorySnapshot(val)
-    try {
-      window.localStorage.setItem('bothub.dot.memorySnapshot', val)
-    } catch {
-      /* ignore */
-    }
+    void saveDotMemoryDraft(val).then((encrypted) => {
+      setVaultSealed(encrypted)
+    })
   }
 
   const refresh = useCallback(async () => {
@@ -729,6 +731,12 @@ export function DotGoalAndThreadsSection({ accountId }: { accountId: string }) {
             rows={memorySnapshot.trim() ? 5 : 2}
             className="w-full rounded-lg border border-line bg-transparent p-2 font-mono text-[11px] leading-[15px] text-ink outline-none"
           />
+          {vaultSealed && memorySnapshot.trim() && (
+            <p className="flex items-center gap-1 text-[10.5px] text-status-online-ink">
+              <Lock className="size-3 shrink-0" aria-hidden />
+              <span>记忆草稿已由系统钥匙串加密保存（0600 保险箱，无明文缓存）</span>
+            </p>
+          )}
 
           {otherDotBots.length > 0 && memorySnapshot.trim() && (
             <div className="flex items-center gap-1.5">

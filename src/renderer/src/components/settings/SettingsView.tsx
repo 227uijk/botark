@@ -20,12 +20,14 @@ import {
   ShieldAlert,
   ShieldCheck,
   Shuffle,
+  Sparkles,
   Trash2,
   Users
 } from 'lucide-react'
 import type { PlatformId } from '@adapters/types'
 import type { MuseProxyMode, MuseProxyPoolItemView, MuseProxyView } from '@shared/ipc'
 import { createId } from '@shared/id'
+import { SecurityVaultCenter } from '@/components/info/SecurityVaultCard'
 import { PaneHeader } from '@/components/layout/PaneHeader'
 import { MuseBatchImport } from '@/components/add-bot/MuseBatchImport'
 import { BotAvatar } from '@/components/ui/Avatar'
@@ -82,6 +84,7 @@ export function SettingsView() {
   const tr = useT()
   const settingsTab = useBotStore((s) => s.settingsTab)
   const setSettingsOpen = useBotStore((s) => s.setSettingsOpen)
+  const setOnboardingOpen = useBotStore((s) => s.setOnboardingOpen)
   const groups = useBotStore((s) => s.groups)
   const bots = useBotStore((s) => s.bots)
   const accounts = useBotStore((s) => s.accounts)
@@ -101,6 +104,7 @@ export function SettingsView() {
   const moveBotToGroup = useBotStore((s) => s.moveBotToGroup)
   const togglePinBot = useBotStore((s) => s.togglePinBot)
   const setGrokAccessToken = useBotStore((s) => s.setGrokAccessToken)
+  const syncGrokAccountBots = useBotStore((s) => s.syncGrokAccountBots)
   const signOutAccount = useBotStore((s) => s.signOutAccount)
   const removeBot = useBotStore((s) => s.removeBot)
   const clearAllCredentials = useBotStore((s) => s.clearAllCredentials)
@@ -272,8 +276,9 @@ export function SettingsView() {
       setRawProxyText('')
       setPool(res.items)
       const ids = museAccounts.map((a) => a.id)
+      const keepIds = [...harkAccounts, ...grokAccounts, ...dotAccounts].map((a) => a.id)
       if (ids.length > 0 && muse.assignProxyPool) {
-        const assigned = await muse.assignProxyPool(ids, harkAccounts.map((a) => a.id))
+        const assigned = await muse.assignProxyPool(ids, keepIds)
         setPool(assigned.items)
         setHint(`已导入 ${res.added} 个代理（池共 ${res.total} 个），并已自动为 ${assigned.assignedCount} 个 Muse 账号一对一绑定代理`)
       } else {
@@ -295,7 +300,8 @@ export function SettingsView() {
     setHint(undefined)
     try {
       const ids = museAccounts.map((a) => a.id)
-      const res = await muse.assignProxyPool(ids, harkAccounts.map((a) => a.id))
+      const keepIds = [...harkAccounts, ...grokAccounts, ...dotAccounts].map((a) => a.id)
+      const res = await muse.assignProxyPool(ids, keepIds)
       setPool(res.items)
       setHint(`已为 ${res.assignedCount} / ${ids.length} 个 Muse 账号完成一对一代理匹配`)
       await refreshProxiesAndPool()
@@ -328,7 +334,8 @@ export function SettingsView() {
     const muse = getBridge()?.muse
     if (muse?.assignProxyPool) {
       const ids = [...museAccounts.map((a) => a.id), accountId]
-      await muse.assignProxyPool(ids, harkAccounts.map((a) => a.id)).catch(() => undefined)
+      const keepIds = [...harkAccounts, ...grokAccounts, ...dotAccounts].map((a) => a.id)
+      await muse.assignProxyPool(ids, keepIds).catch(() => undefined)
     }
     addBot({
       id: botId,
@@ -341,18 +348,22 @@ export function SettingsView() {
     void openMuseLogin(accountId)
   }
 
-  const handleQuickAddGrokAccount = () => {
+  const handleQuickAddGrokAccount = (openInBrowser = false) => {
+    const offlineExisting = grokAccounts.find((a) => a.status === 'offline' || a.status === 'error')
+    if (offlineExisting) {
+      void openGrokLogin(offlineExisting.id, openInBrowser)
+      return
+    }
     const accountId = createId('acc')
     const botId = createId('bot')
-    const index = grokBots.length + 1
     addBot({
       id: botId,
       platformId: 'grok',
-      name: `Grok Bot ${index}`,
-      accounts: [{ key: accountId, accountId, displayName: `Grok ${index}`, handle: '' }],
+      name: 'Grok Bot',
+      accounts: [{ key: accountId, accountId, displayName: 'Grok Bot', handle: '' }],
       background: true
     })
-    void openGrokLogin(accountId)
+    void openGrokLogin(accountId, openInBrowser)
   }
 
   const handleImportGrokToken = async () => {
@@ -365,22 +376,24 @@ export function SettingsView() {
     try {
       const isNew = grokTargetAccountId === '__new__' || !accounts[grokTargetAccountId]
       const accountId = isNew ? createId('acc') : grokTargetAccountId
-      if (isNew) {
-        const botId = createId('bot')
-        const index = grokBots.length + 1
-        addBot({
-          id: botId,
-          platformId: 'grok',
-          name: `Grok Bot ${index}`,
-          accounts: [{ key: accountId, accountId, displayName: `Grok ${index}`, handle: '' }],
-          background: true
-        })
+      await setGrokAccessToken(accountId, token, undefined, undefined, rt)
+      const latestAcc = useBotStore.getState().accounts[accountId]
+      if (latestAcc?.status === 'error') {
+        setError(latestAcc.statusDetail || '凭据无效或已过期，请检查后重试')
+        return
       }
+      const totalBots = await syncGrokAccountBots(accountId, {
+        includeDismissed: true,
+        selectFirst: isNew
+      })
       setGrokTokenInput('')
       setGrokRefreshInput('')
       setGrokTargetAccountId('__new__')
-      await setGrokAccessToken(accountId, token, undefined, undefined, rt)
-      setHint(isNew ? '已导入 Grok Sand Token 并新建 Grok Bot' : '已更新 Grok 账号 Token 并重新同步')
+      setHint(
+        isNew
+          ? `已接入 Grok 账号，自动同步 ${totalBots} 个 Bot 到左侧列表`
+          : `已更新凭据并同步 ${totalBots} 个 Bot`
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -1498,42 +1511,46 @@ export function SettingsView() {
               <div className="flex flex-col gap-5 animate-veil-in">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">Grok Bot (Sand) 账号管理</h2>
+                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">Grok Bot 账号管理</h2>
                     <p className="mt-1 text-[13px] text-ink-secondary">
-                      通过官方 PKCE 深链（`cursor.com/loginDeepControl?redirectTarget=sand` + `/auth/poll`）登录并获取具备完整读写权限的 Sand OAuth Token，自动刷新续期并使用 `safeStorage` 加密保存在本机安全存储中。
+                      一个 Grok 账号下可包含多个 Bot，登录后会自动按 Bot 展开在左侧对话列表中。
                     </p>
                   </div>
-                  <Button variant="primary" size="sm" onClick={handleQuickAddGrokAccount}>
-                    <Plus className="size-3.5" /> PKCE 登录新增 Grok 账号
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="primary" size="sm" onClick={() => handleQuickAddGrokAccount(false)}>
+                      <Plus className="size-3.5" /> 登录窗口添加账号
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => handleQuickAddGrokAccount(true)}>
+                      <Globe className="size-3.5" /> 默认浏览器授权
+                    </Button>
+                  </div>
                 </div>
 
-                {/* Manual Token Paste Card */}
+                {/* Credential Import Card */}
                 <div className="rounded-2xl border border-line bg-surface p-4 shadow-soft">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-[13px] font-medium text-ink">导入或替换 Sand OAuth Token (AT / RT)</span>
+                    <span className="text-[13px] font-medium text-ink">粘贴凭据导入（Token / Cookie / JSON / API Key）</span>
                     <select
                       value={grokTargetAccountId}
                       onChange={(e) => setGrokTargetAccountId(e.target.value)}
                       className="rounded-lg border border-line bg-canvas px-2 py-1 text-[12px] text-ink"
                     >
-                      <option value="__new__">+ 新建 Grok Bot</option>
-                      {grokAccounts.map((acc) => {
-                        const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
-                        return (
-                          <option key={acc.id} value={acc.id}>
-                            替换凭据：{ownerBot?.name || acc.displayName} ({acc.id})
-                          </option>
-                        )
-                      })}
+                      <option value="__new__">+ 接入新 Grok 账号（自动同步全部 Bot）</option>
+                      {grokAccounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          更新凭据：{acc.handle || acc.displayName || acc.id}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <input
+                    <textarea
                       value={grokTokenInput}
                       onChange={(e) => setGrokTokenInput(e.target.value)}
-                      placeholder="粘贴 eyJ... (Sand OAuth Access Token)"
-                      className="h-8 w-full rounded-xl border border-line bg-canvas px-3 font-mono text-[12px] text-ink outline-none focus:border-accent-600"
+                      placeholder="粘贴 Access Token (eyJ...)、Cookie (WorkosCursorSessionToken=...)、JSON 或 API Key…"
+                      rows={2}
+                      spellCheck={false}
+                      className="block w-full resize-none rounded-xl border border-line bg-canvas p-2.5 font-mono text-[12px] leading-5 text-ink outline-none placeholder:text-ink-muted focus:border-accent-600"
                     />
                     <div className="flex gap-2">
                       <input
@@ -1548,7 +1565,7 @@ export function SettingsView() {
                         disabled={busy || !grokTokenInput.trim()}
                         onClick={() => void handleImportGrokToken()}
                       >
-                        {grokTargetAccountId === '__new__' ? '导入并新建' : '更新 Token'}
+                        {busy ? '验证中…' : grokTargetAccountId === '__new__' ? '导入并同步 Bot' : '更新凭据'}
                       </Button>
                     </div>
                   </div>
@@ -1559,79 +1576,122 @@ export function SettingsView() {
                   <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-line py-10 text-center">
                     <p className="text-[14px] font-medium text-ink">暂无 Grok Bot 账号</p>
                     <p className="max-w-md text-[12.5px] text-ink-muted">
-                      点击上方「PKCE 登录新增 Grok 账号」在弹窗中确认授权，即可拉取你账号下的全部 Grok Bots 并流式对话。
+                      点击上方「登录窗口添加账号」或粘贴凭据，即可将账号下的全部 Bot 同步到左侧列表。
                     </p>
                   </div>
                 ) : (
                   <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-soft">
                     <ul className="divide-y divide-line">
                       {grokAccounts.map((acc) => {
-                        const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
+                        const accountBots = bots.filter(
+                          (b) => b.platformId === 'grok' && b.accountIds.includes(acc.id)
+                        )
+                        const ownerBot = accountBots[0]
                         return (
-                          <li key={acc.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-hover/30">
-                            <div className="flex min-w-0 items-center gap-3">
-                              <BotAvatar
-                                seed={ownerBot?.id ?? acc.id}
-                                avatar={ownerBot?.avatar}
-                                avatarShape={ownerBot?.avatarShape}
-                                avatarColor={ownerBot?.avatarColor}
-                                status={acc.status}
-                                size="md"
-                              />
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="truncate text-[14px] font-medium text-ink">
-                                    {ownerBot?.name || acc.displayName}
-                                  </span>
-                                  <StatusBadge status={acc.status} />
+                          <li key={acc.id} className="flex flex-col gap-2.5 px-4 py-3.5 hover:bg-hover/30">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <div className="flex min-w-0 items-center gap-3">
+                                <BotAvatar
+                                  seed={ownerBot?.id ?? acc.id}
+                                  avatar={ownerBot?.avatar}
+                                  avatarShape={ownerBot?.avatarShape}
+                                  avatarColor={ownerBot?.avatarColor}
+                                  platformId="grok"
+                                  status={acc.status}
+                                  size="md"
+                                />
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="truncate text-[14px] font-medium text-ink">
+                                      {acc.handle || acc.displayName || 'Grok Bot 账号'}
+                                    </span>
+                                    <StatusBadge status={acc.status} />
+                                    <span className="rounded-md bg-sunken px-1.5 py-0.5 text-[11px] text-ink-secondary">
+                                      {accountBots.length} 个 Bot
+                                    </span>
+                                  </div>
+                                  {acc.statusDetail && (
+                                    <p className="mt-0.5 truncate text-[11.5px] text-ink-muted">
+                                      {acc.statusDetail}
+                                    </p>
+                                  )}
                                 </div>
-                                <p className="mt-0.5 truncate font-mono text-[11px] text-ink-muted">
-                                  {acc.statusDetail || acc.handle || acc.id}
-                                </p>
                               </div>
-                            </div>
-                            <div className="flex shrink-0 items-center gap-1.5">
-                              {ownerBot && (
-                                <Button size="sm" variant="secondary" onClick={() => selectBot(ownerBot.id)}>
-                                  进入对话
+                              <div className="flex shrink-0 items-center gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  disabled={acc.pending}
+                                  onClick={() => void openGrokLogin(acc.id, false)}
+                                >
+                                  登录窗口
                                 </Button>
-                              )}
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                disabled={acc.pending}
-                                onClick={() => void openGrokLogin(acc.id)}
-                              >
-                                PKCE 登录
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                disabled={acc.pending}
-                                onClick={() => void connectAccount(acc.id)}
-                              >
-                                刷新名单
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                disabled={acc.pending}
-                                onClick={() => void signOutAccount(acc.id)}
-                                title="退出登录"
-                              >
-                                <LogOut className="size-3.5" />
-                              </Button>
-                              {ownerBot && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  disabled={acc.pending}
+                                  onClick={() => void openGrokLogin(acc.id, true)}
+                                >
+                                  浏览器授权
+                                </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => void removeBot(ownerBot.id)}
-                                  title="删除"
+                                  disabled={acc.pending || busy}
+                                  onClick={() => {
+                                    void connectAccount(acc.id).then(() =>
+                                      syncGrokAccountBots(acc.id, { includeDismissed: true })
+                                    )
+                                  }}
+                                >
+                                  同步全部 Bot
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={acc.pending}
+                                  onClick={() => void signOutAccount(acc.id)}
+                                  title="退出登录"
+                                >
+                                  <LogOut className="size-3.5" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    for (const b of accountBots) {
+                                      await removeBot(b.id)
+                                    }
+                                  }}
+                                  title="移除该账号及名下全部 Bot"
                                 >
                                   <Trash2 className="size-3.5 text-status-error" />
                                 </Button>
-                              )}
+                              </div>
                             </div>
+
+                            {accountBots.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1.5 pl-12">
+                                {accountBots.map((b) => (
+                                  <button
+                                    key={b.id}
+                                    type="button"
+                                    onClick={() => selectBot(b.id)}
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-canvas px-2.5 py-1 text-[12px] text-ink transition-colors hover:border-line-strong hover:bg-hover"
+                                  >
+                                    <BotAvatar
+                                      seed={b.id}
+                                      avatar={b.avatar}
+                                      avatarShape={b.avatarShape}
+                                      avatarColor={b.avatarColor}
+                                      platformId="grok"
+                                      size="xs"
+                                    />
+                                    <span className="max-w-[160px] truncate">{b.name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </li>
                         )
                       })}
@@ -2008,6 +2068,23 @@ export function SettingsView() {
                       {tr('Check for updates')}
                     </Button>
                   </div>
+
+                  <div className="flex items-center justify-between px-4 py-3.5">
+                    <div>
+                      <p className="text-[14px] font-medium text-ink">新手引导与产品架构导览</p>
+                      <p className="text-[12px] text-ink-muted">
+                        随时查看四大原生协议对比、钥匙串加密沙盒架构与专属右侧操作台交互指南
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setOnboardingOpen(true)}
+                    >
+                      <Sparkles className="size-3.5 text-accent-600" />
+                      打开新手引导
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Sidebar Section / Group Management */}
@@ -2092,6 +2169,9 @@ export function SettingsView() {
                     })}
                   </ul>
                 </div>
+
+                {/* Live OS Keychain & Security Vault Audit */}
+                <SecurityVaultCenter />
 
                 {/* Security & Sanitization Center */}
                 <div className="overflow-hidden rounded-2xl border border-status-error/25 bg-surface shadow-soft">

@@ -3,6 +3,7 @@ import { AddBotDialog } from '@/components/add-bot/AddBotDialog'
 import { ChatArea } from '@/components/chat/ChatArea'
 import { AppShell } from '@/components/layout/AppShell'
 import { InfoPanel } from '@/components/info/InfoPanel'
+import { hasSeenOnboarding, OnboardingDialog } from '@/components/onboarding/OnboardingGuide'
 import { CommandPalette } from '@/components/palette/CommandPalette'
 import { SettingsView } from '@/components/settings/SettingsView'
 import { Sidebar } from '@/components/sidebar/Sidebar'
@@ -118,6 +119,39 @@ export default function App() {
     }
     return stop
   }, [])
+
+  // Handle `--open-grok-login` startup trigger or first-visit full-screen guide
+  useEffect(() => {
+    const triggerGrokLoginFlow = () => {
+      const state = useBotStore.getState()
+      const offlineGrok = Object.values(state.accounts).find(
+        (a) => a.platformId === 'grok' && (a.status === 'offline' || a.status === 'error')
+      )
+      if (offlineGrok) {
+        const owner = state.bots.find((b) => b.accountIds.includes(offlineGrok.id))
+        if (owner) state.selectBot(owner.id)
+        void state.openGrokLogin(offlineGrok.id, false)
+        return
+      }
+      state.setAddBotOpen(true, 'grok')
+    }
+
+    const params =
+      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+    if (params?.get('openGrokLogin') === '1') {
+      const timer = setTimeout(triggerGrokLoginFlow, 220)
+      return () => clearTimeout(timer)
+    }
+
+    if (!hasSeenOnboarding() && useBotStore.getState().bots.length > 0) {
+      useBotStore.getState().setOnboardingOpen(true)
+    }
+
+    const onTrigger = () => triggerGrokLoginFlow()
+    window.addEventListener('bothub:open-grok-login', onTrigger)
+    return () => window.removeEventListener('bothub:open-grok-login', onTrigger)
+  }, [])
+
   useEffect(() => startPrefsSync(), [])
   useGlobalShortcuts()
 
@@ -150,6 +184,7 @@ export default function App() {
         />
       </div>
       <AddBotDialog />
+      <OnboardingDialog />
       <CommandPalette />
     </>
   )

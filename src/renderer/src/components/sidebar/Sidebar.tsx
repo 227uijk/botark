@@ -1,5 +1,6 @@
 import { type KeyboardEvent } from 'react'
-import { PanelLeft, Plus, Search, Settings } from 'lucide-react'
+import { PanelLeft, Plus, Search, Settings, Sparkles } from 'lucide-react'
+import { hasSeenOnboarding } from '@/components/onboarding/OnboardingGuide'
 import { GrokBotMark } from '@/components/ui/GrokBotMark'
 import { IconButton } from '@/components/ui/IconButton'
 import { t } from '@/lib/i18n'
@@ -27,10 +28,12 @@ export function Sidebar({ onAddBot }: SidebarProps) {
   const toggleSidebarCollapsed = useBotStore((s) => s.toggleSidebarCollapsed)
   const settingsOpen = useBotStore((s) => s.settingsOpen)
   const setSettingsOpen = useBotStore((s) => s.setSettingsOpen)
+  const onboardingOpen = useBotStore((s) => s.onboardingOpen)
+  const setOnboardingOpen = useBotStore((s) => s.setOnboardingOpen)
   const selectedPlatformId = useBotStore(
     (s) => s.bots.find((b) => b.id === s.selectedBotId)?.platformId
   )
-  const totalAccountCount = useBotStore((s) => Object.keys(s.accounts).length)
+  const unseenGuide = !onboardingOpen && !hasSeenOnboarding()
 
   const defaultSettingsTab =
     selectedPlatformId === 'dot'
@@ -68,10 +71,26 @@ export function Sidebar({ onAddBot }: SidebarProps) {
           <IconButton round label={t('New bot')} shortcut={shortcutLabel('N')} onClick={onAddBot}>
             <Plus />
           </IconButton>
+          <span className="relative">
+            <IconButton
+              round
+              active={onboardingOpen}
+              label="打开操作指南"
+              onClick={() => setOnboardingOpen(true)}
+            >
+              <Sparkles />
+            </IconButton>
+            {unseenGuide && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute top-0.5 right-0.5 size-2 rounded-full bg-accent-600 ring-2 ring-surface"
+              />
+            )}
+          </span>
           <IconButton
             round
             active={settingsOpen}
-            label="设置与 Muse 账号池"
+            label="设置与账号"
             onClick={() => setSettingsOpen(!settingsOpen)}
           >
             <Settings />
@@ -120,18 +139,27 @@ export function Sidebar({ onAddBot }: SidebarProps) {
           )}
         >
           <BrandMark />
-          <div className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] leading-4 font-semibold tracking-tight text-ink">
-              设置与账号
-            </span>
-            {totalAccountCount > 0 && (
-              <span className="block truncate text-[11px] leading-3.5 text-ink-muted">
-                {totalAccountCount} 个已连接账号
-              </span>
-            )}
-          </div>
+          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold tracking-tight text-ink">
+            设置与账号
+          </span>
           <Settings className="size-4 shrink-0 text-ink-secondary" aria-hidden />
         </button>
+        <span className="relative shrink-0">
+          <IconButton
+            round
+            active={onboardingOpen}
+            label="打开操作指南"
+            onClick={() => setOnboardingOpen(true)}
+          >
+            <Sparkles />
+          </IconButton>
+          {unseenGuide && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute top-0.5 right-0.5 size-2 rounded-full bg-accent-600 ring-2 ring-surface"
+            />
+          )}
+        </span>
       </footer>
     </div>
   )

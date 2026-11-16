@@ -47,7 +47,12 @@ function AddAccountFlow({ bot, open, onClose }: { bot: Bot; open: boolean; onClo
       className="w-[min(92vw,420px)]"
     >
       {phase.kind === 'waiting' ? (
-        <LoginWaiting platformId={bot.platformId} windowClosed={phase.windowClosed} onReopen={login.reopen} />
+        <LoginWaiting
+          platformId={bot.platformId}
+          accountId={login.accountId}
+          windowClosed={phase.windowClosed}
+          onReopen={login.reopen}
+        />
       ) : phase.kind === 'idle' && phase.error ? (
         <div className="flex animate-step-in flex-col items-center gap-4 pt-2 pb-2 text-center">
           <p className="text-[14px] text-status-error" role="alert">

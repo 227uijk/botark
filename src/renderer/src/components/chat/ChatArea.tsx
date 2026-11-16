@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from 'react'
-import type { AttachmentMeta } from '@adapters/types'
-import { Plus } from 'lucide-react'
+import type { AttachmentMeta, PlatformId } from '@adapters/types'
+import { PanelRight } from 'lucide-react'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
+import { getPlatformInspector } from '@/components/info/platformInspector'
+import { OnboardingStage } from '@/components/onboarding/OnboardingGuide'
 import { getBotAccounts } from '@/lib/selectors'
-import { shortcutLabel } from '@/lib/shortcuts'
 import { useBotStore } from '@/store/botStore'
 import type { Bot, ChatMessage } from '@/types'
 import { ChatHeader } from './ChatHeader'
@@ -23,18 +24,27 @@ const STARTERS = [
   t('Brainstorm five names for a side project')
 ]
 
+const PLATFORM_LOGIN_LABELS: Record<PlatformId, string> = {
+  'meta-muse': '使用 Muse 登录',
+  grok: '使用 Grok Bot 登录',
+  hark: '使用 Hark 登录',
+  dot: '使用 ChatGPT Dot 登录'
+}
+
 function ConversationIntro({
   bot,
   canSend,
-  needsMuseLogin,
+  needsPlatformLogin,
   onPick,
-  onMuseLogin
+  onPlatformLogin,
+  onOpenInspector
 }: {
   bot: Bot
   canSend: boolean
-  needsMuseLogin: boolean
+  needsPlatformLogin: boolean
   onPick: (text: string) => void
-  onMuseLogin?: () => void
+  onPlatformLogin?: () => void
+  onOpenInspector?: () => void
 }) {
   return (
     <div className="flex min-h-0 flex-1 animate-veil-in flex-col items-center justify-center gap-5 px-8 pb-6 text-center">
@@ -51,10 +61,18 @@ function ConversationIntro({
         />
         <h2 className="text-[17px] leading-6 font-medium tracking-tight text-ink">{bot.name}</h2>
       </div>
-      {needsMuseLogin && onMuseLogin ? (
-        <Button variant="primary" size="lg" onClick={onMuseLogin}>
-          使用 Muse 登录
-        </Button>
+      {needsPlatformLogin && onPlatformLogin ? (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button variant="primary" size="lg" onClick={onPlatformLogin}>
+            {t(PLATFORM_LOGIN_LABELS[bot.platformId])}
+          </Button>
+          {bot.platformId !== 'meta-muse' && onOpenInspector && (
+            <Button variant="secondary" size="lg" onClick={onOpenInspector}>
+              <PanelRight className="size-4" aria-hidden />
+              {t('Import token in right panel')}
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="flex max-w-xl flex-wrap justify-center gap-2">
           {STARTERS.map((starter) => (
@@ -83,7 +101,8 @@ export function ChatArea() {
   const openDotLogin = useBotStore((s) => s.openDotLogin)
   const webSessionOpen = useBotStore((s) => s.webSessionOpen)
   const hasBots = useBotStore((s) => s.bots.length > 0)
-  const setAddBotOpen = useBotStore((s) => s.setAddBotOpen)
+  const infoPanelOpen = useBotStore((s) => s.infoPanelOpen)
+  const toggleInfoPanel = useBotStore((s) => s.toggleInfoPanel)
   const activeDocument = useBotStore((s) => s.activeDocument)
   const setActiveDocument = useBotStore((s) => s.setActiveDocument)
 
@@ -114,37 +133,48 @@ export function ChatArea() {
 
   if (!bot) {
     return (
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         <div className="drag-region h-[52px] shrink-0" />
-        <div className="flex flex-1 animate-veil-in flex-col items-center justify-center gap-4 pb-[52px]">
-          {hasBots ? (
+        {hasBots ? (
+          <div className="flex flex-1 animate-veil-in flex-col items-center justify-center gap-4 pb-[52px]">
             <p className="text-[13px] text-ink-muted">{t('Select a bot')}</p>
-          ) : (
-            <>
-              <p className="text-[15px] font-semibold tracking-tight text-ink">{t('Add your first bot')}</p>
-              <Button variant="primary" size="lg" onClick={() => setAddBotOpen(true)} title={`New bot (${shortcutLabel('N')})`}>
-                <Plus aria-hidden /> {t('New bot')}
-              </Button>
-            </>
-          )}
-        </div>
+          </div>
+        ) : (
+          <OnboardingStage />
+        )}
       </div>
     )
   }
 
-  // Only a signed-out account needs login; errors and approvals are surfaced as themselves.
-  const needsMuseLogin = bot.platformId === 'meta-muse' && !!activeAccount && activeAccount.status === 'offline'
+  // Signed-out accounts on all 4 platforms offer direct partition login; errors and approvals surface as themselves.
+  const needsPlatformLogin = !!activeAccount && activeAccount.status === 'offline'
+
+  const triggerActiveAccountLogin = () => {
+    if (!activeAccount) return
+    switch (bot.platformId) {
+      case 'meta-muse':
+        return onMuseLogin(activeAccount.id)
+      case 'grok':
+        return onGrokLogin(activeAccount.id)
+      case 'hark':
+        return onHarkLogin(activeAccount.id)
+      case 'dot':
+        return onDotLogin(activeAccount.id)
+    }
+  }
 
   const canSend =
     activeAccount?.status === 'online' ||
     activeAccount?.status === 'busy' ||
     activeAccount?.status === 'attention'
+  const showWebSession =
+    webSessionOpen && !!activeAccount && getPlatformInspector(bot.platformId).supportsWebSession
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <ChatHeader bot={bot} accounts={accounts} />
-        {webSessionOpen && activeAccount ? (
+        {showWebSession && activeAccount ? (
           <WebSessionPane key={`${bot.id}:${activeAccount.id}`} bot={bot} account={activeAccount} />
         ) : (
           <>
@@ -152,14 +182,23 @@ export function ChatArea() {
               <ConversationIntro
                 bot={bot}
                 canSend={canSend}
-                needsMuseLogin={needsMuseLogin}
+                needsPlatformLogin={needsPlatformLogin}
                 onPick={(text) => onSend(text)}
-                onMuseLogin={activeAccount ? () => onMuseLogin(activeAccount.id) : undefined}
+                onPlatformLogin={activeAccount ? triggerActiveAccountLogin : undefined}
+                onOpenInspector={() => {
+                  if (!infoPanelOpen) toggleInfoPanel()
+                }}
               />
             ) : (
               <MessageList bot={bot} messages={messages} accounts={accounts} typing={typing} onRetry={onRetry} />
             )}
-            {bot.platformId === 'meta-muse' && activeAccount && <ChatApprovals accountId={activeAccount.id} />}
+            {(bot.platformId === 'meta-muse' || bot.platformId === 'grok') && activeAccount && (
+              <ChatApprovals
+                accountId={activeAccount.id}
+                platformId={bot.platformId}
+                agentId={bot.selectedAgentId}
+              />
+            )}
             <Composer
               key={bot.id}
               bot={bot}
@@ -172,12 +211,12 @@ export function ChatArea() {
               onGrokLogin={onGrokLogin}
               onHarkLogin={onHarkLogin}
               onDotLogin={onDotLogin}
-              hideNotice={needsMuseLogin && messages.length === 0 && !typing}
+              hideNotice={needsPlatformLogin && messages.length === 0 && !typing}
             />
           </>
         )}
       </div>
-      {activeDocument && !webSessionOpen && (
+      {activeDocument && !showWebSession && (
         <DocumentCanvasPane
           target={activeDocument}
           onClose={() => setActiveDocument(null)}

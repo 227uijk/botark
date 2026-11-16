@@ -220,11 +220,38 @@ export type MuseRichWidgetView =
       widgetId: string
       cards: Array<{ id: string; title: string; subtitle?: string; prompt?: string }>
     }
+  | {
+      kind: 'grok_form'
+      widgetId: string
+      formKind: 'user-form' | 'secret-request' | 'messaging-card'
+      entryId: string
+      cardVersion?: number
+      title?: string
+      subtitle?: string
+      fields: Array<{
+        id: string
+        label: string
+        type?: string
+        required?: boolean
+        placeholder?: string
+        secret?: boolean
+        options?: Array<{ id: string; label: string }>
+      }>
+      submitted?: boolean
+    }
 
 export interface MuseOptionWidgetView {
   kind: 'option'
   widgetId: string
   options: string[]
+  /** Parallel wire values when option value differs from display label (e.g. Grok RespondGrokBotWidget). */
+  optionValues?: string[]
+  /** Transcript entry id or card id backing this widget. */
+  entryId?: string
+  /** Optional card version for GrokBotMessagingCard (AnswerGrokBotMessagingCard). */
+  cardVersion?: number
+  /** Subtype hint ('widget' | 'messaging-card'). */
+  widgetSource?: 'muse' | 'grok-widget' | 'grok-card'
   buttonStyle: 'dotted_lines' | 'center_aligned_filled'
   customInputPlaceholder?: string
   selectedText?: string | null
@@ -448,6 +475,7 @@ export type UpdateStatusEvent =
 
 export const GROK_CHANNELS = {
   openLogin: 'bothub:grok:open-login',
+  cancelLogin: 'bothub:grok:cancel-login',
   setAccessToken: 'bothub:grok:set-access-token',
   clearAuth: 'bothub:grok:clear-auth',
   authStatus: 'bothub:grok:auth-status',
@@ -461,16 +489,19 @@ export type GrokMainEvent =
       type: 'auth'
       accountId: string
       signedIn: true
-      accessToken: string
+      /** Kept optional for backward compatibility; main no longer needs to leak raw tokens to renderer. */
+      accessToken?: string
       accountSlot?: string
+      teamId?: string
       machineId?: string
     }
-  | { type: 'auth'; accountId: string; signedIn: false }
+  | { type: 'auth'; accountId: string; signedIn: false; windowClosed?: boolean }
   | {
       type: 'stream'
       accountId: string
       conversationId?: string
       agentId: string
+      sessionId?: string
       messageId: string
       text: string
       done: boolean
@@ -479,13 +510,71 @@ export type GrokMainEvent =
       media?: MuseMediaPartView[]
       richWidgets?: MuseRichWidgetView[]
     }
+  | {
+      type: 'activity'
+      accountId: string
+      agentId: string
+      sessionId?: string
+      busy: boolean
+      isComposing?: boolean
+      hasRunningSubagents?: boolean
+      activityCode: string
+      activityText?: string
+      activityEmoji?: string
+    }
+  | {
+      type: 'approvals'
+      accountId: string
+      agentId?: string
+      pending: unknown[]
+    }
+  | {
+      type: 'roster_changed'
+      accountId: string
+      kind: string
+      agentId: string
+      agent?: Record<string, unknown>
+    }
+  | {
+      type: 'turn_failed'
+      accountId: string
+      agentId: string
+      sessionId?: string
+      turnId?: string
+      code: string
+      summary: string
+    }
+  | {
+      type: 'box_state'
+      accountId: string
+      state: Record<string, unknown>
+    }
+  | {
+      type: 'page_changed'
+      accountId: string
+      storeId: string
+      canvasId?: string
+      documentId: string
+      title: string
+      contentChanged?: boolean
+    }
+  | {
+      type: 'message_deleted'
+      accountId: string
+      agentId: string
+      sessionId?: string
+      messageIds: string[]
+    }
 
 export interface GrokOpenLoginRequest {
   accountId: string
+  /** When true, opens the PKCE authorization link in the OS default browser instead of an embedded window. */
+  openInBrowser?: boolean
 }
 
 export interface GrokSetAccessTokenRequest {
   accountId: string
+  /** Accepts Bearer accessToken, Cursor user API key (exchanged via /auth/exchange_user_api_key), or JSON {accessToken, refreshToken, xaiAccessToken, ...}. */
   accessToken: string
   refreshToken?: string
   accountSlot?: string
@@ -497,9 +586,14 @@ export interface GrokAuthStatus {
   accountId: string
   signedIn: boolean
   accountSlot?: string
+  teamId?: string
+  machineId?: string
+  hasRefreshToken?: boolean
+  authKind?: 'cursor' | 'xai' | 'web'
+  hasProxy?: boolean
 }
 
-/** In-memory session hydrate for renderer (never written to disk). */
+/** In-memory session hydrate for renderer (never needs raw Bearer token). */
 export interface GrokAuthSessionPayload {
   accountId: string
   signedIn: boolean
@@ -507,9 +601,13 @@ export interface GrokAuthSessionPayload {
   accountSlot?: string
   teamId?: string
   machineId?: string
+  hasRefreshToken?: boolean
+  authKind?: 'cursor' | 'xai' | 'web'
 }
 
-/** Renderer → main ConnectRPC unary (avoids api2 CORS). */
+export type GrokServiceId = 'grokbot' | 'sandbox' | 'agentstore' | 'dashboard' | 'ai'
+
+/** Renderer → main ConnectRPC unary & streaming orchestration (avoids api2 CORS). */
 export type GrokRpcRequest =
   | {
       accountId: string
@@ -527,6 +625,24 @@ export type GrokRpcRequest =
   | {
       accountId: string
       timeZone?: string
+      op: 'ensureWatch'
+      agentIds?: string[]
+      conversationMap?: Record<string, string | string[]>
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'stopWatch'
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'listApprovals'
+      agentId?: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
       op: 'sendUserMessage'
       agentId: string
       messageId: string
@@ -534,6 +650,129 @@ export type GrokRpcRequest =
       sessionId?: string
       machineId?: string
       sentAtMs?: number
+      replyToId?: string
+      replyQuote?: string
+      attachmentPaths?: string[]
+      attachmentNames?: string[]
+      attachments?: Array<{ name: string; mimeType: string; dataBase64: string; size?: number }>
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'uploadAttachment'
+      agentId: string
+      sessionId?: string
+      fileName: string
+      mimeType?: string
+      dataBase64: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'resolveAttachmentReads'
+      agentId: string
+      sessionId?: string
+      paths: string[]
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'downloadAttachment'
+      agentId?: string
+      sessionId?: string
+      path?: string
+      url?: string
+      storeId?: string
+      documentId?: string
+      groupChatId?: string
+      name?: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'uploadAgentFile'
+      agentId: string
+      fileName: string
+      contentType?: string
+      dataBase64: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'respondWidget'
+      agentId: string
+      entryId: string
+      value: string
+      sessionId?: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'dismissWidget'
+      agentId: string
+      entryId: string
+      sessionId?: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'answerMessagingCard'
+      cardId: string
+      version: number
+      answer: 'APPROVE' | 'DENY' | 'CHOOSE' | 'SUBMIT' | 'ALWAYS' | 'ESCALATE' | number
+      optionId?: string
+      values?: Record<string, string>
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'submitUserForm'
+      agentId: string
+      entryId: string
+      values: Record<string, string>
+      sessionId?: string
+      saveToVault?: boolean
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'submitSecret'
+      agentId: string
+      entryId: string
+      value: string
+      sessionId?: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'reactMessage'
+      agentId: string
+      entryId: string
+      emoji: string
+      sessionId?: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'searchTranscripts'
+      query: string
+      target?: 'MESSAGES' | 'FILES'
+      agentId?: string
+      limit?: number
+      continuation?: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'exportRecipe'
+      agentId: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'importRecipe'
+      recipeJson: string
+      nameOverride?: string
     }
   | {
       accountId: string
@@ -567,6 +806,7 @@ export type GrokRpcRequest =
       accountId: string
       timeZone?: string
       op: 'call'
+      service?: GrokServiceId
       method: string
       params?: Record<string, unknown>
     }
@@ -586,6 +826,7 @@ export type GrokRpcRequest =
       timeZone?: string
       op: 'resolveLocalTool'
       agentId: string
+      entryId?: string
       requestId: string
       resolution: number
       sessionId?: string
@@ -595,9 +836,20 @@ export type GrokRpcRequest =
       timeZone?: string
       op: 'resolveConnectorGrant'
       agentId: string
+      entryId?: string
       requestId: string
       resolution: number
       sessionId?: string
+    }
+  | {
+      accountId: string
+      timeZone?: string
+      op: 'resolveVirtualCard'
+      agentId: string
+      entryId: string
+      requestId: string
+      resolution: number
+      paymentMethodId?: string
     }
 
 export type GrokRpcResponse =
@@ -663,6 +915,7 @@ export interface HarkAuthStatus {
   signedIn: boolean
   handle?: string
   displayName?: string
+  hasProxy?: boolean
 }
 
 export type HarkRpcRequest =
@@ -884,4 +1137,56 @@ export type DotRpcRequest =
 export type DotRpcResponse =
   | { ok: true; data: unknown }
   | { ok: false; status: number; code?: string; message: string; body?: string }
+
+export const VAULT_CHANNELS = {
+  status: 'bothub:vault:status',
+  getSecret: 'bothub:vault:get-secret',
+  setSecret: 'bothub:vault:set-secret',
+  deleteSecret: 'bothub:vault:delete-secret',
+  clearAll: 'bothub:vault:clear-all',
+  hardenPermissions: 'bothub:vault:harden-permissions'
+} as const
+
+export interface SecurityStoreAudit {
+  id: string
+  label: string
+  fileName: string
+  exists: boolean
+  modeOctal: string | null
+  ownerOnly: boolean
+  entryCount: number
+}
+
+export interface SecurityAccountAudit {
+  accountId: string
+  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot'
+  partition: string
+  transportProtocol: string
+  credentialIsolation: string
+  proxyMode: MuseProxyMode
+  proxyEndpoint?: string
+  proxyReadable: boolean
+  failClosedGuard: boolean
+}
+
+export interface SecurityVaultStatus {
+  checkedAtMs: number
+  keychainAvailable: boolean
+  cipherSuite: string
+  codeSigned: boolean
+  signingAuthority?: string
+  rendererSandbox: {
+    contextIsolation: boolean
+    sandbox: boolean
+    zeroRendererTokens: boolean
+  }
+  stores: SecurityStoreAudit[]
+  accountAudit?: SecurityAccountAudit
+}
+
+export interface VaultStatusRequest {
+  accountId?: string
+  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot'
+}
+
 

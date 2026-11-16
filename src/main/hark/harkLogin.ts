@@ -7,6 +7,7 @@
  */
 
 import { BrowserWindow, session as electronSession, shell } from 'electron'
+import { applyProxyToPartition } from '../muse/accountProxy'
 import { partitionForAccount } from '../webContentsViewManager'
 import {
   extractHandle,
@@ -93,6 +94,9 @@ export async function openHarkLoginWindow(accountId: string, parent?: BrowserWin
     existing.focus()
     return
   }
+
+  // Enforce per-account proxy BEFORE probing session or loading app.hark.com/login (fail-closed).
+  await applyProxyToPartition(accountId)
 
   // Already signed in on this partition?
   const already = await probeSignedIn(accountId)

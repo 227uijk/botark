@@ -1,12 +1,16 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, shell } from 'electron'
 import { attachWebViewManager, registerWebViewIpc } from './webViewIpc'
-import { attachMuseSessionManager, registerMuseIpc } from './muse/museIpc'
+import { attachMuseSessionManager, disposeAllMuseManagers, registerMuseIpc } from './muse/museIpc'
 import { registerUpdaterIpc, startAutoUpdater } from './updater'
 import { registerGrokIpc } from './grok/grokIpc'
+import { stopGrokAccountWatch } from './grok/grokWatchManager'
 import { registerHarkIpc } from './hark/harkIpc'
+import { cancelHarkWatch } from './hark/harkClient'
 import { registerDotIpc } from './dot/dotIpc'
+import { closeCelsiusWatcher } from './dot/dotClient'
 import { applyAllStoredProxies } from './muse/accountProxy'
+import { hardenVaultFilePermissions, registerVaultIpc } from './securityVault'
 
 const isMac = process.platform === 'darwin'
 let mainWindow: BrowserWindow | null = null
@@ -18,11 +22,16 @@ const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     if (mainWindow.isMinimized()) mainWindow.restore()
     mainWindow.show()
     mainWindow.focus()
+    if (Array.isArray(argv) && argv.includes('--open-grok-login')) {
+      void mainWindow.webContents
+        .executeJavaScript("window.dispatchEvent(new CustomEvent('bothub:open-grok-login'))")
+        .catch(() => undefined)
+    }
   })
 }
 
@@ -87,11 +96,18 @@ function createMainWindow(): BrowserWindow {
   // window) that would replace the UI. Reloads are not affected.
   win.webContents.on('will-navigate', (event) => event.preventDefault())
 
+  const wantGrokLogin = process.argv.includes('--open-grok-login')
   const devUrl = process.env['ELECTRON_RENDERER_URL']
   if (!app.isPackaged && devUrl) {
-    void win.loadURL(devUrl)
+    const targetUrl = wantGrokLogin
+      ? `${devUrl}${devUrl.includes('?') ? '&' : '?'}openGrokLogin=1`
+      : devUrl
+    void win.loadURL(targetUrl)
   } else {
-    void win.loadFile(join(__dirname, '../renderer/index.html'))
+    void win.loadFile(
+      join(__dirname, '../renderer/index.html'),
+      wantGrokLogin ? { query: { openGrokLogin: '1' } } : undefined
+    )
   }
 
   return win
@@ -99,10 +115,15 @@ function createMainWindow(): BrowserWindow {
 
 app.on('before-quit', () => {
   quitting = true
+  stopGrokAccountWatch('*')
+  closeCelsiusWatcher('*')
+  cancelHarkWatch('*')
+  disposeAllMuseManagers()
 })
 
 app.whenReady().then(async () => {
   if (!gotLock) return
+  hardenVaultFilePermissions()
   // Before any partition loads: otherwise the first requests go direct.
   await Promise.race([applyAllStoredProxies(), new Promise((r) => setTimeout(r, 5_000))])
   registerWebViewIpc()
@@ -111,6 +132,7 @@ app.whenReady().then(async () => {
   registerGrokIpc()
   registerHarkIpc()
   registerDotIpc()
+  registerVaultIpc()
   mainWindow = createMainWindow()
   startAutoUpdater()
 

@@ -152,7 +152,7 @@ export async function clearProxyConfig(accountId: string): Promise<void> {
   await applyProxyToPartition(accountId, { mode: "direct" })
 }
 
-function proxyUrl(cfg: MuseProxyConfig): string | null {
+export function buildAccountProxyUrl(cfg: MuseProxyConfig): string | null {
   if (cfg.mode === "direct" || !cfg.host || !cfg.port) return null
   const auth =
     cfg.username && cfg.password
@@ -162,6 +162,17 @@ function proxyUrl(cfg: MuseProxyConfig): string | null {
         : ""
   const scheme = cfg.mode === "http" ? "http" : cfg.mode
   return `${scheme}://${auth}${cfg.host}:${cfg.port}`
+}
+
+/**
+ * Resolve the per-account proxy URL string (`http://...`, `socks5://...`, `socks5h://...`)
+ * for Node-side `proxyFetch` / `proxyWsAgent` callers (Grok, Dot, etc.).
+ * Throws `ProxyConfigUnreadableError` if a proxy is configured on disk yet
+ * `safeStorage` cannot decrypt it — never silently falls back to direct.
+ */
+export async function loadAccountProxyUrl(accountId: string): Promise<string | undefined> {
+  const cfg = await loadProxyConfig(accountId)
+  return buildAccountProxyUrl(cfg) ?? undefined
 }
 
 export async function applyProxyToPartition(accountId: string, cfg?: MuseProxyConfig): Promise<void> {
@@ -175,12 +186,13 @@ export async function applyProxyToPartition(accountId: string, cfg?: MuseProxyCo
     throw err
   }
   if (c.mode === "direct") {
-    await ses.setProxy({ mode: "direct" })
+    // Respect OS system proxy (e.g. Clash / Surge on 127.0.0.1) when no per-account proxy is set.
+    await ses.setProxy({ mode: "system" })
     return
   }
-  const url = proxyUrl(c)
+  const url = buildAccountProxyUrl(c)
   if (!url) {
-    await ses.setProxy({ mode: "direct" })
+    await ses.setProxy({ mode: "system" })
     return
   }
   // Electron honors proxyRules for partition fetch + WebContents login window.
@@ -190,7 +202,7 @@ export async function applyProxyToPartition(accountId: string, cfg?: MuseProxyCo
 /** Node `ws` / HTTPS agent for Noise WSS (session.setProxy does not cover Node ws). */
 export async function createProxyAgent(accountId: string): Promise<Agent | undefined> {
   const cfg = await loadProxyConfig(accountId)
-  const url = proxyUrl(cfg)
+  const url = buildAccountProxyUrl(cfg)
   if (!url) return undefined
   if (cfg.mode === "http") return new HttpsProxyAgent(url) as unknown as Agent
   return new SocksProxyAgent(url) as unknown as Agent

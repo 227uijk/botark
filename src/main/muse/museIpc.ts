@@ -13,8 +13,24 @@ import {
   type MuseProxyConfig,
   type MuseProxyMode
 } from './accountProxy'
+import { rebindGrokAccountWatch } from '../grok/grokWatchManager'
+import { rebindDotAccountNetwork } from '../dot/dotClient'
+import { cancelHarkWatch } from '../hark/harkClient'
 
 const managers = new Map<number, MuseSessionManager>()
+
+export function disposeAllMuseManagers(): void {
+  for (const mgr of managers.values()) {
+    mgr.destroyAll()
+  }
+  managers.clear()
+}
+
+function rebindNonMuseAccountStreams(accountId: string): void {
+  rebindGrokAccountWatch(accountId)
+  rebindDotAccountNetwork(accountId)
+  cancelHarkWatch(accountId)
+}
 
 export function attachMuseSessionManager(window: BrowserWindow, views: WebContentsViewManager): MuseSessionManager {
   const manager = new MuseSessionManager(window, views)
@@ -233,6 +249,7 @@ export function registerMuseIpc(): void {
     const c = config as MuseProxyConfig
     const view = await saveProxyConfig(accountId, c)
     await managerFor(event).applyAccountProxy(accountId)
+    rebindNonMuseAccountStreams(accountId)
     return view
   })
 
@@ -266,6 +283,7 @@ export function registerMuseIpc(): void {
       ids,
       async (accId) => {
         await mgr.applyAccountProxy(accId).catch(() => undefined)
+        rebindNonMuseAccountStreams(accId)
       },
       // Logins still in flight are not in the renderer list yet; keep their proxy.
       (accId) => kept.has(accId) || [...managers.values()].some((m) => m.isLoginInFlight(accId))

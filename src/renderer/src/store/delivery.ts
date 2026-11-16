@@ -155,9 +155,43 @@ export function toPersistedMessages(
   return out
 }
 
+function compactPersistedEnvelope(rawJson: string, maxPerBot: number, dropLargeHtml: boolean): string | null {
+  try {
+    const parsed = JSON.parse(rawJson) as {
+      state?: { messages?: Record<string, ChatMessage[]> }
+      version?: number
+    }
+    if (!parsed?.state?.messages || typeof parsed.state.messages !== "object") return null
+    const compacted: Record<string, ChatMessage[]> = {}
+    for (const [botId, list] of Object.entries(parsed.state.messages)) {
+      if (!Array.isArray(list)) continue
+      const sliced = list.length > maxPerBot ? list.slice(-maxPerBot) : list
+      compacted[botId] = dropLargeHtml
+        ? sliced.map((m) =>
+            m.richWidgets?.some((w) => w.kind === "html" && w.html.length > 8_192)
+              ? {
+                  ...m,
+                  richWidgets: m.richWidgets.filter(
+                    (w) => !(w.kind === "html" && w.html.length > 8_192)
+                  )
+                }
+              : m
+          )
+        : sliced
+    }
+    return JSON.stringify({
+      ...parsed,
+      state: { ...parsed.state, messages: compacted }
+    })
+  } catch {
+    return null
+  }
+}
+
 /**
- * localStorage that never throws out of zustand's `set()`. A quota error
- * there used to abort sendMessage before the message was delivered.
+ * localStorage that never throws out of zustand's `set()`. On quota exhaustion,
+ * progressively compacts persisted message history (120 -> 30 + strip huge HTML)
+ * so bots/accounts/groups/settings still persist cleanly instead of dropping saves.
  */
 export function createSafeStorage(
   backing: () => Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | undefined,
@@ -173,9 +207,29 @@ export function createSafeStorage(
       }
     },
     setItem: (name, value) => {
+      const store = backing()
+      if (!store) return
       try {
-        backing()?.setItem(name, value)
+        store.setItem(name, value)
       } catch (error) {
+        const tier1 = compactPersistedEnvelope(value, 120, false)
+        if (tier1) {
+          try {
+            store.setItem(name, tier1)
+            return
+          } catch {
+            /* try aggressive tier2 */
+          }
+        }
+        const tier2 = compactPersistedEnvelope(value, 30, true)
+        if (tier2) {
+          try {
+            store.setItem(name, tier2)
+            return
+          } catch {
+            /* fall through to onError */
+          }
+        }
         onError(error)
       }
     },

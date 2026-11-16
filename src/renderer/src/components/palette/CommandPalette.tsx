@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import * as RadixDialog from '@radix-ui/react-dialog'
-import { Globe, PanelRight, Plus, RefreshCw, Search, X } from 'lucide-react'
+import { Globe, PanelRight, Plus, RefreshCw, Search, Sparkles, X } from 'lucide-react'
+import { getPlatformInspector } from '@/components/info/platformInspector'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { useGlide } from '@/hooks/useGlide'
 import { getBridge } from '@/lib/bridge'
@@ -68,6 +69,7 @@ export function CommandPalette() {
 function PaletteBody({ onClose }: { onClose: () => void }) {
   const seed = useBotStore((s) => s.paletteQuery)
   const bots = useBotStore((s) => s.bots)
+  const selectedBotId = useBotStore((s) => s.selectedBotId)
   const groups = useBotStore((s) => s.groups)
   const accounts = useBotStore((s) => s.accounts)
   const messages = useBotStore((s) => s.messages)
@@ -75,6 +77,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const webOpen = useBotStore((s) => s.webSessionOpen)
   const selectBot = useBotStore((s) => s.selectBot)
   const setAddBotOpen = useBotStore((s) => s.setAddBotOpen)
+  const setOnboardingOpen = useBotStore((s) => s.setOnboardingOpen)
   const toggleInfoPanel = useBotStore((s) => s.toggleInfoPanel)
   const toggleWebSession = useBotStore((s) => s.toggleWebSession)
   const [query, setQuery] = useState(seed)
@@ -139,15 +142,33 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         run: toggleInfoPanel
       },
       {
-        key: 'cmd:web',
-        title: webOpen ? t('Back to conversation') : t('Show web session'),
+        key: 'cmd:onboarding',
+        title: t('Open product & security guide'),
         lead: (
           <CommandIcon>
-            <Globe />
+            <Sparkles />
           </CommandIcon>
         ),
-        run: toggleWebSession
+        run: () => setOnboardingOpen(true)
       },
+      ...(selectedBotId &&
+      (() => {
+        const selectedBot = bots.find((b) => b.id === selectedBotId)
+        return selectedBot ? getPlatformInspector(selectedBot.platformId).supportsWebSession : true
+      })()
+        ? [
+            {
+              key: 'cmd:web',
+              title: webOpen ? t('Back to conversation') : t('Show web session'),
+              lead: (
+                <CommandIcon>
+                  <Globe />
+                </CommandIcon>
+              ),
+              run: toggleWebSession
+            }
+          ]
+        : []),
       ...(getBridge()?.updates
         ? [
             {
@@ -165,7 +186,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     ].filter((row) => !wanted || row.title.toLowerCase().includes(wanted))
     if (commands.length) out.push([t('Commands'), commands])
     return out
-  }, [bots, groups, accounts, messages, wanted, infoOpen, webOpen, selectBot, setAddBotOpen, toggleInfoPanel, toggleWebSession])
+  }, [bots, selectedBotId, groups, accounts, messages, wanted, infoOpen, webOpen, selectBot, setAddBotOpen, setOnboardingOpen, toggleInfoPanel, toggleWebSession])
 
   const rows = sections.flatMap(([, items]) => items)
   const active = Math.min(cursor, Math.max(rows.length - 1, 0))

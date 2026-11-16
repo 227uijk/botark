@@ -39,7 +39,9 @@ import type {
   DotAuthStatus,
   DotImportCredentialsRequest,
   DotRpcRequest,
-  DotRpcResponse
+  DotRpcResponse,
+  SecurityVaultStatus,
+  VaultStatusRequest
 } from './ipc'
 
 /** Controls embedded platform web sessions (Electron WebContentsView). */
@@ -140,9 +142,10 @@ export interface UpdateBridge {
 }
 
 export interface GrokBridge {
-  /** Open authenticator.cursor.sh in a partition BrowserWindow; auto-captures token when possible. */
+  /** Open Grok Bot PKCE login (embedded BrowserWindow by default, or OS browser when `openInBrowser: true`). */
   openLogin(request: GrokOpenLoginRequest): Promise<{ ok: true }>
-  /** Store a bearer token for ConnectRPC (never persisted to disk by BotHub yet). */
+  cancelLogin(accountId: string): Promise<{ ok: true }>
+  /** Store a bearer token / cookie / JSON / API key for ConnectRPC. */
   setAccessToken(request: GrokSetAccessTokenRequest): Promise<GrokAuthStatus>
   clearAuth(accountId: string): Promise<GrokAuthStatus>
   authStatus(accountId: string): Promise<GrokAuthStatus>
@@ -174,6 +177,15 @@ export interface DotBridge {
   onEvent(listener: (event: DotMainEvent) => void): () => void
 }
 
+export interface VaultBridge {
+  status(request?: VaultStatusRequest): Promise<SecurityVaultStatus>
+  getSecret(key: string): Promise<string | null>
+  setSecret(key: string, value: string): Promise<{ ok: boolean; encrypted: boolean; updatedAtMs: number }>
+  deleteSecret(key: string): Promise<{ ok: true }>
+  clearAll(): Promise<{ ok: true }>
+  hardenPermissions(): Promise<{ repaired: number; status: SecurityVaultStatus }>
+}
+
 export interface BotHubBridge {
   /** Node-style platform string, e.g. "darwin", "win32", "linux". */
   readonly platform: string
@@ -188,4 +200,5 @@ export interface BotHubBridge {
   readonly grok: GrokBridge
   readonly hark: HarkBridge
   readonly dot: DotBridge
+  readonly vault?: VaultBridge
 }

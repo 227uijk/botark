@@ -55,6 +55,10 @@ export interface OutgoingMessage {
   accountId: string
   /** Optional platform thread / session id (e.g. Muse session_id). */
   sessionId?: string
+  /** Optional message id being replied to (e.g. Grok reply_to_id). */
+  replyToId?: string
+  /** Optional quoted snippet when replying. */
+  replyQuote?: string
   text: string
   attachments?: AttachmentMeta[]
   /**
@@ -215,11 +219,34 @@ export type MuseRichWidget =
       widgetId: string
       cards: Array<{ id: string; title: string; subtitle?: string; prompt?: string }>
     }
+  | {
+      kind: 'grok_form'
+      widgetId: string
+      formKind: 'user-form' | 'secret-request' | 'messaging-card'
+      entryId: string
+      cardVersion?: number
+      title?: string
+      subtitle?: string
+      fields: Array<{
+        id: string
+        label: string
+        type?: string
+        required?: boolean
+        placeholder?: string
+        secret?: boolean
+        options?: Array<{ id: string; label: string }>
+      }>
+      submitted?: boolean
+    }
 
 export interface MuseOptionWidget {
   kind: 'option'
   widgetId: string
   options: string[]
+  optionValues?: string[]
+  entryId?: string
+  cardVersion?: number
+  widgetSource?: 'muse' | 'grok-widget' | 'grok-card'
   buttonStyle: 'dotted_lines' | 'center_aligned_filled'
   customInputPlaceholder?: string
   selectedText?: string | null

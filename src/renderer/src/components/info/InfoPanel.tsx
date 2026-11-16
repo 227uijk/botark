@@ -6,12 +6,16 @@ import { AgentDiagnosticSection } from '@/components/muse/AgentDiagnosticSection
 import { ComputerSection } from '@/components/muse/ComputerSection'
 import { GoalsSection } from '@/components/muse/GoalsSection'
 import {
+  GrokAccountAuthSection,
+  GrokAgentsAndRoomsSection,
   GrokAutomationsSection,
   GrokComputerSection,
+  GrokConnectorsAndMcpSection,
   GrokFilesSection,
   GrokMemoriesAndSkillsSection,
   GrokMembersSection,
-  GrokSessionsSection
+  GrokSessionsSection,
+  GrokTasksAndSubagentsSection
 } from '@/components/grok/GrokInfoSections'
 import {
   HarkBillingSection,
@@ -50,20 +54,18 @@ import { cn } from '@/lib/cn'
 import { getBotAccounts, getBotStatus } from '@/lib/selectors'
 import { shortcutLabel } from '@/lib/shortcuts'
 import { useBotStore } from '@/store/botStore'
-import type { Bot } from '@/types'
+import type { Bot, BotAccount } from '@/types'
 import { AccountList } from './AccountList'
 import { MemoryEditor } from './MemoryEditor'
+import { InspectorProtocolCard } from './SecurityVaultCard'
 import { EmptyLine, Section, SectionsCollapsed } from './Section'
+import {
+  getPlatformInspector,
+  resolveInspectorTab,
+  type InspectorTabId,
+  type InspectorTabSpec
+} from './platformInspector'
 import { t } from '@/lib/i18n'
-
-/** Grok Bot–aligned chips: Overview / Library / Computer (Slice 1 UI parity). */
-type InfoTab = 'overview' | 'library' | 'computer' | 'members'
-const TABS: ReadonlyArray<[InfoTab, string]> = [
-  ['overview', 'Overview'],
-  ['library', 'Library'],
-  ['computer', 'Computer'],
-  ['members', 'Members']
-]
 
 const STATUS_LABEL: Record<string, string> = {
   online: 'Online',
@@ -80,21 +82,15 @@ const STATUS_DOT: Record<string, string> = {
   error: 'bg-status-error'
 }
 
-/** Compact header row: avatar (click: appearance editor), name (click: rename), status, quick actions. */
+/** Compact header row: avatar (click: appearance editor), name (click: rename), status, platform & protocol badge. */
 function BotHero({ bot }: { bot: Bot }) {
   const accounts = useBotStore((s) => s.accounts)
   const renameBot = useBotStore((s) => s.renameBot)
   const typing = useBotStore((s) => s.typing[bot.id] === true)
   const [editing, setEditing] = useState(false)
   const [avatarEditorOpen, setAvatarEditorOpen] = useState(false)
-  const PLATFORM_DISPLAY: Record<string, string> = {
-    'meta-muse': 'Muse',
-    grok: 'Grok Bot',
-    hark: 'Hark',
-    dot: 'Dot'
-  }
+  const inspector = getPlatformInspector(bot.platformId)
   const status = getBotStatus(bot, accounts)
-  const platform = PLATFORM_DISPLAY[bot.platformId] ?? bot.platformId
 
   return (
     <div className="flex items-center gap-3 px-4 pb-3">
@@ -134,10 +130,10 @@ function BotHero({ bot }: { bot: Bot }) {
         ) : (
           <p className="truncate text-[15px] leading-5 font-semibold tracking-tight text-ink">{bot.name}</p>
         )}
-        <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-ink-secondary">
-          <span aria-hidden className={cn('size-1.5 rounded-full', STATUS_DOT[status] ?? 'bg-ink-muted')} />
-          <span>{t(STATUS_LABEL[status] ?? status)}</span>
-          <span className="text-ink-muted">· {platform}</span>
+        <p className="mt-0.5 flex items-center gap-1.5 truncate text-[12px] text-ink-secondary">
+          <span aria-hidden className={cn('size-1.5 shrink-0 rounded-full', STATUS_DOT[status] ?? 'bg-ink-muted')} />
+          <span className="shrink-0">{t(STATUS_LABEL[status] ?? status)}</span>
+          <span className="truncate text-ink-muted">· {inspector.displayName}</span>
         </p>
       </div>
       <IconButton label={t('Rename')} className="shrink-0" onClick={() => setEditing(true)}>
@@ -147,8 +143,18 @@ function BotHero({ bot }: { bot: Bot }) {
   )
 }
 
-function Tabs({ tab, onChange }: { tab: InfoTab; onChange: (tab: InfoTab) => void }) {
-  const glide = useGlide<HTMLDivElement>(tab, { axis: 'x' })
+function Tabs({
+  tabs,
+  platformKey,
+  tab,
+  onChange
+}: {
+  tabs: ReadonlyArray<InspectorTabSpec>
+  platformKey: string
+  tab: InspectorTabId
+  onChange: (tab: InspectorTabId) => void
+}) {
+  const glide = useGlide<HTMLDivElement>(`${platformKey}:${tab}:${tabs.length}`, { axis: 'x' })
   return (
     <div
       ref={glide.ref}
@@ -159,7 +165,8 @@ function Tabs({ tab, onChange }: { tab: InfoTab; onChange: (tab: InfoTab) => voi
         if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
         event.preventDefault()
         const delta = event.key === 'ArrowRight' ? 1 : -1
-        const next = TABS[(TABS.findIndex(([id]) => id === tab) + delta + TABS.length) % TABS.length]![0]
+        const idx = Math.max(0, tabs.findIndex((item) => item.id === tab))
+        const next = tabs[(idx + delta + tabs.length) % tabs.length]!.id
         onChange(next)
         glide.ref.current?.querySelector<HTMLButtonElement>(`[data-tab="${next}"]`)?.focus()
       }}
@@ -167,7 +174,7 @@ function Tabs({ tab, onChange }: { tab: InfoTab; onChange: (tab: InfoTab) => voi
       {glide.thumb && (
         <span aria-hidden className="absolute top-0.5 bottom-0.5 rounded-lg bg-surface shadow-float" style={glide.thumb} />
       )}
-      {TABS.map(([id, label]) => (
+      {tabs.map(({ id, label }) => (
         <button
           key={id}
           type="button"
@@ -177,7 +184,7 @@ function Tabs({ tab, onChange }: { tab: InfoTab; onChange: (tab: InfoTab) => voi
           tabIndex={tab === id ? 0 : -1}
           onClick={() => onChange(id)}
           className={cn(
-            'press relative h-[30px] min-w-0 flex-1 rounded-lg px-0 text-[12px] tracking-tight whitespace-nowrap transition-colors',
+            'press relative h-[30px] min-w-0 flex-1 rounded-lg px-1 text-[12px] tracking-tight whitespace-nowrap transition-colors',
             tab === id ? 'text-ink' : 'text-ink-secondary hover:text-ink'
           )}
         >
@@ -188,14 +195,71 @@ function Tabs({ tab, onChange }: { tab: InfoTab; onChange: (tab: InfoTab) => voi
   )
 }
 
+function NotesAndProxyCollapsed({
+  bot,
+  onUpdateNotes,
+  extraBeforeProxy
+}: {
+  bot: Bot
+  onUpdateNotes: (botId: string, notes: string) => void
+  extraBeforeProxy?: React.ReactNode
+}) {
+  return (
+    <SectionsCollapsed>
+      {extraBeforeProxy}
+      {bot.activeAccountId && <ProxySection accountId={bot.activeAccountId} />}
+      <Section title={t('Notes')} count={bot.memory.length || undefined}>
+        <div className="flex flex-col gap-2">
+          <MemoryEditor bot={bot} />
+          <textarea
+            value={bot.notes}
+            onChange={(event) => onUpdateNotes(bot.id, event.target.value)}
+            placeholder={t('Private notes')}
+            aria-label={t('Notes')}
+            rows={2}
+            className="block w-full resize-none border-t border-line pt-2 bg-transparent text-[12.5px] leading-[18px] text-ink outline-none placeholder:text-ink-muted"
+          />
+        </div>
+      </Section>
+    </SectionsCollapsed>
+  )
+}
+
+function SignInRequiredSection({
+  title,
+  platformName,
+  bot,
+  accounts
+}: {
+  title: string
+  platformName: string
+  bot: Bot
+  accounts: BotAccount[]
+}) {
+  return (
+    <>
+      <Section title={title}>
+        <EmptyLine>{t('Sign in to {name} to use this panel', { name: platformName })}</EmptyLine>
+      </Section>
+      <Section title={t('Accounts')} flush>
+        <AccountList bot={bot} accounts={accounts} />
+      </Section>
+    </>
+  )
+}
+
 export function InfoPanel() {
   const bot = useBotStore((s) => s.bots.find((b) => b.id === s.selectedBotId))
   const accountMap = useBotStore((s) => s.accounts)
   const toggleInfoPanel = useBotStore((s) => s.toggleInfoPanel)
   const updateNotes = useBotStore((s) => s.updateNotes)
-  const [tab, setTab] = useState<InfoTab>('overview')
+  const [requestedTab, setTab] = useState<InspectorTabId>('overview')
 
   const accounts = useMemo(() => (bot ? getBotAccounts(bot, accountMap) : []), [bot, accountMap])
+  const inspector = bot ? getPlatformInspector(bot.platformId) : null
+  const activeTab = bot ? resolveInspectorTab(bot.platformId, requestedTab) : 'overview'
+  const activeTabLabel =
+    inspector?.tabs.find((item) => item.id === activeTab)?.label ?? 'Overview'
 
   return (
     <>
@@ -210,13 +274,19 @@ export function InfoPanel() {
         </IconButton>
       </PaneHeader>
 
-      {bot && (
+      {bot && inspector && (
         <div className="min-h-0 flex-1 overflow-y-auto pb-4">
           <BotHero key={bot.id} bot={bot} />
-          <Tabs tab={tab} onChange={setTab} />
+          <InspectorProtocolCard bot={bot} activeTab={activeTab} onSelectTab={setTab} />
+          <Tabs
+            tabs={inspector.tabs}
+            platformKey={bot.platformId}
+            tab={activeTab}
+            onChange={setTab}
+          />
 
-          <div key={`${bot.id}:${tab}`} className="animate-veil-in">
-            {tab === 'overview' ? (
+          <div key={`${bot.id}:${activeTab}`} className="animate-veil-in">
+            {activeTab === 'overview' ? (
               <>
                 {bot.platformId === 'meta-muse' && bot.activeAccountId && (
                   <>
@@ -228,12 +298,22 @@ export function InfoPanel() {
                 )}
                 {bot.platformId === 'grok' && bot.activeAccountId && (
                   <>
+                    <GrokAccountAuthSection accountId={bot.activeAccountId} />
+                    <ApprovalsSection accountId={bot.activeAccountId} platformId="grok" />
                     <GrokSessionsSection
                       accountId={bot.activeAccountId}
                       agentId={bot.selectedAgentId}
                       botId={bot.id}
                     />
+                    <GrokTasksAndSubagentsSection
+                      accountId={bot.activeAccountId}
+                      agentId={bot.selectedAgentId}
+                    />
                     <GrokAutomationsSection
+                      accountId={bot.activeAccountId}
+                      agentId={bot.selectedAgentId}
+                    />
+                    <GrokMemoriesAndSkillsSection
                       accountId={bot.activeAccountId}
                       agentId={bot.selectedAgentId}
                     />
@@ -251,73 +331,83 @@ export function InfoPanel() {
                   <>
                     <DotCredentialsAndQuotaSection accountId={bot.activeAccountId} botId={bot.id} />
                     <DotOrbitProfilesSection accountId={bot.activeAccountId} botId={bot.id} />
-                    <DotGoalAndThreadsSection accountId={bot.activeAccountId} />
                   </>
                 )}
+
                 <Section title={t('Accounts')} flush>
                   <AccountList bot={bot} accounts={accounts} />
                 </Section>
+
                 {bot.platformId === 'meta-muse' && bot.activeAccountId && (
                   <ConnectorsSection accountId={bot.activeAccountId} />
                 )}
                 {bot.platformId === 'hark' && bot.activeAccountId && (
                   <HarkConnectorsSection accountId={bot.activeAccountId} />
                 )}
-                {bot.platformId === 'grok' && bot.activeAccountId && (
-                  <GrokMemoriesAndSkillsSection
-                    accountId={bot.activeAccountId}
-                    agentId={bot.selectedAgentId}
-                  />
-                )}
-                <SectionsCollapsed>
-                  {bot.platformId === 'meta-muse' && bot.activeAccountId && (
-                    <>
-                      <GoalsSection accountId={bot.activeAccountId} />
-                      <AgentDiagnosticSection accountId={bot.activeAccountId} />
-                      <PermissionsSection accountId={bot.activeAccountId} />
-                      <MemorySection accountId={bot.activeAccountId} />
-                      <SkillsSection accountId={bot.activeAccountId} />
-                      <ProxySection accountId={bot.activeAccountId} />
-                    </>
-                  )}
-                  {bot.platformId === 'hark' && bot.activeAccountId && (
-                    <ProxySection accountId={bot.activeAccountId} />
-                  )}
-                  <Section title={t('Notes')} count={bot.memory.length || undefined}>
-                    <div className="flex flex-col gap-2">
-                      <MemoryEditor bot={bot} />
-                      <textarea
-                        value={bot.notes}
-                        onChange={(event) => updateNotes(bot.id, event.target.value)}
-                        placeholder={t('Private notes')}
-                        aria-label={t('Notes')}
-                        rows={2}
-                        className="block w-full resize-none border-t border-line pt-2 bg-transparent text-[12.5px] leading-[18px] text-ink outline-none placeholder:text-ink-muted"
-                      />
-                    </div>
-                  </Section>
-                </SectionsCollapsed>
+
+                <NotesAndProxyCollapsed
+                  bot={bot}
+                  onUpdateNotes={updateNotes}
+                  extraBeforeProxy={
+                    bot.platformId === 'meta-muse' && bot.activeAccountId ? (
+                      <>
+                        <GoalsSection accountId={bot.activeAccountId} />
+                        <MemorySection accountId={bot.activeAccountId} />
+                        <SkillsSection accountId={bot.activeAccountId} />
+                      </>
+                    ) : undefined
+                  }
+                />
               </>
-            ) : tab === 'library' ? (
-              bot.platformId === 'meta-muse' && bot.activeAccountId ? (
+            ) : !bot.activeAccountId ? (
+              <SignInRequiredSection
+                title={t(activeTabLabel)}
+                platformName={inspector.displayName}
+                bot={bot}
+                accounts={accounts}
+              />
+            ) : activeTab === 'memory' ? (
+              <DotGoalAndThreadsSection accountId={bot.activeAccountId} />
+            ) : activeTab === 'library' ? (
+              bot.platformId === 'meta-muse' ? (
                 <FilesSection accountId={bot.activeAccountId} />
-              ) : bot.platformId === 'grok' && bot.activeAccountId ? (
+              ) : bot.platformId === 'grok' ? (
                 <GrokFilesSection
                   accountId={bot.activeAccountId}
                   agentId={bot.selectedAgentId}
                 />
-              ) : bot.platformId === 'hark' && bot.activeAccountId ? (
+              ) : bot.platformId === 'hark' ? (
                 <HarkLibrarySection accountId={bot.activeAccountId} />
-              ) : bot.platformId === 'dot' && bot.activeAccountId ? (
-                <DotLibrarySection accountId={bot.activeAccountId} />
               ) : (
-                <Section title={t('Library')}>
-                  <EmptyLine>{t('Library is available for Muse bots (files on the agent).')}</EmptyLine>
-                </Section>
+                <DotLibrarySection accountId={bot.activeAccountId} />
               )
-            ) : tab === 'members' ? (
+            ) : activeTab === 'computer' ? (
+              bot.platformId === 'meta-muse' ? (
+                <>
+                  <ComputerSection accountId={bot.activeAccountId} />
+                  <PermissionsSection accountId={bot.activeAccountId} />
+                  <SectionsCollapsed>
+                    <AgentDiagnosticSection accountId={bot.activeAccountId} />
+                  </SectionsCollapsed>
+                </>
+              ) : bot.platformId === 'grok' ? (
+                <>
+                  <GrokComputerSection
+                    accountId={bot.activeAccountId}
+                    agentId={bot.selectedAgentId}
+                  />
+                  <GrokConnectorsAndMcpSection
+                    accountId={bot.activeAccountId}
+                    agentId={bot.selectedAgentId}
+                  />
+                </>
+              ) : (
+                <HarkComputerSection accountId={bot.activeAccountId} botId={bot.id} />
+              )
+            ) : (
+              /* activeTab === 'members' — Muse Sharing / Grok Agents & Rooms / Hark Devices */
               <>
-                {bot.platformId === 'meta-muse' && bot.activeAccountId ? (
+                {bot.platformId === 'meta-muse' ? (
                   <>
                     <SharedAgentsSection accountId={bot.activeAccountId} />
                     <InviteSection accountId={bot.activeAccountId} />
@@ -325,47 +415,20 @@ export function InfoPanel() {
                       <PeersSection accountId={bot.activeAccountId} />
                     </SectionsCollapsed>
                   </>
-                ) : bot.platformId === 'grok' && bot.activeAccountId ? (
-                  <GrokMembersSection
-                    accountId={bot.activeAccountId}
-                    agentId={bot.selectedAgentId}
-                  />
-                ) : bot.platformId === 'hark' && bot.activeAccountId ? (
+                ) : bot.platformId === 'grok' ? (
+                  <>
+                    <GrokAgentsAndRoomsSection
+                      accountId={bot.activeAccountId}
+                      agentId={bot.selectedAgentId}
+                      botId={bot.id}
+                    />
+                    <GrokMembersSection
+                      accountId={bot.activeAccountId}
+                      agentId={bot.selectedAgentId}
+                    />
+                  </>
+                ) : (
                   <HarkInviteAndSessionsSection accountId={bot.activeAccountId} />
-                ) : (
-                  <Section title={t('Members')}>
-                    <EmptyLine>{t('Only you use this bot.')}</EmptyLine>
-                  </Section>
-                )}
-              </>
-            ) : (
-              <>
-                {bot.platformId === 'meta-muse' && bot.activeAccountId ? (
-                  <ComputerSection accountId={bot.activeAccountId} />
-                ) : bot.platformId === 'hark' && bot.activeAccountId ? (
-                  <HarkComputerSection accountId={bot.activeAccountId} botId={bot.id} />
-                ) : bot.platformId === 'dot' && bot.activeAccountId ? (
-                  <>
-                    <DotOrbitProfilesSection accountId={bot.activeAccountId} botId={bot.id} />
-                    <DotGoalAndThreadsSection accountId={bot.activeAccountId} />
-                  </>
-                ) : bot.platformId === 'grok' && bot.activeAccountId ? (
-                  <>
-                    <GrokComputerSection
-                      accountId={bot.activeAccountId}
-                      agentId={bot.selectedAgentId}
-                    />
-                    <GrokAutomationsSection
-                      accountId={bot.activeAccountId}
-                      agentId={bot.selectedAgentId}
-                    />
-                  </>
-                ) : (
-                  <Section title={t('Computer')}>
-                    <EmptyLine>
-                      {t('Muse has no Grok-style cloud computer yet. This tab is a shell for future parity — nothing to show.')}
-                    </EmptyLine>
-                  </Section>
                 )}
               </>
             )}

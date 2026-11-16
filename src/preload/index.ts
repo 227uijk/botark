@@ -6,6 +6,7 @@ import {
   HARK_CHANNELS,
   MUSE_CHANNELS,
   UPDATE_CHANNELS,
+  VAULT_CHANNELS,
   WEB_VIEW_CHANNELS,
   type DotMainEvent,
   type GrokMainEvent,
@@ -96,6 +97,7 @@ const bridge: BotHubBridge = {
   },
   grok: {
     openLogin: (request) => ipcRenderer.invoke(GROK_CHANNELS.openLogin, request),
+    cancelLogin: (accountId) => ipcRenderer.invoke(GROK_CHANNELS.cancelLogin, accountId),
     setAccessToken: (request) => ipcRenderer.invoke(GROK_CHANNELS.setAccessToken, request),
     clearAuth: (accountId) => ipcRenderer.invoke(GROK_CHANNELS.clearAuth, accountId),
     authStatus: (accountId) => ipcRenderer.invoke(GROK_CHANNELS.authStatus, accountId),
@@ -132,6 +134,14 @@ const bridge: BotHubBridge = {
       ipcRenderer.on(DOT_CHANNELS.event, handler)
       return () => ipcRenderer.removeListener(DOT_CHANNELS.event, handler)
     }
+  },
+  vault: {
+    status: (request) => ipcRenderer.invoke(VAULT_CHANNELS.status, request ?? {}),
+    getSecret: (key) => ipcRenderer.invoke(VAULT_CHANNELS.getSecret, key),
+    setSecret: (key, value) => ipcRenderer.invoke(VAULT_CHANNELS.setSecret, key, value),
+    deleteSecret: (key) => ipcRenderer.invoke(VAULT_CHANNELS.deleteSecret, key),
+    clearAll: () => ipcRenderer.invoke(VAULT_CHANNELS.clearAll),
+    hardenPermissions: () => ipcRenderer.invoke(VAULT_CHANNELS.hardenPermissions)
   }
 }
 

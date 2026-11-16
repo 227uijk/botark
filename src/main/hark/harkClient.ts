@@ -9,6 +9,7 @@
 
 import { randomUUID } from 'node:crypto'
 import { session as electronSession, type Session } from 'electron'
+import { applyProxyToPartition } from '../muse/accountProxy'
 import { partitionForAccount } from '../webContentsViewManager'
 import { HarkWatchRegistry } from './watchRegistry'
 
@@ -77,6 +78,16 @@ export function timezoneName(): string {
 
 export function sessionForAccount(accountId: string): Session {
   return electronSession.fromPartition(partitionForAccount(accountId))
+}
+
+/**
+ * Resolve the account's Electron session ONLY after enforcing per-account proxy
+ * rules (fails closed with `ProxyConfigUnreadableError` + blackhole proxy if
+ * `safeStorage` cannot decrypt a configured proxy).
+ */
+export async function preparedSessionForAccount(accountId: string): Promise<Session> {
+  await applyProxyToPartition(accountId)
+  return sessionForAccount(accountId)
 }
 
 function harkClientHeaders(extra?: Record<string, string>): Record<string, string> {
@@ -183,7 +194,8 @@ export async function callHarkApi(
   }
 ): Promise<unknown> {
   const cleanPath = opts.path.startsWith('/') ? opts.path : `/${opts.path}`
-  return harkFetch(sessionForAccount(accountId), cleanPath, {
+  const ses = await preparedSessionForAccount(accountId)
+  return harkFetch(ses, cleanPath, {
     method: opts.method,
     query: opts.query,
     body: opts.body
@@ -191,7 +203,7 @@ export async function callHarkApi(
 }
 
 export async function getAuthSession(accountId: string): Promise<HarkAuthSession> {
-  const ses = sessionForAccount(accountId)
+  const ses = await preparedSessionForAccount(accountId)
   const data = await harkFetch(ses, '/auth/get-session')
   if (data == null) return null
   if (typeof data !== 'object') return null
@@ -237,7 +249,7 @@ export async function listSessionCookieNames(accountId: string): Promise<string[
 export async function importHarkCredentials(accountId: string, rawInput: string): Promise<boolean> {
   const trimmed = rawInput.trim().replace(/^Cookie:\s*/i, '')
   if (!trimmed) return false
-  const ses = sessionForAccount(accountId)
+  const ses = await preparedSessionForAccount(accountId)
   const exp = Math.floor(Date.now() / 1000) + 86400 * 30
   const pairs: Array<{ name: string; value: string; domain?: string; path?: string }> = []
 
@@ -320,7 +332,7 @@ export async function fetchConversationSnapshotSummary(
   accountId: string,
   conversationId: string
 ): Promise<HarkConversationSnapshotSummary> {
-  const ses = sessionForAccount(accountId)
+  const ses = await preparedSessionForAccount(accountId)
   const managerId = randomUUID()
   const syncState = new HarkConversationSyncState()
   try {
@@ -363,24 +375,24 @@ export async function fetchConversationSnapshotMessages(
 }
 
 export async function getProfile(accountId: string): Promise<unknown> {
-  return harkFetch(sessionForAccount(accountId), '/profile')
+  return harkFetch(await preparedSessionForAccount(accountId), '/profile')
 }
 
 export async function listConversations(accountId: string): Promise<unknown> {
-  return harkFetch(sessionForAccount(accountId), '/conversations')
+  return harkFetch(await preparedSessionForAccount(accountId), '/conversations')
 }
 
 export async function getMainConversation(
   accountId: string,
   timezone = timezoneName()
 ): Promise<unknown> {
-  return harkFetch(sessionForAccount(accountId), '/conversations/main', {
+  return harkFetch(await preparedSessionForAccount(accountId), '/conversations/main', {
     query: { timezone }
   })
 }
 
 export async function getConversationStatuses(accountId: string): Promise<unknown> {
-  return harkFetch(sessionForAccount(accountId), '/conversations/status')
+  return harkFetch(await preparedSessionForAccount(accountId), '/conversations/status')
 }
 
 export interface HarkUploadedAttachment {
@@ -405,7 +417,7 @@ export async function uploadHarkAttachment(
   conversationId: string,
   file: { name: string; mimeType: string; dataBase64: string }
 ): Promise<HarkUploadedAttachment> {
-  const ses = sessionForAccount(accountId)
+  const ses = await preparedSessionForAccount(accountId)
   const bytes = Buffer.from(file.dataBase64, 'base64')
   const contentType = file.mimeType || 'application/octet-stream'
 
@@ -466,7 +478,7 @@ export async function downloadHarkArtifact(
   filename: string
   text?: string
 }> {
-  const ses = sessionForAccount(accountId)
+  const ses = await preparedSessionForAccount(accountId)
   let targetUrl = opts.url?.trim() || ''
 
   if (!targetUrl && opts.fileId) {
@@ -530,7 +542,7 @@ export async function sendMessage(
   idempotencyKey: string
   responseMessageId: string
 }> {
-  const ses = sessionForAccount(accountId)
+  const ses = await preparedSessionForAccount(accountId)
   const idempotencyKey = randomUUID()
   const responseMessageId = randomUUID()
   const body: Record<string, unknown> = {
@@ -1190,7 +1202,7 @@ export async function watchHarkConversationSync(
     onUpdate?: (msg: HarkChatMessage, state: HarkConversationSyncState) => void
   } = {}
 ): Promise<{ reply: HarkChatMessage | null; messages: HarkChatMessage[] }> {
-  const ses = sessionForAccount(accountId)
+  const ses = await preparedSessionForAccount(accountId)
   const managerId = randomUUID()
   const timeoutMs = opts.timeoutMs ?? 90_000
   const deadline = Date.now() + timeoutMs

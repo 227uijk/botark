@@ -1,4 +1,4 @@
-/** Grok Bot (sand / api2.cursor.sh) adapter types. */
+/** Grok Bot (sand 0.79.3 / api2.cursor.sh) adapter types. */
 
 export type GrokAccountSlot = string // e.g. "grok|user_<ULID>"
 
@@ -10,13 +10,14 @@ export interface GrokAgentSummary {
   visibility?: string
   avatarShape?: string
   avatarColor?: string
+  voiceId?: string
   isGroup?: boolean
   unreadCount?: number
   lastMessageId?: string
   awaitingUserResponse?: boolean
 }
 
-/** Auto-review resolution enums from asar proto (Yw). */
+/** Auto-review resolution enums from 0.79.3 `proto.cjs` (`GrokBotAutoReviewResolution`). */
 export type GrokAutoReviewResolution = 'UNSPECIFIED' | 'APPROVED' | 'DENIED' | 'ALWAYS'
 
 export const GROK_AUTO_REVIEW_RESOLUTION: Record<GrokAutoReviewResolution, number> = {
@@ -26,7 +27,7 @@ export const GROK_AUTO_REVIEW_RESOLUTION: Record<GrokAutoReviewResolution, numbe
   ALWAYS: 3
 }
 
-/** Local tool permission card enums from asar (Xw) — NEVER observed in descriptor. */
+/** Local tool permission card enums from 0.79.3 `proto.cjs` (`GrokBotLocalToolPermissionResolution`). */
 export type GrokLocalToolResolution = 'UNSPECIFIED' | 'ALLOW_ONCE' | 'DENY' | 'ALWAYS' | 'NEVER'
 
 export const GROK_LOCAL_TOOL_RESOLUTION: Record<GrokLocalToolResolution, number> = {
@@ -37,12 +38,30 @@ export const GROK_LOCAL_TOOL_RESOLUTION: Record<GrokLocalToolResolution, number>
   NEVER: 4
 }
 
+/** Connector grant resolution enums from 0.79.3 `proto.cjs` (`GrokBotConnectorGrantResolution`). */
+export type GrokConnectorGrantResolution =
+  | 'UNSPECIFIED'
+  | 'ALLOWED'
+  | 'SKIPPED'
+  | 'ALWAYS_THIS_BOT'
+  | 'ALWAYS_ALL_TEAM_BOTS'
+
+export const GROK_CONNECTOR_GRANT_RESOLUTION: Record<GrokConnectorGrantResolution, number> = {
+  UNSPECIFIED: 0,
+  ALLOWED: 1,
+  SKIPPED: 2,
+  ALWAYS_THIS_BOT: 3,
+  ALWAYS_ALL_TEAM_BOTS: 4
+}
+
 export interface GrokAuthSession {
   accountId: string
-  accessToken: string
+  signedIn?: boolean
+  /** Optional legacy in-memory token; Electron main holds the real token via safeStorage. */
+  accessToken?: string
   /** Optional Cursor team id header. */
   teamId?: string
-  /** Stable machine id used for x-cursor-checksum (algorithm still approximate). */
+  /** Stable machine id used for x-cursor-checksum. */
   machineId?: string
   accountSlot?: GrokAccountSlot
 }

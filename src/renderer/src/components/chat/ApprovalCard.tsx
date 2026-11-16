@@ -123,15 +123,23 @@ function Card({
   )
 }
 
-/** Pending Muse permission requests for the bot's active account, shown above the composer. */
-export function ChatApprovals({ accountId }: { accountId: string }) {
+/** Pending Muse or Grok Bot permission requests for the bot's active account, shown above the composer. */
+export function ChatApprovals({
+  accountId,
+  platformId = 'meta-muse',
+  agentId
+}: {
+  accountId: string
+  platformId?: 'meta-muse' | 'grok'
+  agentId?: string
+}) {
   const status = useBotStore((s) => s.accounts[accountId]?.status)
   const [pending, setPending] = useState<MuseApproval[]>([])
   const [busyId, setBusyId] = useState<string>()
   const [error, setError] = useState<string>()
 
   useEffect(() => {
-    const adapter = adapterRegistry.get('meta-muse')
+    const adapter = adapterRegistry.get(platformId)
     if (!adapter) return
     const unsub = adapter.subscribe((event) => {
       if (event.type === 'approvals' && event.accountId === accountId) setPending(event.pending)
@@ -140,11 +148,22 @@ export function ChatApprovals({ accountId }: { accountId: string }) {
       void adapter.listApprovals?.(accountId).then(setPending).catch(() => {})
     }
     return unsub
-  }, [accountId, status])
+  }, [accountId, platformId, status])
 
-  if (!pending.length) return null
+  const visiblePending =
+    platformId === 'grok' && agentId
+      ? pending.filter((a) => {
+          const rawAgent =
+            a.raw && typeof a.raw === 'object'
+              ? String((a.raw as Record<string, unknown>)['agentId'] ?? '')
+              : ''
+          return !rawAgent || rawAgent === agentId
+        })
+      : pending
+
+  if (!visiblePending.length) return null
   const decide = async (id: string, decision: ApprovalDecision) => {
-    const adapter = adapterRegistry.get('meta-muse')
+    const adapter = adapterRegistry.get(platformId)
     if (!adapter?.decideApproval) return
     setBusyId(id)
     setError(undefined)
@@ -158,7 +177,7 @@ export function ChatApprovals({ accountId }: { accountId: string }) {
   }
   return (
     <div className="px-4" data-chat-approvals>
-      {pending.map((a) => (
+      {visiblePending.map((a) => (
         <Card key={a.id} approval={a} busy={busyId === a.id} onDecide={(d) => void decide(a.id, d)} />
       ))}
       {error && <p className="mx-auto mb-2 max-w-[720px] text-[12px] text-status-error">{error}</p>}

@@ -1,15 +1,18 @@
 /**
- * Sand client accessToken via official PKCE + poll login (Grok Bot.app flow).
- * Web WorkosCursorSessionToken only works for reads; writes need this token.
- * Tokens persist with Electron safeStorage in BotHub's own userData file.
+ * Sand client accessToken via official PKCE + poll login (Grok Bot.app 0.79.3 flow).
+ * Supports both Cursor WorkOS Sand tokens and xAI Identity OAuth2 tokens, plus
+ * `/auth/exchange_user_api_key` API-key exchange.
  *
- * Spec: docs/grokbot-protocol/asar-scan/sand-token-flow.md
+ * Every network request routes through per-account `proxyFetch` (fail-closed if
+ * proxy config is unreadable). Tokens persist exclusively via Electron `safeStorage`.
  */
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { app, BrowserWindow, safeStorage } from 'electron'
 import { createMutex } from '@shared/proxyPool'
 import { readJsonFile, writeJsonAtomic } from '../jsonFile'
+import { applyProxyToPartition, loadAccountProxyUrl } from '../muse/accountProxy'
+import { proxyFetch } from '../proxyTransport'
 import { partitionForAccount } from '../webContentsViewManager'
 
 export const SAND_CLIENT_ID = 'KbZUR41cY7W6zRSdpSUJ7I7mLYBKOCmB'
@@ -21,6 +24,24 @@ export interface SandTokens {
   refreshToken?: string
   authId?: string
   selectedTeamId?: string
+  /** Optional xAI identity issuer (`https://auth.grok.com` / OAuth2 issuer) when using xAI auth. */
+  xaiIssuer?: string
+  /** Optional OAuth2 client_id extracted from xAI JWT `aud` or `client_id`. */
+  xaiClientId?: string
+  /** Explicit expiry timestamp in ms when provided by poll/refresh. */
+  expiresAtMs?: number
+  authKind?: 'cursor' | 'xai' | 'web'
+}
+
+export function grokFetcherForAccount(
+  accountId: string,
+  explicitFetch?: typeof fetch
+): typeof fetch {
+  if (explicitFetch) return explicitFetch
+  return async (input, init) => {
+    const proxyUrl = await loadAccountProxyUrl(accountId)
+    return proxyFetch(proxyUrl, String(input), init)
+  }
 }
 
 // ---------------- PKCE ----------------
@@ -41,44 +62,390 @@ export function sandLoginUrl(challenge: string, uuid: string): string {
   return `https://cursor.com/loginDeepControl?${q.toString()}`
 }
 
-// ---------------- poll ----------------
+// ---------------- JWT helpers ----------------
+export function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const seg = token.split('.')[1]
+    if (!seg) return null
+    const parsed = JSON.parse(Buffer.from(seg, 'base64url').toString('utf8'))
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
+/** Decode JWT exp (seconds) without verifying. */
+export function tokenExpMs(accessToken: string, fallbackExpiresAtMs?: number): number | null {
+  const payload = decodeJwtPayload(accessToken)
+  if (payload && typeof payload['exp'] === 'number') {
+    return payload['exp'] * 1000
+  }
+  if (typeof fallbackExpiresAtMs === 'number' && Number.isFinite(fallbackExpiresAtMs) && fallbackExpiresAtMs > 0) {
+    return fallbackExpiresAtMs
+  }
+  return null
+}
+
+function inferClientIdFromJwt(token: string): string | undefined {
+  const p = decodeJwtPayload(token)
+  if (!p) return undefined
+  if (typeof p['client_id'] === 'string' && p['client_id']) return p['client_id']
+  if (typeof p['azp'] === 'string' && p['azp']) return p['azp']
+  if (typeof p['aud'] === 'string' && p['aud']) return p['aud']
+  if (Array.isArray(p['aud']) && typeof p['aud'][0] === 'string') return p['aud'][0]
+  return undefined
+}
+
+function inferSubjectFromJwt(token: string): string | undefined {
+  const p = decodeJwtPayload(token)
+  if (!p) return undefined
+  if (typeof p['email'] === 'string' && p['email'].trim()) return p['email'].trim()
+  if (typeof p['preferred_username'] === 'string' && p['preferred_username'].trim()) {
+    return p['preferred_username'].trim()
+  }
+  if (typeof p['sub'] === 'string' && p['sub']) return p['sub']
+  return undefined
+}
+
+export function extractAccountHandleFromJwt(token: string): string | undefined {
+  return inferSubjectFromJwt(token)
+}
+
+/**
+ * Extract `{ accessToken, accountSlot }` from a `WorkosCursorSessionToken` cookie value,
+ * a full `Cookie:` header string, or a `Bearer eyJ...` JWT string.
+ */
+export function parseWorkosCookieOrToken(
+  rawInput: string
+): { accessToken: string; accountSlot?: string } | null {
+  if (!rawInput || !rawInput.trim()) return null
+  let value = rawInput
+    .trim()
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/^Cookie:\s*/i, '')
+    .replace(/^Authorization:\s*/i, '')
+    .replace(/^Bearer\s+/i, '')
+    .trim()
+
+  // Extract WorkosCursorSessionToken if full cookie string was pasted
+  const cookieMatch = /(?:WorkosCursorSessionToken|workos_cursor_session_token)=([^;\s]+)/i.exec(
+    value
+  )
+  if (cookieMatch?.[1]) {
+    value = cookieMatch[1].trim()
+  }
+
+  try {
+    value = decodeURIComponent(value)
+  } catch {
+    /* keep raw */
+  }
+  value = value.replace(/^['"]|['"]$/g, '').trim()
+
+  const parts = value.split('::')
+  if (parts.length >= 2) {
+    const slot = parts[0]?.trim()
+    const jwt = parts.slice(1).join('::').trim()
+    if (jwt.startsWith('eyJ') && jwt.length > 40) {
+      return {
+        accessToken: jwt,
+        accountSlot: extractAccountHandleFromJwt(jwt) ?? (slot || undefined)
+      }
+    }
+  }
+  if (value.startsWith('eyJ') && value.length > 40) {
+    return {
+      accessToken: value,
+      accountSlot: extractAccountHandleFromJwt(value)
+    }
+  }
+  return null
+}
+
+// ---------------- poll & parse ----------------
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
-function parseSandTokens(raw: unknown): SandTokens | null {
+export function parseSandTokens(raw: unknown): SandTokens | null {
   if (!raw || typeof raw !== 'object') return null
   const r = raw as Record<string, unknown>
-  const accessToken = typeof r['accessToken'] === 'string' ? r['accessToken'] : undefined
+
+  // 0.79.3 xAI Identity branch: { xaiAccessToken, xaiRefreshToken, xaiAccessTokenExpiresAt, xaiIssuer, selectedTeamId? }
+  if (typeof r['xaiAccessToken'] === 'string' && r['xaiAccessToken'].length > 0) {
+    const xaiAccessToken = r['xaiAccessToken']
+    const expiresSec =
+      typeof r['xaiAccessTokenExpiresAt'] === 'number' ? r['xaiAccessTokenExpiresAt'] : undefined
+    const expiresAtMs =
+      typeof r['expiresAtMs'] === 'number'
+        ? r['expiresAtMs']
+        : expiresSec != null
+          ? expiresSec * 1000
+          : undefined
+    const xaiIssuer = typeof r['xaiIssuer'] === 'string' ? r['xaiIssuer'] : undefined
+    const xaiClientId =
+      typeof r['xaiClientId'] === 'string'
+        ? r['xaiClientId']
+        : inferClientIdFromJwt(xaiAccessToken)
+    const authId =
+      typeof r['authId'] === 'string' ? r['authId'] : inferSubjectFromJwt(xaiAccessToken)
+    return {
+      accessToken: xaiAccessToken,
+      refreshToken:
+        typeof r['xaiRefreshToken'] === 'string'
+          ? r['xaiRefreshToken']
+          : typeof r['refreshToken'] === 'string'
+            ? r['refreshToken']
+            : undefined,
+      authId,
+      selectedTeamId:
+        typeof r['selectedTeamId'] === 'string'
+          ? r['selectedTeamId']
+          : typeof r['selectedTeamId'] === 'number'
+            ? String(r['selectedTeamId'])
+            : undefined,
+      xaiIssuer,
+      xaiClientId,
+      expiresAtMs,
+      authKind: 'xai'
+    }
+  }
+
+  // Standard Cursor Sand branch (or persisted SandTokens JSON)
+  const accessToken =
+    typeof r['accessToken'] === 'string'
+      ? r['accessToken']
+      : typeof r['access_token'] === 'string'
+        ? r['access_token']
+        : undefined
   if (!accessToken) return null
+  const refreshToken =
+    typeof r['refreshToken'] === 'string'
+      ? r['refreshToken']
+      : typeof r['refresh_token'] === 'string'
+        ? r['refresh_token']
+        : undefined
+  const xaiIssuer = typeof r['xaiIssuer'] === 'string' ? r['xaiIssuer'] : undefined
+  const xaiClientId = typeof r['xaiClientId'] === 'string' ? r['xaiClientId'] : undefined
+  const authKind: SandTokens['authKind'] =
+    r['authKind'] === 'xai' || r['authKind'] === 'web' || r['authKind'] === 'cursor'
+      ? r['authKind']
+      : xaiIssuer
+        ? 'xai'
+        : 'cursor'
   return {
     accessToken,
-    refreshToken: typeof r['refreshToken'] === 'string' ? r['refreshToken'] : undefined,
-    authId: typeof r['authId'] === 'string' ? r['authId'] : undefined,
+    refreshToken,
+    authId:
+      typeof r['authId'] === 'string' ? r['authId'] : inferSubjectFromJwt(accessToken),
     selectedTeamId:
       typeof r['selectedTeamId'] === 'string'
         ? r['selectedTeamId']
         : typeof r['selectedTeamId'] === 'number'
           ? String(r['selectedTeamId'])
-          : undefined
+          : undefined,
+    xaiIssuer,
+    xaiClientId,
+    expiresAtMs: typeof r['expiresAtMs'] === 'number' ? r['expiresAtMs'] : undefined,
+    authKind
   }
 }
 
 /**
+ * Exchange a Cursor user API key for `{ accessToken, refreshToken }` via
+ * `POST https://api2.cursor.sh/auth/exchange_user_api_key` (0.79.3 `xdn`).
+ */
+export async function exchangeSandUserApiKey(
+  apiKey: string,
+  opts: { accountId?: string; fetchImpl?: typeof fetch; apiBaseUrl?: string } = {}
+): Promise<SandTokens | null> {
+  const base = (opts.apiBaseUrl ?? API).replace(/\/$/, '')
+  const doFetch =
+    opts.fetchImpl ?? (opts.accountId ? grokFetcherForAccount(opts.accountId) : fetch)
+  const res = await doFetch(`${base}/auth/exchange_user_api_key`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/json',
+      authorization: `Bearer ${apiKey.trim()}`
+    },
+    body: JSON.stringify({})
+  })
+  if (!res.ok) return null
+  const body = await res.json().catch(() => null)
+  return parseSandTokens(body)
+}
+
+export interface SandPollWake {
+  wake: () => void
+  wait: (ms: number) => Promise<void>
+}
+
+export function createSandPollWake(): SandPollWake {
+  let pendingResolve: (() => void) | null = null
+  let pendingWake = false
+  return {
+    wake() {
+      if (pendingResolve) {
+        const fn = pendingResolve
+        pendingResolve = null
+        fn()
+      } else {
+        pendingWake = true
+      }
+    },
+    wait(ms: number) {
+      if (pendingWake) {
+        pendingWake = false
+        return Promise.resolve()
+      }
+      return new Promise<void>((resolve) => {
+        const timer = setTimeout(() => {
+          if (pendingResolve === done) pendingResolve = null
+          resolve()
+        }, ms)
+        const done = () => {
+          clearTimeout(timer)
+          pendingResolve = null
+          resolve()
+        }
+        pendingResolve = done
+      })
+    }
+  }
+}
+
+/**
+ * Universal credential parser for Grok Bot:
+ * 1. JSON (`{ accessToken, refreshToken }`, `{ access_token, refresh_token }`, `{ xaiAccessToken, ... }`)
+ * 2. Cookie header / `WorkosCursorSessionToken=user_01...%3A%3AeyJ...` / `slot::eyJ...`
+ * 3. `Bearer eyJ...` / raw JWT
+ * 4. Cursor/Grok API key (`key_...` / `crsr_...`) exchanged via `/auth/exchange_user_api_key`
+ */
+export async function parseAnyGrokCredentialInput(
+  rawInput: string,
+  opts: {
+    refreshToken?: string
+    accountSlot?: string
+    teamId?: string
+    existing?: SandTokens | null
+    accountId?: string
+    fetchImpl?: typeof fetch
+  } = {}
+): Promise<SandTokens | null> {
+  const trimmed = rawInput.trim()
+  if (!trimmed) return null
+
+  const fallbackRefresh = opts.refreshToken?.trim() || opts.existing?.refreshToken
+  const fallbackTeam = opts.teamId?.trim() || opts.existing?.selectedTeamId
+
+  // 1. JSON object or array
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const parsedJson = JSON.parse(trimmed) as unknown
+      const candidate = Array.isArray(parsedJson) ? parsedJson[0] : parsedJson
+      const sand = parseSandTokens(candidate)
+      if (sand?.accessToken) {
+        return {
+          ...sand,
+          refreshToken: sand.refreshToken ?? fallbackRefresh,
+          authId:
+            extractAccountHandleFromJwt(sand.accessToken) ??
+            sand.authId ??
+            opts.accountSlot ??
+            opts.existing?.authId,
+          selectedTeamId: sand.selectedTeamId ?? fallbackTeam
+        }
+      }
+      // Also support JSON cookie array from browser extensions: [{ name: "WorkosCursorSessionToken", value: "..." }]
+      if (Array.isArray(parsedJson)) {
+        for (const item of parsedJson) {
+          if (item && typeof item === 'object') {
+            const rec = item as Record<string, unknown>
+            const name = String(rec['name'] ?? '')
+            const val = String(rec['value'] ?? '')
+            if (/workos.*session|cursor.*session/i.test(name) && val) {
+              const fromCookie = parseWorkosCookieOrToken(val)
+              if (fromCookie) {
+                return {
+                  accessToken: fromCookie.accessToken,
+                  refreshToken: fallbackRefresh,
+                  authId: fromCookie.accountSlot ?? opts.accountSlot ?? opts.existing?.authId,
+                  selectedTeamId: fallbackTeam,
+                  authKind: 'cursor'
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      /* continue */
+    }
+  }
+
+  // 2. Cookie / WorkOS token / Bearer JWT
+  const cookieOrJwt = parseWorkosCookieOrToken(trimmed)
+  if (cookieOrJwt) {
+    return {
+      accessToken: cookieOrJwt.accessToken,
+      refreshToken: fallbackRefresh,
+      authId: cookieOrJwt.accountSlot ?? opts.accountSlot ?? opts.existing?.authId,
+      selectedTeamId: fallbackTeam,
+      authKind: 'cursor'
+    }
+  }
+
+  // 3. API key exchange (`key_...` / `crsr_...` / non-JWT token)
+  const cleanKey = trimmed
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/^Bearer\s+/i, '')
+    .trim()
+  if (cleanKey && !cleanKey.startsWith('eyJ') && !/\s/.test(cleanKey)) {
+    const exchanged = await exchangeSandUserApiKey(cleanKey, {
+      accountId: opts.accountId,
+      fetchImpl: opts.fetchImpl
+    }).catch(() => null)
+    if (exchanged?.accessToken) {
+      return {
+        ...exchanged,
+        authId:
+          extractAccountHandleFromJwt(exchanged.accessToken) ??
+          exchanged.authId ??
+          opts.accountSlot
+      }
+    }
+  }
+
+  return null
+}
+
+/**
  * Poll api2 /auth/poll until tokens appear.
- * 404 → keep waiting; backoff 1s * 1.2^n cap 10s, max 150 attempts;
- * 3 consecutive non-404 errors abort.
+ * 404 → keep waiting; backoff 1s * 1.2^n cap 6s, max 180 attempts;
+ * `wake` immediately skips the current wait when the browser login page confirms!
  */
 export async function pollSandAuth(
   uuid: string,
   verifier: string,
-  opts: { isAborted?: () => boolean; maxAttempts?: number; fetchImpl?: typeof fetch } = {}
+  opts: {
+    accountId?: string
+    isAborted?: () => boolean
+    maxAttempts?: number
+    fetchImpl?: typeof fetch
+    wake?: SandPollWake
+  } = {}
 ): Promise<SandTokens> {
-  const max = opts.maxAttempts ?? 150
-  const doFetch = opts.fetchImpl ?? fetch
+  const max = opts.maxAttempts ?? 180
+  const doFetch =
+    opts.fetchImpl ?? (opts.accountId ? grokFetcherForAccount(opts.accountId) : fetch)
   let consecutiveErrors = 0
   for (let attempt = 0; attempt < max; attempt++) {
     if (opts.isAborted?.()) throw new Error('sand login aborted')
-    const delay = Math.min(1000 * Math.pow(1.2, attempt), 10000)
-    if (attempt > 0) await sleep(delay)
+    const delay = Math.min(900 * Math.pow(1.18, attempt), 6000)
+    if (attempt > 0) {
+      if (opts.wake) await opts.wake.wait(delay)
+      else await sleep(delay)
+    }
+    if (opts.isAborted?.()) throw new Error('sand login aborted')
     try {
       const url = `${API}/auth/poll?uuid=${encodeURIComponent(uuid)}&verifier=${encodeURIComponent(verifier)}`
       const res = await doFetch(url, { method: 'GET', headers: { accept: 'application/json' } })
@@ -88,16 +455,21 @@ export async function pollSandAuth(
       }
       if (!res.ok) {
         consecutiveErrors++
-        if (consecutiveErrors >= 3) throw new Error(`auth/poll failed ${res.status} (x${consecutiveErrors})`)
+        if (consecutiveErrors >= 5) throw new Error(`auth/poll failed ${res.status} (x${consecutiveErrors})`)
         continue
       }
       consecutiveErrors = 0
       const tokens = parseSandTokens(await res.json())
-      if (tokens) return tokens
+      if (tokens) {
+        return {
+          ...tokens,
+          authId: extractAccountHandleFromJwt(tokens.accessToken) ?? tokens.authId
+        }
+      }
     } catch (e) {
       if (opts.isAborted?.()) throw new Error('sand login aborted')
       consecutiveErrors++
-      if (consecutiveErrors >= 3) throw e instanceof Error ? e : new Error(String(e))
+      if (consecutiveErrors >= 5) throw e instanceof Error ? e : new Error(String(e))
     }
   }
   throw new Error('sand login timed out')
@@ -111,8 +483,54 @@ export interface RefreshResult {
 
 export async function refreshSandToken(
   refreshToken: string,
-  fetchImpl: typeof fetch = fetch
+  fetchImpl: typeof fetch = fetch,
+  xaiMeta?: { issuer?: string; clientId?: string }
 ): Promise<RefreshResult> {
+  // xAI Identity OAuth2 refresh branch (`POST ${issuer}/oauth2/token` URL-encoded)
+  if (xaiMeta?.issuer) {
+    const tokenUrl = new URL('/oauth2/token', `${xaiMeta.issuer.replace(/\/$/, '')}/`).toString()
+    const params = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      ...(xaiMeta.clientId ? { client_id: xaiMeta.clientId } : {})
+    })
+    const res = await fetchImpl(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        accept: 'application/json'
+      },
+      body: params.toString()
+    })
+    if (res.status === 400 || res.status === 401 || res.status === 403) {
+      const errBody = (await res.json().catch(() => ({}))) as Record<string, unknown>
+      if (errBody['error'] === 'invalid_grant' || res.status === 401) {
+        return { shouldLogout: true }
+      }
+      return { shouldLogout: true }
+    }
+    if (!res.ok) throw new Error(`xAI oauth2/token refresh failed ${res.status}`)
+    const body = (await res.json()) as Record<string, unknown>
+    const accessToken =
+      typeof body['access_token'] === 'string' ? body['access_token'] : undefined
+    if (!accessToken) return { shouldLogout: true }
+    const rotated =
+      typeof body['refresh_token'] === 'string' ? body['refresh_token'] : refreshToken
+    const expiresIn = typeof body['expires_in'] === 'number' ? body['expires_in'] : undefined
+    return {
+      shouldLogout: false,
+      tokens: {
+        accessToken,
+        refreshToken: rotated,
+        xaiIssuer: xaiMeta.issuer,
+        xaiClientId: xaiMeta.clientId ?? inferClientIdFromJwt(accessToken),
+        expiresAtMs: expiresIn != null ? Date.now() + expiresIn * 1000 : undefined,
+        authKind: 'xai'
+      }
+    }
+  }
+
+  // Standard Cursor Sand OAuth refresh (`POST https://api2.cursor.sh/oauth/token`)
   const res = await fetchImpl(`${API}/oauth/token`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', accept: 'application/json' },
@@ -122,39 +540,31 @@ export async function refreshSandToken(
       refresh_token: refreshToken
     })
   })
-  // 400/401 → token revoked / rotated out: caller should re-login.
   if (res.status === 400 || res.status === 401 || res.status === 403) {
     return { shouldLogout: true }
   }
   if (!res.ok) throw new Error(`oauth/token refresh failed ${res.status}`)
   const body = (await res.json()) as Record<string, unknown>
-  const accessToken = typeof body['access_token'] === 'string' ? body['access_token'] : (body['accessToken'] as string)
+  const accessToken =
+    typeof body['access_token'] === 'string'
+      ? body['access_token']
+      : (body['accessToken'] as string | undefined)
   if (!accessToken) return { shouldLogout: true }
-  const rotated = typeof body['refresh_token'] === 'string'
-    ? (body['refresh_token'] as string)
-    : typeof body['refreshToken'] === 'string'
-      ? (body['refreshToken'] as string)
-      : refreshToken // keep old when not rotated
+  const rotated =
+    typeof body['refresh_token'] === 'string'
+      ? (body['refresh_token'] as string)
+      : typeof body['refreshToken'] === 'string'
+        ? (body['refreshToken'] as string)
+        : refreshToken
   return {
     shouldLogout: false,
     tokens: {
       accessToken,
       refreshToken: rotated,
       selectedTeamId:
-        typeof body['selectedTeamId'] === 'string' ? (body['selectedTeamId'] as string) : undefined
+        typeof body['selectedTeamId'] === 'string' ? (body['selectedTeamId'] as string) : undefined,
+      authKind: 'cursor'
     }
-  }
-}
-
-/** Decode JWT exp (seconds) without verifying. */
-export function tokenExpMs(accessToken: string): number | null {
-  try {
-    const seg = accessToken.split('.')[1]
-    if (!seg) return null
-    const payload = JSON.parse(Buffer.from(seg, 'base64url').toString()) as { exp?: number }
-    return typeof payload.exp === 'number' ? payload.exp * 1000 : null
-  } catch {
-    return null
   }
 }
 
@@ -172,7 +582,11 @@ function storePath(): string {
 }
 
 function readFile(): StoreFile {
-  return readJsonFile<StoreFile>(storePath(), {}, (raw) => Boolean(raw) && typeof raw === 'object' && !Array.isArray(raw))
+  return readJsonFile<StoreFile>(
+    storePath(),
+    {},
+    (raw) => Boolean(raw) && typeof raw === 'object' && !Array.isArray(raw)
+  )
 }
 
 function writeFile(store: StoreFile): void {
@@ -200,22 +614,24 @@ export async function persistSandTokens(accountId: string, tokens: SandTokens): 
   })
 }
 
-/**
- * One refresh per account at a time. Parallel RPCs at startup each used to
- * refresh with the same refresh token; with rotation the losers got
- * shouldLogout and signed the account out.
- */
-const refreshInFlight = new Map<string, Promise<{ accessToken: string; selectedTeamId?: string } | null>>()
+const refreshInFlight = new Map<
+  string,
+  Promise<{ accessToken: string; selectedTeamId?: string } | null>
+>()
 
 function refreshAndPersist(
   accountId: string,
   tokens: SandTokens,
-  fetchImpl: typeof fetch
+  fetchImpl?: typeof fetch
 ): Promise<{ accessToken: string; selectedTeamId?: string } | null> {
   const running = refreshInFlight.get(accountId)
   if (running) return running
+  const doFetch = grokFetcherForAccount(accountId, fetchImpl)
   const run = (async () => {
-    const result = await refreshSandToken(tokens.refreshToken!, fetchImpl)
+    const result = await refreshSandToken(tokens.refreshToken!, doFetch, {
+      issuer: tokens.xaiIssuer,
+      clientId: tokens.xaiClientId
+    })
     if (result.shouldLogout) {
       clearSandTokens(accountId)
       return null
@@ -225,7 +641,11 @@ function refreshAndPersist(
       accessToken: result.tokens.accessToken,
       refreshToken: result.tokens.refreshToken ?? tokens.refreshToken,
       authId: tokens.authId,
-      selectedTeamId: result.tokens.selectedTeamId ?? tokens.selectedTeamId
+      selectedTeamId: result.tokens.selectedTeamId ?? tokens.selectedTeamId,
+      xaiIssuer: result.tokens.xaiIssuer ?? tokens.xaiIssuer,
+      xaiClientId: result.tokens.xaiClientId ?? tokens.xaiClientId,
+      expiresAtMs: result.tokens.expiresAtMs,
+      authKind: result.tokens.authKind ?? tokens.authKind
     }
     await persistSandTokens(accountId, merged)
     return { accessToken: merged.accessToken, selectedTeamId: merged.selectedTeamId }
@@ -301,7 +721,7 @@ export function listPersistedSandAccountIds(): string[] {
 /** Force an oauth/token refresh regardless of expiry. Clears tokens on logout. */
 export async function forceRefreshSandAccessToken(
   accountId: string,
-  fetchImpl: typeof fetch = fetch
+  fetchImpl?: typeof fetch
 ): Promise<{ accessToken: string; selectedTeamId?: string } | null> {
   const tokens = await loadSandTokens(accountId)
   if (!tokens?.refreshToken) return null
@@ -311,16 +731,15 @@ export async function forceRefreshSandAccessToken(
 /** Return a valid accessToken, refreshing when within 5min of expiry. */
 export async function getValidSandAccessToken(
   accountId: string,
-  fetchImpl: typeof fetch = fetch
+  fetchImpl?: typeof fetch
 ): Promise<{ accessToken: string; selectedTeamId?: string } | null> {
   const tokens = await loadSandTokens(accountId)
   if (!tokens?.accessToken) return null
-  const expMs = tokenExpMs(tokens.accessToken)
+  const expMs = tokenExpMs(tokens.accessToken, tokens.expiresAtMs)
   const needsRefresh = expMs != null && expMs - Date.now() < REFRESH_MARGIN_MS
   if (needsRefresh && tokens.refreshToken) {
     const refreshed = await refreshAndPersist(accountId, tokens, fetchImpl)
     if (refreshed) return refreshed
-    // Logged out by the server: tokens were cleared.
     if (!(await loadSandTokens(accountId))) return null
   }
   return { accessToken: tokens.accessToken, selectedTeamId: tokens.selectedTeamId }
@@ -344,9 +763,8 @@ export interface SandLoginResult {
 }
 
 /**
- * Open cursor.com/loginDeepControl in the account's grok partition and poll.
- * When the page only needs a confirm click (already signed-in session), click
- * it. Does NOT type credentials / codes — caller handles the needsInput case.
+ * Open cursor.com/loginDeepControl in the account's standard partition and poll.
+ * Applies per-account proxy before loading any URL (fail-closed on unreadable proxy).
  */
 export async function runSandLogin(
   accountId: string,
@@ -361,9 +779,12 @@ export async function runSandLogin(
   const existing = sandLoginWindows.get(accountId)
   if (existing && !existing.isDestroyed()) existing.close()
 
+  // Enforce per-account proxy on the shared partition BEFORE opening the login window.
+  await applyProxyToPartition(accountId)
+
   const { verifier, challenge, uuid } = createPkce()
   const url = sandLoginUrl(challenge, uuid)
-  const partition = partitionForAccount(`grok-${accountId}`)
+  const partition = partitionForAccount(accountId)
 
   const win = new BrowserWindow({
     width: 980,
@@ -416,12 +837,12 @@ export async function runSandLogin(
     }
   }
 
-  // Click confirm a few times across first seconds, in case page renders late.
   win.webContents.on('did-finish-load', () => void tryConfirmClick())
   const confirmTimers = [1200, 2500, 4000, 6500].map((ms) => setTimeout(() => void tryConfirmClick(), ms))
 
   try {
     const tokens = await pollSandAuth(uuid, verifier, {
+      accountId,
       isAborted: () => closed,
       maxAttempts: opts.maxAttempts
     })

@@ -6,6 +6,7 @@ import WebSocket from 'ws'
 import { proxyFetch, proxyWsAgent } from '../proxyTransport'
 import { readJsonFile } from '../jsonFile'
 import { requireValidProxyUrl } from '../proxyUrl'
+import { applyProxyToPartition, loadAccountProxyUrl, ProxyConfigUnreadableError } from '../muse/accountProxy'
 import type {
   DotAuthStatus,
   MuseMediaPartView,
@@ -170,17 +171,34 @@ interface PersistedDotAccount extends Omit<DotStoredAccount, 'accessToken' | 're
   encTokens?: string
 }
 
-function getSafeStorage(): typeof import('electron').safeStorage | null {
+function getSafeStorage(): {
+  ss: typeof import('electron').safeStorage | null
+  inElectron: boolean
+} {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const electron = require('electron') as typeof import('electron')
+    const inElectron = Boolean(electron?.app?.getPath)
     if (electron?.safeStorage?.isEncryptionAvailable?.()) {
-      return electron.safeStorage
+      return { ss: electron.safeStorage, inElectron }
     }
+    return { ss: null, inElectron }
   } catch {
     /* standalone node */
   }
-  return null
+  return { ss: null, inElectron: false }
+}
+
+async function resolveDotProxyUrl(
+  accountId: string,
+  explicitProxyUrl?: string
+): Promise<string | undefined> {
+  const explicit = explicitProxyUrl?.trim()
+  if (explicit) return explicit
+  // Throws ProxyConfigUnreadableError if a proxy is stored in accountProxy but unreadable
+  const globalProxy = await loadAccountProxyUrl(accountId)
+  if (globalProxy) return globalProxy
+  return getStoredDotAccount(accountId)?.proxyUrl
 }
 
 function ensureStoreLoaded(): void {
@@ -204,7 +222,7 @@ function ensureStoreLoaded(): void {
         : (parsed as unknown as Record<string, PersistedDotAccount>)
     )
     if (raw && typeof raw === 'object') {
-      const ss = getSafeStorage()
+      const { ss } = getSafeStorage()
       let migratedPlaintext = false
       for (const [k, v] of Object.entries(raw)) {
         if (!v || typeof v !== 'object') continue
@@ -257,7 +275,11 @@ function saveStore(): void {
   try {
     const file = resolveStorePath()
     mkdirSync(dirname(file), { recursive: true })
-    const ss = getSafeStorage()
+    const { ss, inElectron } = getSafeStorage()
+    if (inElectron && !ss) {
+      console.warn('[dot] safeStorage encryption unavailable; refusing to persist Dot tokens in plaintext')
+      return
+    }
     const out: Record<string, PersistedDotAccount> = {}
     for (const [k, v] of unreadableEntries.entries()) {
       if (!accountStore.has(k)) out[k] = v
@@ -509,7 +531,7 @@ export async function importDotCredentialsFromRaw(
   const trimmed = (rawInput ?? '').trim()
   // Token exchanges must use the account proxy even when re-importing
   // without one in the form (the stored proxy is kept by upsert).
-  const authProxyUrl = extra?.proxyUrl?.trim() || getStoredDotAccount(accountId)?.proxyUrl
+  const authProxyUrl = await resolveDotProxyUrl(accountId, extra?.proxyUrl)
   const extraRt = extra?.refreshToken?.trim()
 
   if (!trimmed && !extraRt) {
@@ -693,7 +715,11 @@ export async function refreshDotAccessToken(accountId: string): Promise<DotStore
     throw new DotApiError(401, 'No refresh_token available for Dot account')
   }
 
-  const exchanged = await exchangeDotRefreshToken(acc.refreshToken, acc.clientId, acc.proxyUrl)
+  const exchanged = await exchangeDotRefreshToken(
+    acc.refreshToken,
+    acc.clientId,
+    await resolveDotProxyUrl(accountId, acc.proxyUrl)
+  )
 
   return upsertDotCredentials(accountId, {
     accessToken: exchanged.accessToken,
@@ -718,6 +744,7 @@ export async function trySyncFromElectronPartition(
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const electron = require('electron') as typeof import('electron')
     if (!electron?.session?.fromPartition) return undefined
+    await applyProxyToPartition(accountId)
     const ses = electron.session.fromPartition(`persist:bothub-account-${accountId}`)
     const res = await ses.fetch('https://chatgpt.com/api/auth/session', {
       headers: {
@@ -744,7 +771,8 @@ export async function trySyncFromElectronPartition(
       displayName: typeof userObj['name'] === 'string' ? userObj['name'] : undefined,
       planType: typeof accObj['planType'] === 'string' ? accObj['planType'] : undefined
     })
-  } catch {
+  } catch (err) {
+    if (err instanceof ProxyConfigUnreadableError) throw err
     return undefined
   }
 }
@@ -794,7 +822,7 @@ export async function getDotAuthStatus(accountId: string): Promise<DotAuthStatus
     hasRefreshToken: Boolean(acc.refreshToken),
     expiresAtMs: acc.expiresAtMs,
     updatedAt: acc.updatedAtMs,
-    hasProxy: Boolean(acc.proxyUrl)
+    hasProxy: Boolean(acc.proxyUrl || (await loadAccountProxyUrl(accountId).catch(() => true)))
   }
 }
 
@@ -856,7 +884,8 @@ export async function callDotApi<T = unknown>(
       headers['Content-Type'] = 'application/json'
       bodyPayload = JSON.stringify(opts.body)
     }
-    return proxyFetch(cred.proxyUrl, url.toString(), {
+    const effectiveProxy = await resolveDotProxyUrl(accountId, cred.proxyUrl)
+    return proxyFetch(effectiveProxy, url.toString(), {
       method,
       headers,
       body: bodyPayload,
@@ -1399,7 +1428,8 @@ export async function downloadDotFile(
 
   const fetchUrl = async (u: string): Promise<Response> => {
     const isChatgptApi = u.startsWith(DOT_ORIGIN)
-    return proxyFetch(acc.proxyUrl, u, {
+    const effectiveProxy = await resolveDotProxyUrl(accountId, acc.proxyUrl)
+    return proxyFetch(effectiveProxy, u, {
       headers: {
         ...(isChatgptApi
           ? {
@@ -1493,7 +1523,8 @@ export async function triggerRoomLivePush(accountId: string, roomId: string): Pr
 
   try {
     const acc = await ensureValidDotAccount(accountId)
-    const res = await proxyFetch(acc.proxyUrl, `${DOT_API_BASE}/messaging/rooms/${encodeURIComponent(roomId)}/live`, {
+    const effectiveProxy = await resolveDotProxyUrl(accountId, acc.proxyUrl)
+    const res = await proxyFetch(effectiveProxy, `${DOT_API_BASE}/messaging/rooms/${encodeURIComponent(roomId)}/live`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${acc.accessToken}`,
@@ -1799,6 +1830,27 @@ export function handleCalpicoEventPayload(
 }
 
 export function closeCelsiusWatcher(accountId: string): void {
+  if (accountId === '*') {
+    for (const [, v] of activeRoomLiveStreams.entries()) v.ac.abort()
+    activeRoomLiveStreams.clear()
+    for (const [, poller] of roomPollers.entries()) {
+      poller.closed = true
+      if (poller.timer) clearTimeout(poller.timer)
+    }
+    roomPollers.clear()
+    for (const [, st] of celsiusWatchers.entries()) {
+      st.closed = true
+      if (st.reconnectTimer) clearTimeout(st.reconnectTimer)
+      if (st.pingTimer) clearInterval(st.pingTimer)
+      try {
+        st.ws?.close()
+      } catch {
+        /* ignore */
+      }
+    }
+    celsiusWatchers.clear()
+    return
+  }
   closeRoomLiveStream(accountId)
   const poller = roomPollers.get(accountId)
   if (poller) {
@@ -1817,6 +1869,17 @@ export function closeCelsiusWatcher(accountId: string): void {
     /* ignore */
   }
   celsiusWatchers.delete(accountId)
+}
+
+export function rebindDotAccountNetwork(accountId: string): void {
+  const hadWatcher = celsiusWatchers.get(accountId)
+  const hadPoller = roomPollers.get(accountId)
+  if (!hadWatcher && !hadPoller) return
+  const roomId =
+    hadPoller?.roomId ||
+    (hadWatcher ? [...hadWatcher.subscribedRooms][0] : undefined)
+  closeCelsiusWatcher(accountId)
+  void ensureCelsiusWatcher(accountId, roomId).catch(() => undefined)
 }
 
 export async function ensureCelsiusWatcher(accountId: string, roomId?: string): Promise<void> {
@@ -1865,8 +1928,9 @@ export async function ensureCelsiusWatcher(accountId: string, roomId?: string): 
     }
     celsiusWatchers.set(accountId, st)
 
+    const effectiveProxy = await resolveDotProxyUrl(accountId, getStoredDotAccount(accountId)?.proxyUrl)
     const ws = new WebSocket(info.websocket_url, {
-      agent: proxyWsAgent(getStoredDotAccount(accountId)?.proxyUrl),
+      agent: proxyWsAgent(effectiveProxy),
       headers: {
         Origin: DOT_ORIGIN,
         'User-Agent': CHROME_UA
@@ -2245,12 +2309,13 @@ async function withAppServerWs<T>(
   timeoutMs = 35_000
 ): Promise<T> {
   const acc = await ensureValidDotAccount(accountId)
+  const effectiveProxy = await resolveDotProxyUrl(accountId, acc.proxyUrl)
   return new Promise<T>((resolve, reject) => {
     const ws = new WebSocket(
       DOT_APP_SERVER_WS_URL,
       ['codex-app-server', 'codex-client.browser', `openai-bearer.${acc.accessToken}`],
       {
-        agent: proxyWsAgent(acc.proxyUrl),
+        agent: proxyWsAgent(effectiveProxy),
         headers: {
           Origin: DOT_ORIGIN,
           'User-Agent': CHROME_UA

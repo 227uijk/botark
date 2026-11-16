@@ -118,56 +118,140 @@ export function startAdapterBridge(): () => void {
   if (bridge?.grok?.onEvent) {
     unsubscribers.push(
       bridge.grok.onEvent((event) => {
+        const store = useBotStore.getState()
         if (event.type === "auth") {
           if (event.signedIn) {
-            void useBotStore.getState().setGrokAccessToken(
+            if (store.accounts[event.accountId]) {
+              void store
+                .setGrokAccessToken(
+                  event.accountId,
+                  event.accessToken,
+                  event.accountSlot,
+                  event.machineId
+                )
+                .catch(() => undefined)
+            }
+          } else if (store.accounts[event.accountId]) {
+            store.setAccountStatus(
               event.accountId,
-              event.accessToken,
-              event.accountSlot,
-              event.machineId
+              "offline",
+              event.windowClosed ? "登录窗口已关闭，未完成授权" : "已退出 Grok Bot"
             )
-          } else {
-            useBotStore.getState().setAccountStatus(event.accountId, "offline", "已退出 Grok")
+          }
+          return
+        }
+        if (event.type === "roster_changed") {
+          if (store.accounts[event.accountId]) {
+            void store.syncGrokAccountBots(event.accountId).catch(() => undefined)
+          }
+          return
+        }
+        const matchGrokBots = (accountId: string, agentId: string) => {
+          const exact = store.bots.filter(
+            (b) =>
+              b.platformId === "grok" &&
+              b.accountIds.includes(accountId) &&
+              b.selectedAgentId === agentId
+          )
+          if (exact.length > 0) return exact
+          return store.bots.filter(
+            (b) =>
+              b.platformId === "grok" &&
+              b.accountIds.includes(accountId) &&
+              !b.selectedAgentId
+          )
+        }
+        if (event.type === "activity") {
+          touchAccount(event.accountId)
+          store.setActivity(
+            event.accountId,
+            event.busy
+              ? {
+                  code: event.activityCode,
+                  text: event.activityText ?? "正在运行…",
+                  emoji: event.activityEmoji ?? null,
+                  busy: true,
+                  subagents: event.hasRunningSubagents ? 1 : undefined
+                }
+              : null
+          )
+          for (const targetBot of matchGrokBots(event.accountId, event.agentId)) {
+            store.setTyping(targetBot.id, event.busy)
+          }
+          return
+        }
+        if (event.type === "turn_failed") {
+          store.setActivity(event.accountId, null)
+          for (const targetBot of matchGrokBots(event.accountId, event.agentId)) {
+            store.setTyping(targetBot.id, false)
+            store.receiveMessage({
+              id: `grok_err_${event.turnId || Date.now()}`,
+              conversationId: targetBot.id,
+              accountId: event.accountId,
+              text: `⚠️ **Grok Bot 执行中断 (${event.code})**：${event.summary}`,
+              createdAt: Date.now()
+            })
+          }
+          return
+        }
+        if (event.type === "message_deleted") {
+          for (const targetBot of matchGrokBots(event.accountId, event.agentId)) {
+            store.deleteMessages(targetBot.id, event.messageIds)
           }
           return
         }
         if (event.type === "stream") {
-          const store = useBotStore.getState()
-          const convId =
-            event.conversationId ||
-            store.bots.find((b) => b.accountIds.includes(event.accountId))?.id ||
-            event.accountId
-          watchdog.touch(botIdFor(convId))
-          if (!event.done) {
-            store.setTyping(convId, true)
-            if (event.text || event.widgets?.length || event.tools?.length || event.media?.length) {
-              store.applyMessageDelta(
-                event.messageId,
-                convId,
-                event.accountId,
-                event.text || "",
-                event.widgets,
-                event.tools,
-                event.media,
-                event.richWidgets
+          // Route strictly to `(accountId, selectedAgentId)` or explicit `conversationId`
+          const targets = event.conversationId
+            ? store.bots.filter(
+                (b) =>
+                  b.id === event.conversationId &&
+                  (!b.selectedAgentId || b.selectedAgentId === event.agentId)
               )
-            }
-          } else {
-            store.setTyping(convId, false)
-            if (event.text || event.widgets?.length || event.tools?.length || event.media?.length) {
-              store.receiveMessage({
-                id: event.messageId,
-                conversationId: convId,
-                accountId: event.accountId,
-                text: event.text || "",
-                createdAt: Date.now(),
-                widgets: event.widgets,
-                tools: event.tools,
-                media: event.media,
-                richWidgets: event.richWidgets
-              })
+            : matchGrokBots(event.accountId, event.agentId)
+          if (targets.length === 0) return
+          const hasPayload = Boolean(
+            event.text ||
+              event.widgets?.length ||
+              event.richWidgets?.length ||
+              event.tools?.length ||
+              event.media?.length
+          )
+          for (const matchingBot of targets) {
+            const convId = matchingBot.id
+            watchdog.touch(botIdFor(convId))
+            if (!event.done) {
+              store.setTyping(convId, true)
+              if (hasPayload) {
+                store.applyMessageDelta(
+                  event.messageId,
+                  convId,
+                  event.accountId,
+                  event.text || "",
+                  event.widgets,
+                  event.tools,
+                  event.media,
+                  event.richWidgets
+                )
+              }
+            } else {
+              store.setTyping(convId, false)
+              if (hasPayload) {
+                store.receiveMessage({
+                  id: event.messageId,
+                  conversationId: convId,
+                  accountId: event.accountId,
+                  text: event.text || "",
+                  createdAt: Date.now(),
+                  widgets: event.widgets,
+                  tools: event.tools,
+                  media: event.media,
+                  richWidgets: event.richWidgets
+                })
+              }
             }
           }
+          return
         }
       })
     )

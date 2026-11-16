@@ -1,12 +1,27 @@
 // electron-builder config (was the "build" key in package.json).
-// Signing is optional: without the secrets below every build is unsigned,
+// Signing is optional: without the env vars below every build is unsigned,
 // exactly like the earlier manual releases.
-//   macOS:   CSC_LINK, CSC_KEY_PASSWORD (+ APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD,
-//            APPLE_TEAM_ID to notarize)
-//   Windows: WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD
+//   macOS CI (.p12):       CSC_LINK, CSC_KEY_PASSWORD
+//   macOS local Keychain:  APPLE_SIGN=1 (or CSC_NAME="Developer ID Application: ...")
+//   macOS Notarization:    (APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD + APPLE_TEAM_ID)
+//                       or (APPLE_API_KEY + APPLE_API_KEY_ID + APPLE_API_ISSUER)
+//                       or (APPLE_KEYCHAIN_PROFILE [+ APPLE_KEYCHAIN])
+//   Windows:               WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD
 const has = (name) => Boolean(process.env[name] && process.env[name].trim())
-const macSigned = has('CSC_LINK')
-const notarize = macSigned && has('APPLE_ID') && has('APPLE_APP_SPECIFIC_PASSWORD') && has('APPLE_TEAM_ID')
+const macSigned = has('CSC_LINK') || has('CSC_NAME') || process.env.APPLE_SIGN === '1'
+const notarizeByAppleId =
+  has('APPLE_ID') && has('APPLE_APP_SPECIFIC_PASSWORD') && has('APPLE_TEAM_ID')
+const notarizeByApiKey =
+  has('APPLE_API_KEY') && has('APPLE_API_KEY_ID') && has('APPLE_API_ISSUER')
+const notarizeByKeychainProfile = has('APPLE_KEYCHAIN_PROFILE')
+const notarize =
+  macSigned && (notarizeByAppleId || notarizeByApiKey || notarizeByKeychainProfile)
+const cliArgs = new Set(process.argv.slice(2))
+const macArchs = cliArgs.has('--arm64')
+  ? ['arm64']
+  : cliArgs.has('--x64')
+    ? ['x64']
+    : ['arm64', 'x64']
 
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
@@ -22,18 +37,26 @@ module.exports = {
   mac: {
     category: 'public.app-category.productivity',
     target: [
-      { target: 'dmg', arch: ['arm64', 'x64'] },
+      { target: 'dmg', arch: macArchs },
       // zip is what electron-updater reads on macOS (latest-mac.yml).
-      { target: 'zip', arch: ['arm64', 'x64'] }
+      { target: 'zip', arch: macArchs }
     ],
     // null = skip signing entirely (unsigned build, as before).
     identity: macSigned ? undefined : null,
     hardenedRuntime: macSigned,
     gatekeeperAssess: false,
+    // Skip non-code data files (covered by CodeResources) and framework symlink duplicates
+    // so codesign only signs real Mach-O binaries & bundles once (TN2206 compliant, ~30x faster).
+    signIgnore: [
+      '\\.(pak|dat|bin|icns|car|asar|nib|strings|plist|json|txt|md|html|css|svg|png|woff2)$',
+      '\\.framework/Versions/Current(/|$)',
+      '\\.framework/(Electron Framework|Helpers|Libraries|Resources|Mantle|ReactiveObjC|Squirrel)(/|$)'
+    ],
     notarize,
     artifactName: '${productName}-${version}-${arch}.${ext}'
   },
   dmg: {
+    sign: macSigned,
     artifactName: '${productName}-${version}-${arch}.${ext}'
   },
   win: {

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 
 /**
@@ -10,6 +10,11 @@ export function writeJsonAtomic(path: string, data: unknown, mode = 0o600): void
   mkdirSync(dirname(path), { recursive: true })
   const tmp = `${path}.${process.pid}.tmp`
   writeFileSync(tmp, JSON.stringify(data, null, 2), { encoding: 'utf8', mode })
+  try {
+    chmodSync(tmp, mode)
+  } catch {
+    /* Windows / unsupported fs */
+  }
   renameWithRetry(tmp, path)
 }
 

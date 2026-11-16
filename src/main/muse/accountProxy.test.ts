@@ -40,8 +40,10 @@ describe('account proxy fails closed', () => {
     expect(setProxy).toHaveBeenCalledWith(expect.objectContaining({ proxyRules: 'http://127.0.0.1:9' }))
   })
 
-  it('accounts without a proxy stay direct', async () => {
+  it('accounts without a proxy use system network stack', async () => {
     await expect(loadProxyConfig('nobody')).resolves.toEqual({ mode: 'direct' })
+    await applyProxyToPartition('nobody')
+    expect(setProxy).toHaveBeenCalledWith({ mode: 'system' })
   })
 
   it('applies every stored account at startup without throwing', async () => {

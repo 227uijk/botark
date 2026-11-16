@@ -88,7 +88,17 @@ function isAllowedMuseUrl(url: string): boolean {
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return false
     const host = u.hostname.replace(/^www\./, '')
     if (AUTH_HOSTS.has(u.hostname) || AUTH_HOSTS.has(host)) return true
-    return host.endsWith('muse.ai') || host.endsWith('metaaivm.com') || host.endsWith('meta.com') || host.endsWith('facebook.com')
+    return (
+      host.endsWith('muse.ai') ||
+      host.endsWith('metaaivm.com') ||
+      host.endsWith('meta.com') ||
+      host.endsWith('facebook.com') ||
+      host.endsWith('instagram.com') ||
+      host.endsWith('google.com') ||
+      host.endsWith('googleusercontent.com') ||
+      host.endsWith('apple.com') ||
+      host.endsWith('icloud.com')
+    )
   } catch {
     return false
   }
@@ -995,6 +1005,20 @@ export class MuseSessionManager {
     }
     this.views.destroy(session.viewId)
     this.sessions.delete(accountId)
+  }
+
+  destroyAll(): void {
+    for (const ac of this.autoLogins.values()) ac.abort()
+    this.autoLogins.clear()
+    for (const ac of this.activeStreams.values()) ac.abort()
+    this.activeStreams.clear()
+    for (const win of this.loginWindows.values()) {
+      if (!win.isDestroyed()) win.destroy()
+    }
+    this.loginWindows.clear()
+    for (const accountId of [...this.sessions.keys()]) {
+      this.destroyAccount(accountId)
+    }
   }
 
   private partitionFetch(accountId: string) {

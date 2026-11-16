@@ -32,14 +32,13 @@ function createCursorChecksum(machineId) {
 ## 基础头 `getSandBackendClientHeaders`
 
 ```js
-// SAND_CLIENT_TYPE === "sand"
+// SAND_CLIENT_TYPE === "sand" (main-core.cjs X3() in 0.79.3)
 {
   "user-agent": `Mozilla/5.0 ${osUa(clientOS)} AppleWebKit/537.36 (KHTML, like Gecko) Sand/${clientVersion} Safari/537.36`,
   "x-cursor-client-type": "sand",
-  "x-cursor-client-version": clientVersion, // 取自 app，约 0.78.x
-  "x-sand-box-namespace": boxNamespace,
+  "x-cursor-client-version": clientVersion, // 0.79.3
+  "x-sand-box-namespace": "prod",
   "x-cursor-client-os": clientOS, // darwin|win32|linux
-  // optional: "x-cursor-client-source": ...
 }
 ```
 

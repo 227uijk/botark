@@ -23,8 +23,16 @@ export class HarkWatchRegistry {
     if (map.size === 0) this.byAccount.delete(accountId)
   }
 
-  /** Stop every watch of the account (stop-tool, sign-out). */
+  /** Stop every watch of the account (stop-tool, sign-out), or '*' for all accounts. */
   cancelAll(accountId: string): void {
+    if (accountId === '*') {
+      const entries = [...this.byAccount.values()]
+      this.byAccount.clear()
+      for (const map of entries) {
+        for (const { abort } of map.values()) abort()
+      }
+      return
+    }
     const map = this.byAccount.get(accountId)
     if (!map) return
     this.byAccount.delete(accountId)

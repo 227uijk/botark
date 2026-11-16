@@ -102,6 +102,46 @@ describe('createSafeStorage', () => {
     expect(onError).toHaveBeenCalledTimes(1)
     expect(storage.getItem('k')).toBe('x')
   })
+
+  it('auto-compacts persisted message history when initial setItem hits QuotaExceededError', () => {
+    const saved = new Map<string, string>()
+    const onError = vi.fn()
+    const storage = createSafeStorage(
+      () => ({
+        getItem: (k) => saved.get(k) ?? null,
+        setItem: (k, v) => {
+          if (v.length > 5_000) {
+            throw new Error('QuotaExceededError')
+          }
+          saved.set(k, v)
+        },
+        removeItem: (k) => {
+          saved.delete(k)
+        }
+      }),
+      onError
+    )
+
+    const manyMessages = Array.from({ length: 200 }, (_, i) =>
+      msg({ id: `m_${i}`, text: 'x'.repeat(40) })
+    )
+    const bigPayload = JSON.stringify({
+      version: 0,
+      state: {
+        bots: [{ id: 'bot_1', name: 'Test Bot' }],
+        messages: { bot_1: manyMessages }
+      }
+    })
+    expect(bigPayload.length).toBeGreaterThan(5_000)
+
+    storage.setItem('bothub-workspace-v1', bigPayload)
+    expect(onError).not.toHaveBeenCalled()
+    const persisted = JSON.parse(saved.get('bothub-workspace-v1')!) as {
+      state: { bots: Array<{ id: string }>; messages: Record<string, ChatMessage[]> }
+    }
+    expect(persisted.state.bots[0]!.id).toBe('bot_1')
+    expect(persisted.state.messages['bot_1']!.length).toBe(30)
+  })
 })
 
 describe('clearNoReplyFlag', () => {

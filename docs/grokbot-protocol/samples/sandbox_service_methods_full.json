@@ -1,277 +1,332 @@
 [
   {
-    "jsKey": "ensureSandBox",
     "name": "EnsureSandBox",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.EnsureSandBoxRequest",
+    "output": "aiserver.v1.EnsureSandBoxResponse"
   },
   {
-    "jsKey": "ensureSandBoxWindow",
     "name": "EnsureSandBoxWindow",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.EnsureSandBoxWindowRequest",
+    "output": "aiserver.v1.EnsureSandBoxResponse"
   },
   {
-    "jsKey": "recreateSandBox",
     "name": "RecreateSandBox",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RecreateSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "forceRecreateSandBox",
     "name": "ForceRecreateSandBox",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ForceRecreateSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "adminRecreateSandBox",
     "name": "AdminRecreateSandBox",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminRecreateSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "adminForceRecreateSandBox",
     "name": "AdminForceRecreateSandBox",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminForceRecreateSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "adminBreakGlassDeleteSandBoxPod",
     "name": "AdminBreakGlassDeleteSandBoxPod",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminBreakGlassDeleteSandBoxPodRequest",
+    "output": "aiserver.v1.AdminBreakGlassDeleteSandBoxPodResponse"
   },
   {
-    "jsKey": "presignSandBoxStoreWrites",
     "name": "PresignSandBoxStoreWrites",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PresignSandBoxStoreWritesRequest",
+    "output": "aiserver.v1.PresignSandBoxStoreWritesResponse"
   },
   {
-    "jsKey": "completeSandBoxStoreMultipartWrites",
     "name": "CompleteSandBoxStoreMultipartWrites",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CompleteSandBoxStoreMultipartWritesRequest",
+    "output": "aiserver.v1.CompleteSandBoxStoreMultipartWritesResponse"
   },
   {
-    "jsKey": "commitSandBoxStoreManifest",
     "name": "CommitSandBoxStoreManifest",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CommitSandBoxStoreManifestRequest",
+    "output": "aiserver.v1.CommitSandBoxStoreManifestResponse"
   },
   {
-    "jsKey": "abortSandBoxStoreMultipartWrites",
     "name": "AbortSandBoxStoreMultipartWrites",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AbortSandBoxStoreMultipartWritesRequest",
+    "output": "aiserver.v1.AbortSandBoxStoreMultipartWritesResponse"
   },
   {
-    "jsKey": "presignSandBoxStoreReads",
     "name": "PresignSandBoxStoreReads",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.PresignSandBoxStoreReadsRequest",
+    "output": "aiserver.v1.PresignSandBoxStoreReadsResponse"
   },
   {
-    "jsKey": "statSandBoxStoreObject",
     "name": "StatSandBoxStoreObject",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StatSandBoxStoreObjectRequest",
+    "output": "aiserver.v1.StatSandBoxStoreObjectResponse"
   },
   {
-    "jsKey": "listSandBoxStoreObjects",
     "name": "ListSandBoxStoreObjects",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListSandBoxStoreObjectsRequest",
+    "output": "aiserver.v1.ListSandBoxStoreObjectsResponse"
   },
   {
-    "jsKey": "adminGetSandBoxStoreStatus",
     "name": "AdminGetSandBoxStoreStatus",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSandBoxStoreStatusRequest",
+    "output": "aiserver.v1.AdminSandBoxStoreStatusResponse"
   },
   {
-    "jsKey": "adminUpdateSandBoxHost",
     "name": "AdminUpdateSandBoxHost",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminUpdateSandBoxHostRequest",
+    "output": "aiserver.v1.AdminUpdateSandBoxHostResponse"
   },
   {
-    "jsKey": "adminGetSandBoxHostStatus",
     "name": "AdminGetSandBoxHostStatus",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSandBoxHostStatusRequest",
+    "output": "aiserver.v1.AdminSandBoxHostStatusResponse"
   },
   {
-    "jsKey": "adminSnapshotSandBoxStore",
     "name": "AdminSnapshotSandBoxStore",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminSnapshotSandBoxStoreRequest",
+    "output": "aiserver.v1.AdminSnapshotSandBoxStoreResponse"
   },
   {
-    "jsKey": "adminListSandBoxStoreManifestVersions",
     "name": "AdminListSandBoxStoreManifestVersions",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListSandBoxStoreManifestVersionsRequest",
+    "output": "aiserver.v1.AdminListSandBoxStoreManifestVersionsResponse"
   },
   {
-    "jsKey": "adminStatSandBoxStoreObject",
     "name": "AdminStatSandBoxStoreObject",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminStatSandBoxStoreObjectRequest",
+    "output": "aiserver.v1.AdminStatSandBoxStoreObjectResponse"
   },
   {
-    "jsKey": "adminRestoreSandBoxStoreSnapshot",
     "name": "AdminRestoreSandBoxStoreSnapshot",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminRestoreSandBoxStoreSnapshotRequest",
+    "output": "aiserver.v1.AdminRestoreSandBoxStoreSnapshotResponse"
   },
   {
-    "jsKey": "adminHibernateSandBox",
     "name": "AdminHibernateSandBox",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminHibernateSandBoxRequest",
+    "output": "aiserver.v1.AdminHibernateSandBoxResponse"
   },
   {
-    "jsKey": "adminRefreshSandBoxEgress",
     "name": "AdminRefreshSandBoxEgress",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminRefreshSandBoxEgressRequest",
+    "output": "aiserver.v1.AdminRefreshSandBoxEgressResponse"
   },
   {
-    "jsKey": "adminListSandAgents",
     "name": "AdminListSandAgents",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminListSandAgentsRequest",
+    "output": "aiserver.v1.AdminListSandAgentsResponse"
   },
   {
-    "jsKey": "adminGetSandAgentTranscriptPage",
     "name": "AdminGetSandAgentTranscriptPage",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.AdminGetSandAgentTranscriptPageRequest",
+    "output": "aiserver.v1.AdminGetSandAgentTranscriptPageResponse"
   },
   {
-    "jsKey": "watchSandBoxMigration",
     "name": "WatchSandBoxMigration",
-    "kind": "i.ServerStreaming"
+    "kind": "i.ServerStreaming",
+    "input": "aiserver.v1.WatchSandBoxMigrationRequest",
+    "output": "aiserver.v1.SandBoxMigrationEvent"
   },
   {
-    "jsKey": "adminWatchSandBoxMigration",
     "name": "AdminWatchSandBoxMigration",
-    "kind": "i.ServerStreaming"
+    "kind": "i.ServerStreaming",
+    "input": "aiserver.v1.AdminWatchSandBoxMigrationRequest",
+    "output": "aiserver.v1.SandBoxMigrationEvent"
   },
   {
-    "jsKey": "getSandBoxRunState",
     "name": "GetSandBoxRunState",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetSandBoxRunStateRequest",
+    "output": "aiserver.v1.GetSandBoxRunStateResponse"
   },
   {
-    "jsKey": "getSandBoxUpgradeSchedule",
     "name": "GetSandBoxUpgradeSchedule",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetSandBoxUpgradeScheduleRequest",
+    "output": "aiserver.v1.GetSandBoxUpgradeScheduleResponse"
   },
   {
-    "jsKey": "scheduleSandBoxUpgrade",
     "name": "ScheduleSandBoxUpgrade",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ScheduleSandBoxUpgradeRequest",
+    "output": "aiserver.v1.ScheduleSandBoxUpgradeResponse"
   },
   {
-    "jsKey": "cancelSandBoxUpgrade",
     "name": "CancelSandBoxUpgrade",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CancelSandBoxUpgradeRequest",
+    "output": "aiserver.v1.CancelSandBoxUpgradeResponse"
   },
   {
-    "jsKey": "rescheduleSandBoxUpgrade",
     "name": "RescheduleSandBoxUpgrade",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RescheduleSandBoxUpgradeRequest",
+    "output": "aiserver.v1.RescheduleSandBoxUpgradeResponse"
   },
   {
-    "jsKey": "listSandBoxes",
     "name": "ListSandBoxes",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListSandBoxesRequest",
+    "output": "aiserver.v1.ListSandBoxesResponse"
   },
   {
-    "jsKey": "notifySandAgentTurnFinished",
     "name": "NotifySandAgentTurnFinished",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.NotifySandAgentTurnFinishedRequest",
+    "output": "aiserver.v1.NotifySandAgentTurnFinishedResponse"
   },
   {
-    "jsKey": "listSandSetupManifests",
     "name": "ListSandSetupManifests",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListSandSetupManifestsRequest",
+    "output": "aiserver.v1.ListSandSetupManifestsResponse"
   },
   {
-    "jsKey": "listTeamSandSetupManifests",
     "name": "ListTeamSandSetupManifests",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListTeamSandSetupManifestsRequest",
+    "output": "aiserver.v1.ListTeamSandSetupManifestsResponse"
   },
   {
-    "jsKey": "saveTeamSandSetupManifest",
     "name": "SaveTeamSandSetupManifest",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SaveTeamSandSetupManifestRequest",
+    "output": "aiserver.v1.SaveTeamSandSetupManifestResponse"
   },
   {
-    "jsKey": "deleteTeamSandSetupManifest",
     "name": "DeleteTeamSandSetupManifest",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteTeamSandSetupManifestRequest",
+    "output": "aiserver.v1.DeleteTeamSandSetupManifestResponse"
   },
   {
-    "jsKey": "listTeamMemberSandBoxes",
     "name": "ListTeamMemberSandBoxes",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ListTeamMemberSandBoxesRequest",
+    "output": "aiserver.v1.ListTeamMemberSandBoxesResponse"
   },
   {
-    "jsKey": "killTeamMemberSandBox",
     "name": "KillTeamMemberSandBox",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.KillTeamMemberSandBoxRequest",
+    "output": "aiserver.v1.KillTeamMemberSandBoxResponse"
   },
   {
-    "jsKey": "recreateTeamMemberSandBox",
     "name": "RecreateTeamMemberSandBox",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.RecreateTeamMemberSandBoxRequest",
+    "output": "aiserver.v1.RecreateSandBoxResponse"
   },
   {
-    "jsKey": "getTeamMemberSandBoxMigrationStatus",
     "name": "GetTeamMemberSandBoxMigrationStatus",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetTeamMemberSandBoxMigrationStatusRequest",
+    "output": "aiserver.v1.GetTeamMemberSandBoxMigrationStatusResponse"
   },
   {
-    "jsKey": "startBulkTeamMemberSandBoxOperation",
     "name": "StartBulkTeamMemberSandBoxOperation",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartBulkTeamMemberSandBoxOperationRequest",
+    "output": "aiserver.v1.StartBulkTeamMemberSandBoxOperationResponse"
   },
   {
-    "jsKey": "getBulkTeamMemberSandBoxOperationStatus",
     "name": "GetBulkTeamMemberSandBoxOperationStatus",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetBulkTeamMemberSandBoxOperationStatusRequest",
+    "output": "aiserver.v1.GetBulkTeamMemberSandBoxOperationStatusResponse"
   },
   {
-    "jsKey": "mintSandVoiceCallSecret",
     "name": "MintSandVoiceCallSecret",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.MintSandVoiceCallSecretRequest",
+    "output": "aiserver.v1.MintSandVoiceCallSecretResponse"
   },
   {
-    "jsKey": "beginOnePasswordConnection",
     "name": "BeginOnePasswordConnection",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.BeginOnePasswordConnectionRequest",
+    "output": "aiserver.v1.BeginOnePasswordConnectionResponse"
   },
   {
-    "jsKey": "completeOnePasswordConnection",
     "name": "CompleteOnePasswordConnection",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CompleteOnePasswordConnectionRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "getOnePasswordState",
     "name": "GetOnePasswordState",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.GetOnePasswordStateRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "syncOnePasswordConnections",
     "name": "SyncOnePasswordConnections",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.SyncOnePasswordConnectionsRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "deleteOnePasswordConnection",
     "name": "DeleteOnePasswordConnection",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DeleteOnePasswordConnectionRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "startOnePasswordOAuth",
     "name": "StartOnePasswordOAuth",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StartOnePasswordOAuthRequest",
+    "output": "aiserver.v1.StartOnePasswordOAuthResponse"
   },
   {
-    "jsKey": "storeOnePasswordIntegrationKey",
     "name": "StoreOnePasswordIntegrationKey",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.StoreOnePasswordIntegrationKeyRequest",
+    "output": "aiserver.v1.StoreOnePasswordIntegrationKeyResponse"
   },
   {
-    "jsKey": "completeOnePasswordOAuth",
     "name": "CompleteOnePasswordOAuth",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.CompleteOnePasswordOAuthRequest",
+    "output": "aiserver.v1.OnePasswordState"
   },
   {
-    "jsKey": "approveOnePasswordCredentialRequest",
     "name": "ApproveOnePasswordCredentialRequest",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.ApproveOnePasswordCredentialRequestRequest",
+    "output": "aiserver.v1.OnePasswordCredentialDecisionResponse"
   },
   {
-    "jsKey": "denyOnePasswordCredentialRequest",
     "name": "DenyOnePasswordCredentialRequest",
-    "kind": "i.Unary"
+    "kind": "i.Unary",
+    "input": "aiserver.v1.DenyOnePasswordCredentialRequestRequest",
+    "output": "aiserver.v1.OnePasswordCredentialDecisionResponse"
   }
 ]

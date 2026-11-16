@@ -1,5 +1,18 @@
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, session as electronSession, shell } from 'electron'
+import { applyProxyToPartition } from '../muse/accountProxy'
+import { partitionForAccount } from '../webContentsViewManager'
 import { DOT_ORIGIN, getStoredDotAccount, trySyncFromElectronPartition } from './dotClient'
+
+const ALLOWED_DOT_HOST =
+  /^(?:[\w-]+\.)*(?:chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com|auth0\.com|google\.com|googleusercontent\.com|gstatic\.com|apple\.com|icloud\.com|live\.com|microsoftonline\.com|cloudflare\.com)$/i
+
+function dotHostAllowed(url: string): boolean {
+  try {
+    return ALLOWED_DOT_HOST.test(new URL(url).hostname)
+  } catch {
+    return false
+  }
+}
 
 export type DotLoginEvent =
   | {
@@ -45,27 +58,51 @@ export async function openDotLoginWindow(
     return
   }
 
-  const partition = `persist:bothub-account-${accountId}`
+  // Enforce per-account proxy BEFORE loading chatgpt.com/dots (fail-closed on unreadable proxy).
+  await applyProxyToPartition(accountId)
+
+  const partition = partitionForAccount(accountId)
   const win = new BrowserWindow({
     width: 1020,
     height: 760,
-    parent,
-    title: 'Sign in to ChatGPT Dot (chatgpt.com/dots)',
+    minWidth: 720,
+    minHeight: 560,
+    parent: parent && !parent.isDestroyed() ? parent : undefined,
+    title: '使用 ChatGPT Dot 登录 (chatgpt.com/dots)',
+    backgroundColor: '#f7f7f8',
     autoHideMenuBar: true,
     webPreferences: {
       partition,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      backgroundThrottling: false
     }
   })
 
   loginWindows.set(accountId, win)
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (dotHostAllowed(url)) {
+      void win.webContents.loadURL(url)
+      return { action: 'deny' }
+    }
+    if (/^https?:\/\//.test(url)) void shell.openExternal(url)
+    return { action: 'deny' }
+  })
+
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!dotHostAllowed(url) && /^https?:\/\//.test(url)) {
+      event.preventDefault()
+      void shell.openExternal(url)
+    }
+  })
+
   let captured = false
 
   const pollSession = async () => {
     if (captured || win.isDestroyed()) return
-    const synced = await trySyncFromElectronPartition(accountId)
+    const synced = await trySyncFromElectronPartition(accountId).catch(() => undefined)
     if (synced && synced.accessToken) {
       captured = true
       emitLogin({
@@ -82,11 +119,11 @@ export async function openDotLoginWindow(
 
   const interval = setInterval(() => {
     void pollSession()
-  }, 2000)
+  }, 1800)
 
-  win.webContents.on('did-navigate', () => {
-    void pollSession()
-  })
+  win.webContents.on('did-finish-load', () => void pollSession())
+  win.webContents.on('did-navigate', () => void pollSession())
+  win.webContents.on('did-redirect-navigation', () => void pollSession())
 
   win.on('closed', () => {
     clearInterval(interval)
@@ -117,8 +154,16 @@ export async function openDotLoginWindow(
 
 export async function cancelDotLogin(accountId: string): Promise<void> {
   const win = loginWindows.get(accountId)
-  if (win && !win.isDestroyed()) {
-    win.close()
-  }
   loginWindows.delete(accountId)
+  if (win && !win.isDestroyed()) {
+    win.destroy()
+  }
+  if (!getStoredDotAccount(accountId)?.accessToken) {
+    try {
+      const ses = electronSession.fromPartition(partitionForAccount(accountId))
+      await ses.clearStorageData()
+    } catch {
+      /* ignore */
+    }
+  }
 }

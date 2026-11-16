@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { ShieldCheck } from 'lucide-react'
 import type { MuseProxyMode, MuseProxyView } from '@shared/ipc'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { Button } from '@/components/ui/Button'
@@ -6,6 +7,7 @@ import { TextInput } from '@/components/ui/Field'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
 import { t } from '@/lib/i18n'
+import { useBotStore } from '@/store/botStore'
 
 const MODES: Array<{ value: MuseProxyMode; label: () => string }> = [
   { value: 'direct', label: () => t('Direct (no proxy)') },
@@ -15,10 +17,11 @@ const MODES: Array<{ value: MuseProxyMode; label: () => string }> = [
 ]
 
 /**
- * BotHub-local per-account Muse egress proxy (partition session.setProxy + Noise WSS agent).
- * Not a Muse RPC. Password stored via Electron safeStorage only.
+ * Per-account isolated egress proxy across all 4 platforms (partition + WSS/RPC transport).
+ * Password stored via OS Keychain (`safeStorage`) with fail-closed leak protection.
  */
 export function ProxySection({ accountId }: { accountId: string }) {
+  const platformId = useBotStore((s) => s.accounts[accountId]?.platformId)
   const [view, setView] = useState<MuseProxyView | null>(null)
   const [mode, setMode] = useState<MuseProxyMode>('direct')
   const [host, setHost] = useState('')
@@ -73,7 +76,11 @@ export function ProxySection({ accountId }: { accountId: string }) {
       })
       setView(next)
       setPassword('')
-      setHint(t('Proxy saved — reconnect Muse to apply WSS fully'))
+      setHint(
+        platformId === 'meta-muse'
+          ? t('Proxy saved — reconnect Muse to apply WSS fully')
+          : '独立代理已加密生效（钥匙串锁定异常时自动阻断直连防泄漏）'
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -96,6 +103,10 @@ export function ProxySection({ accountId }: { accountId: string }) {
     >
       {error && <p className="pb-1 text-[12px] text-status-error">{error}</p>}
       {hint && <p className="pb-1 text-[12px] text-ink-secondary">{hint}</p>}
+      <p className="mb-2 flex items-center gap-1 text-[11px] text-ink-muted">
+        <ShieldCheck className="size-3 shrink-0 text-status-online-ink" aria-hidden />
+        <span>钥匙串加密存储 · 不可读时自动阻断直连</span>
+      </p>
       <div className="flex flex-col gap-2">
         <label className="flex flex-col gap-1 text-[12px]">
           <span className="font-medium text-ink">{t('Mode')}</span>

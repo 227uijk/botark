@@ -1,9 +1,11 @@
 import { ChevronRight, Globe, MessageSquarePlus, PanelRight, Pin, PinOff, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { PaneHeader } from '@/components/layout/PaneHeader'
+import { getPlatformInspector } from '@/components/info/platformInspector'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { IconButton } from '@/components/ui/IconButton'
 import { STATUS_LABEL } from '@/components/ui/Status'
+import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
 import { getBotStatus } from '@/lib/selectors'
 import { shortcutLabel } from '@/lib/shortcuts'
@@ -22,30 +24,26 @@ interface AgentOption {
   name: string
 }
 
-function AgentPicker({ bot }: { bot: Bot }) {
+function useEnsureGrokAgentBound(bot: Bot): void {
   const setSelectedAgent = useBotStore((s) => s.setSelectedAgent)
   const account = useBotStore((s) => s.accounts[bot.activeAccountId])
-  const [agents, setAgents] = useState<AgentOption[]>([])
 
   useEffect(() => {
-    if (bot.platformId !== 'grok' || !account) {
-      setAgents([])
-      return
-    }
+    if (bot.platformId !== 'grok' || !account) return
     const adapter = adapterRegistry.get('grok') as {
       listCachedAgents?: (id: string) => AgentOption[]
       refreshAgents?: (id: string) => Promise<AgentOption[]>
-      bindConversationAgent?: (c: string, a: string) => void
+      bindConversationAgent?: (c: string, a: string, accId?: string) => void
+    }
+    if (bot.selectedAgentId) {
+      adapter?.bindConversationAgent?.(bot.id, bot.selectedAgentId, account.id)
+      return
     }
     const apply = (list: AgentOption[]) => {
-      setAgents(list)
-      const pick =
-        bot.selectedAgentId && list.some((a) => a.id === bot.selectedAgentId)
-          ? bot.selectedAgentId
-          : list[0]?.id
+      const pick = list[0]?.id
       if (!pick) return
-      adapter?.bindConversationAgent?.(bot.id, pick)
-      if (pick !== bot.selectedAgentId) setSelectedAgent(bot.id, pick)
+      adapter?.bindConversationAgent?.(bot.id, pick, account.id)
+      setSelectedAgent(bot.id, pick)
     }
     const cached = adapter?.listCachedAgents?.(account.id) ?? []
     if (cached.length) {
@@ -55,27 +53,8 @@ function AgentPicker({ bot }: { bot: Bot }) {
     void adapter
       ?.refreshAgents?.(account.id)
       .then((list) => apply((list ?? []).map((a) => ({ id: a.id, name: a.name }))))
-      .catch(() => setAgents([]))
+      .catch(() => undefined)
   }, [bot.id, bot.platformId, bot.selectedAgentId, account?.id, account?.status, setSelectedAgent])
-
-  if (bot.platformId !== 'grok' || agents.length === 0) return null
-  return (
-    <label className="flex min-w-0 items-center gap-1.5 text-[12px] text-ink-muted">
-      <span className="shrink-0">{t('Agent')}</span>
-      <select
-        className="max-w-[140px] truncate rounded-full border border-line bg-surface px-2 py-0.5 text-[12px] text-ink outline-none focus:border-accent"
-        value={bot.selectedAgentId ?? agents[0]?.id ?? ''}
-        onChange={(e) => setSelectedAgent(bot.id, e.target.value)}
-        aria-label={t('Select Grok Bot agent')}
-      >
-        {agents.map((a) => (
-          <option key={a.id} value={a.id}>
-            {a.name}
-          </option>
-        ))}
-      </select>
-    </label>
-  )
 }
 
 export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
@@ -86,9 +65,35 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
   const toggleWebSession = useBotStore((s) => s.toggleWebSession)
   const togglePinBot = useBotStore((s) => s.togglePinBot)
   const startNewMuseSession = useBotStore((s) => s.startNewMuseSession)
+  const setSelectedAgent = useBotStore((s) => s.setSelectedAgent)
   const connectAccount = useBotStore((s) => s.connectAccount)
   const typing = useBotStore((s) => s.typing[bot.id] === true)
   const activeAccount = allAccounts[bot.activeAccountId]
+  const inspector = getPlatformInspector(bot.platformId)
+  const [startingFresh, setStartingFresh] = useState(false)
+
+  const handleNewConversation = async () => {
+    if (bot.platformId === 'meta-muse') {
+      await startNewMuseSession(bot.id)
+      return
+    }
+    if (bot.platformId === 'grok' && bot.activeAccountId && bot.selectedAgentId) {
+      const grok = getBridge()?.grok
+      if (!grok?.rpc) return
+      setStartingFresh(true)
+      try {
+        await grok.rpc({
+          accountId: bot.activeAccountId,
+          op: 'call',
+          method: 'StartFreshGrokBotConversation',
+          params: { agent_id: bot.selectedAgentId }
+        })
+        setSelectedAgent(bot.id, bot.selectedAgentId)
+      } finally {
+        setStartingFresh(false)
+      }
+    }
+  }
 
   const status = getBotStatus(bot, allAccounts)
   const activity = useBotStore((s) => s.activity[bot.activeAccountId])
@@ -98,10 +103,11 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
       }`.trim()
     : ''
 
+  useEnsureGrokAgentBound(bot)
+
   return (
     <PaneHeader className="gap-3 pr-3">
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <AgentPicker bot={bot} />
         {activityLine ? (
           <span
             className="hidden min-w-0 truncate text-[12px] text-ink-muted shimmer-text sm:inline"
@@ -158,17 +164,21 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
       </button>
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-1">
-        {bot.platformId === 'meta-muse' && (
+        {inspector.supportsQuickNewConversation && (
           <IconButton
-            label="开启新对话"
-            onClick={() => void startNewMuseSession(bot.id)}
+            label={t('New conversation')}
+            disabled={
+              startingFresh ||
+              (bot.platformId === 'grok' && (!bot.activeAccountId || !bot.selectedAgentId))
+            }
+            onClick={() => void handleNewConversation()}
           >
             <MessageSquarePlus />
           </IconButton>
         )}
         {bot.activeAccountId && (
           <IconButton
-            label="同步最新对话与连接状态"
+            label={t('Sync conversation')}
             disabled={activeAccount?.pending}
             onClick={() => void connectAccount(bot.activeAccountId)}
           >
@@ -178,13 +188,15 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
         <IconButton label={bot.pinned ? t('Unpin from sidebar') : t('Pin to sidebar')} active={bot.pinned === true} onClick={() => togglePinBot(bot.id)}>
           {bot.pinned ? <PinOff /> : <Pin />}
         </IconButton>
-        <IconButton
-          label={webSessionOpen ? t('Back to conversation') : t('Show web session')}
-          active={webSessionOpen}
-          onClick={toggleWebSession}
-        >
-          <Globe />
-        </IconButton>
+        {inspector.supportsWebSession && (
+          <IconButton
+            label={webSessionOpen ? t('Back to conversation') : t('Show web session')}
+            active={webSessionOpen}
+            onClick={toggleWebSession}
+          >
+            <Globe />
+          </IconButton>
+        )}
         <IconButton
           label={infoOpen ? t('Hide details') : t('Show details')}
           shortcut={shortcutLabel('I')}

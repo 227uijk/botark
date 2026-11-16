@@ -5,7 +5,7 @@ import { adapterRegistry } from '@adapters/registry'
 import { AdapterError, type AttachmentMeta, type ConnectionStatus, type IncomingMessage, type PlatformId } from '@adapters/types'
 import { createId } from '@shared/id'
 import { createSeed } from '@/data/seed'
-import type { AccountDraft, Bot, BotAccount, BotGroup, ChatMessage, NewBotInput } from '@/types'
+import type { AccountDraft, Bot, BotAccount, BotGroup, ChatMessage, ChatReplyTarget, NewBotInput } from '@/types'
 import { clearNoReplyFlag, createSafeStorage, sanitizePersisted, SEND_HARD_TIMEOUT_MS, SendTimeoutError, toPersistedMessages, withTimeout, deliveryAfterError, createInFlightSet, hasLostAttachments, ATTACHMENTS_LOST_TEXT } from './delivery'
 
 let warnedStorage = false
@@ -45,8 +45,12 @@ export interface BotHubState {
   /** Sidebar width in px (dragged by its right edge). */
   sidebarWidth: number
   addBotOpen: boolean
+  /** Optional platform pre-highlighted when opening AddBotDialog from Onboarding. */
+  addBotInitialPlatform: PlatformId | null
   /** Bumped on every open so each add-bot flow starts fresh. */
   addBotKey: number
+  /** Interactive product & security onboarding tour modal. */
+  onboardingOpen: boolean
   /** Command palette (⌘K); `paletteQuery` seeds it when typing opens it. */
   paletteOpen: boolean
   paletteQuery: string
@@ -58,10 +62,16 @@ export interface BotHubState {
   settingsTab: 'overview' | 'general' | 'muse-accounts' | 'dot-accounts' | 'grok-accounts' | 'hark-accounts' | 'proxy-pool'
   /** Active document/article opened in the right-side Split-Pane Document Canvas. */
   activeDocument: import('@/components/chat/NativeDocumentDialog').NativeDocumentTarget | null
+  /** Per-bot pending quote-reply target shown in Composer. */
+  replyingTo: Record<string, ChatReplyTarget | undefined>
+  /** Per-account Grok agentIds explicitly removed from sidebar so auto-sync respects user deletion until manual sync. */
+  dismissedGrokAgents: Record<string, string[]>
 
   // Navigation & layout
   selectBot: (botId: string) => void
   setActiveDocument: (doc: import('@/components/chat/NativeDocumentDialog').NativeDocumentTarget | null) => void
+  setReplyTarget: (botId: string, target: ChatReplyTarget | null) => void
+  deleteMessages: (botId: string, messageIds: string[]) => void
   toggleGroup: (groupId: string) => void
   /** Create a local sidebar section (Grok-like; not a host API). */
   addGroup: (name?: string) => string
@@ -75,7 +85,8 @@ export interface BotHubState {
   toggleInfoPanel: () => void
   toggleSidebarCollapsed: () => void
   setSidebarWidth: (width: number) => void
-  setAddBotOpen: (open: boolean) => void
+  setAddBotOpen: (open: boolean, initialPlatform?: PlatformId | null) => void
+  setOnboardingOpen: (open: boolean) => void
   toggleWebSession: () => void
   setSettingsOpen: (
     open: boolean,
@@ -128,16 +139,21 @@ export interface BotHubState {
   connectAccount: (accountId: string) => Promise<void>
   /** Muse: open same-partition login BrowserWindow. */
   openMuseLogin: (accountId: string) => Promise<void>
-  /** Grok: open Cursor authenticator window; token auto-captured when possible. */
-  openGrokLogin: (accountId: string) => Promise<void>
+  /** Grok: open PKCE login (embedded window by default, or OS browser when `openInBrowser` is true). */
+  openGrokLogin: (accountId: string, openInBrowser?: boolean) => Promise<void>
+  /** Sync all Agents under a Grok account so each Agent appears as its own Bot in the left sidebar. */
+  syncGrokAccountBots: (
+    accountId: string,
+    opts?: { includeDismissed?: boolean; selectFirst?: boolean; preferredGroupId?: string }
+  ) => Promise<number>
   /** Hark: open Hark login window (Google / Apple / Email OTP). */
   openHarkLogin: (accountId: string) => Promise<void>
   /** Dot: open ChatGPT Dot login window (chatgpt.com/dots). */
   openDotLogin: (accountId: string) => Promise<void>
-  /** Inject Grok accessToken into adapter after login (encrypted via safeStorage). */
+  /** Inject Grok accessToken (or mark main-captured PKCE session active) in adapter. */
   setGrokAccessToken: (
     accountId: string,
-    accessToken: string,
+    accessToken?: string,
     accountSlot?: string,
     machineId?: string,
     refreshToken?: string
@@ -212,11 +228,18 @@ function normalizeDotMsgId(rawId: string, role: 'user' | 'bot'): string {
   return role === 'user' ? `dot_u_${clean}` : `dot_${clean}`
 }
 
+function isOmittedPlaceholderText(text: string): boolean {
+  return text.startsWith('[消息内容较大') || text.startsWith('[Message body omitted')
+}
+
 function mergeHydratedMessages(existing: ChatMessage[], hydrated: ChatMessage[]): ChatMessage[] {
   if (hydrated.length === 0) return existing
-  const normalizedExisting = existing.map((m) =>
-    m.id.startsWith('dot_dot_') ? { ...m, id: m.id.replace(/^dot_dot_/, 'dot_') } : m
-  )
+  const targetAgentId = hydrated.find((m) => m.agentId)?.agentId
+  const normalizedExisting = existing
+    .filter((m) => !targetAgentId || !m.agentId || m.agentId === targetAgentId)
+    .map((m) =>
+      m.id.startsWith('dot_dot_') ? { ...m, id: m.id.replace(/^dot_dot_/, 'dot_') } : m
+    )
   const hydratedById = new Map(hydrated.map((m) => [m.id, m]))
   const keptLocal: ChatMessage[] = []
   const earliestHydratedTs = hydrated[0]?.createdAt ?? 0
@@ -259,15 +282,25 @@ function mergeHydratedMessages(existing: ChatMessage[], hydrated: ChatMessage[])
   })
 }
 
-/** Pool bookkeeping lists: Muse accounts are assigned, Hark accounts only keep their slot. */
+/** Pool bookkeeping lists: Muse, Grok & Dot accounts can receive pool assignments; Hark accounts keep their slot. */
 export function poolAccountIds(accounts: Record<string, { id: string; platformId: string }>): {
   museIds: string[]
+  grokIds: string[]
+  dotIds: string[]
   harkIds: string[]
+  assignableIds: string[]
 } {
   const all = Object.values(accounts)
+  const museIds = all.filter((a) => a.platformId === 'meta-muse').map((a) => a.id)
+  const grokIds = all.filter((a) => a.platformId === 'grok').map((a) => a.id)
+  const dotIds = all.filter((a) => a.platformId === 'dot').map((a) => a.id)
+  const harkIds = all.filter((a) => a.platformId === 'hark').map((a) => a.id)
   return {
-    museIds: all.filter((a) => a.platformId === 'meta-muse').map((a) => a.id),
-    harkIds: all.filter((a) => a.platformId === 'hark').map((a) => a.id)
+    museIds,
+    grokIds,
+    dotIds,
+    harkIds,
+    assignableIds: [...museIds, ...grokIds, ...dotIds]
   }
 }
 
@@ -342,6 +375,8 @@ export const useBotStore = create<BotHubState>()(
           sessionId: bot.activeSessionId,
           text: message.text,
           attachments: message.attachments,
+          replyToId: message.replyToId,
+          replyQuote: message.replyQuote,
           onAccepted
         }),
         SEND_HARD_TIMEOUT_MS,
@@ -373,7 +408,9 @@ export const useBotStore = create<BotHubState>()(
     sidebarCollapsed: false,
     sidebarWidth: SIDEBAR_DEFAULT,
     addBotOpen: false,
+    addBotInitialPlatform: null,
     addBotKey: 0,
+    onboardingOpen: false,
     paletteOpen: false,
     paletteQuery: '',
     paletteKey: 0,
@@ -381,8 +418,30 @@ export const useBotStore = create<BotHubState>()(
     settingsOpen: false,
     settingsTab: 'overview',
     activeDocument: null,
+    replyingTo: {},
+    dismissedGrokAgents: {},
 
     setActiveDocument: (doc) => set({ activeDocument: doc }),
+
+    setReplyTarget: (botId, target) =>
+      set((state) => {
+        if (!target) {
+          if (!state.replyingTo[botId]) return state
+          const { [botId]: _removed, ...rest } = state.replyingTo
+          return { replyingTo: rest }
+        }
+        return { replyingTo: { ...state.replyingTo, [botId]: target } }
+      }),
+
+    deleteMessages: (botId, messageIds) =>
+      set((state) => {
+        const list = state.messages[botId]
+        if (!list || messageIds.length === 0) return state
+        const drop = new Set(messageIds)
+        const nextList = list.filter((m) => !drop.has(m.id))
+        if (nextList.length === list.length) return state
+        return { messages: { ...state.messages, [botId]: nextList } }
+      }),
 
     selectBot: (botId) =>
       set((state) => {
@@ -492,8 +551,19 @@ export const useBotStore = create<BotHubState>()(
     setSidebarWidth: (width) =>
       set({ sidebarWidth: Math.round(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, width))) }),
 
-    setAddBotOpen: (open) =>
-      set((state) => (open ? { addBotOpen: true, addBotKey: state.addBotKey + 1 } : { addBotOpen: false })),
+    setAddBotOpen: (open, initialPlatform = null) =>
+      set((state) =>
+        open
+          ? {
+              addBotOpen: true,
+              addBotInitialPlatform: initialPlatform,
+              addBotKey: state.addBotKey + 1,
+              onboardingOpen: false
+            }
+          : { addBotOpen: false, addBotInitialPlatform: null }
+      ),
+
+    setOnboardingOpen: (open) => set({ onboardingOpen: open }),
 
     toggleWebSession: () => set((state) => ({ webSessionOpen: !state.webSessionOpen })),
 
@@ -543,6 +613,9 @@ export const useBotStore = create<BotHubState>()(
         name: input.name.trim() || getPlatform(input.platformId).name,
         emoji: input.emoji ?? '🤖',
         avatar: input.avatar,
+        ...(input.avatarShape ? { avatarShape: input.avatarShape } : {}),
+        ...(input.avatarColor ? { avatarColor: input.avatarColor } : {}),
+        ...(input.selectedAgentId ? { selectedAgentId: input.selectedAgentId } : {}),
         description: input.description?.trim() ?? '',
         platformId: input.platformId,
         groupId,
@@ -622,10 +695,26 @@ export const useBotStore = create<BotHubState>()(
       set((s) => {
         const { [botId]: _messages, ...messages } = s.messages
         const { [botId]: _typing, ...typing } = s.typing
+        let dismissedGrokAgents = s.dismissedGrokAgents
+        if (
+          bot.platformId === 'grok' &&
+          bot.selectedAgentId &&
+          bot.activeAccountId &&
+          !orphaned.includes(bot.activeAccountId)
+        ) {
+          const prev = s.dismissedGrokAgents[bot.activeAccountId] ?? []
+          if (!prev.includes(bot.selectedAgentId)) {
+            dismissedGrokAgents = {
+              ...s.dismissedGrokAgents,
+              [bot.activeAccountId]: [...prev, bot.selectedAgentId]
+            }
+          }
+        }
         return {
           bots: s.bots.filter((b) => b.id !== botId),
           messages,
           typing,
+          dismissedGrokAgents,
           selectedBotId: s.selectedBotId === botId ? (neighbour?.id ?? null) : s.selectedBotId
         }
       })
@@ -639,23 +728,33 @@ export const useBotStore = create<BotHubState>()(
     },
 
     sendMessage: async (botId, text, attachments) => {
-      const bot = get().bots.find((b) => b.id === botId)
+      const stateBefore = get()
+      const bot = stateBefore.bots.find((b) => b.id === botId)
       const trimmed = text.trim()
       if (!bot || (!trimmed && !attachments?.length)) return
+      const replyTarget = stateBefore.replyingTo[botId]
 
       const message: ChatMessage = {
         id: createId('msg'),
         botId,
         accountId: bot.activeAccountId,
+        ...(bot.selectedAgentId ? { agentId: bot.selectedAgentId } : {}),
         role: 'user',
         text: trimmed,
         createdAt: Date.now(),
         delivery: 'sending',
+        ...(replyTarget
+          ? { replyToId: replyTarget.entryId, replyQuote: replyTarget.quote }
+          : {}),
         attachments: attachments?.length ? attachments : undefined
       }
-      set((state) => ({
-        messages: { ...state.messages, [botId]: [...(state.messages[botId] ?? []), message] }
-      }))
+      set((state) => {
+        const { [botId]: _clearedReply, ...restReplies } = state.replyingTo
+        return {
+          replyingTo: restReplies,
+          messages: { ...state.messages, [botId]: [...(state.messages[botId] ?? []), message] }
+        }
+      })
       await deliver(botId, message.id)
     },
 
@@ -689,13 +788,15 @@ export const useBotStore = create<BotHubState>()(
             ? incomingText
             : !incomingText
               ? prevText
-              : incomingText.length < prevText.length
-                ? prevText
-                : incomingText.startsWith(prevText) || prevText.length === 0
-                  ? incomingText
-                  : incomingText.length > prevText.length
+              : isOmittedPlaceholderText(prevText) && !isOmittedPlaceholderText(incomingText)
+                ? incomingText
+                : incomingText.length < prevText.length
+                  ? prevText
+                  : incomingText.startsWith(prevText) || prevText.length === 0
                     ? incomingText
-                    : prevText
+                    : incomingText.length > prevText.length
+                      ? incomingText
+                      : prevText
         const prevWidgets = existingIdx >= 0 ? list[existingIdx]!.widgets : undefined
         const incomingWidgets = (incoming as { widgets?: ChatMessage['widgets'] }).widgets
         const prevTools = existingIdx >= 0 ? list[existingIdx]!.tools : undefined
@@ -704,10 +805,12 @@ export const useBotStore = create<BotHubState>()(
         const incomingMedia = (incoming as { media?: ChatMessage['media'] }).media
         const prevRich = existingIdx >= 0 ? list[existingIdx]!.richWidgets : undefined
         const incomingRich = (incoming as { richWidgets?: ChatMessage['richWidgets'] }).richWidgets
+        const targetBot = state.bots.find((b) => b.id === botId)
         const message: ChatMessage = {
           id: incoming.id,
           botId,
           accountId: incoming.accountId,
+          ...(targetBot?.selectedAgentId ? { agentId: targetBot.selectedAgentId } : {}),
           role: 'bot',
           text: mergedText,
           createdAt: existingIdx >= 0 ? list[existingIdx]!.createdAt : incoming.createdAt,
@@ -753,17 +856,20 @@ export const useBotStore = create<BotHubState>()(
         const existingIdx = list.findIndex((m) => m.id === messageId)
         if (existingIdx >= 0) {
           const prev = list[existingIdx]!.text
-          // Reconnect/backfill can briefly send a shorter snapshot — never shrink.
+          // Reconnect/backfill can briefly send a shorter snapshot — never shrink,
+          // unless replacing an omitted-body placeholder with hydrated real text.
           const next =
             !text
               ? prev
-              : text.length < prev.length
-                ? prev
-                : text.startsWith(prev) || prev.length === 0
-                  ? text
-                  : text.length > prev.length
+              : isOmittedPlaceholderText(prev) && !isOmittedPlaceholderText(text)
+                ? text
+                : text.length < prev.length
+                  ? prev
+                  : text.startsWith(prev) || prev.length === 0
                     ? text
-                    : prev
+                    : text.length > prev.length
+                      ? text
+                      : prev
           const prevMsg = list[existingIdx]!
           const nextWidgets = widgets?.length ? widgets : prevMsg.widgets
           const nextTools = tools?.length ? tools : prevMsg.tools
@@ -795,10 +901,12 @@ export const useBotStore = create<BotHubState>()(
             }
           }
         }
+        const targetBot = state.bots.find((b) => b.id === botId)
         const message: ChatMessage = {
           id: messageId,
           botId,
           accountId,
+          ...(targetBot?.selectedAgentId ? { agentId: targetBot.selectedAgentId } : {}),
           role: 'bot',
           text,
           createdAt: Date.now(),
@@ -1076,15 +1184,44 @@ export const useBotStore = create<BotHubState>()(
     setSelectedAgent: (botId, agentId) => {
       const trimmed = agentId.trim()
       if (!trimmed) return
-      patchBot(botId, () => ({ selectedAgentId: trimmed }))
+      const botBefore = get().bots.find((b) => b.id === botId)
+      const adapterBefore = botBefore ? adapterRegistry.get(botBefore.platformId) : undefined
+      const grokAdapter = adapterBefore as
+        | {
+            listCachedAgents?: (accId: string) => Array<{
+              id: string
+              name: string
+              avatarShape?: string
+              avatarColor?: string
+            }>
+            bindConversationAgent?: (c: string, a: string, accId?: string) => void
+          }
+        | undefined
+      const matchedAgent = botBefore
+        ? grokAdapter?.listCachedAgents?.(botBefore.activeAccountId)?.find((a) => a.id === trimmed)
+        : undefined
+      const prevAgentId = botBefore?.selectedAgentId
+      patchBot(botId, (b) => ({
+        selectedAgentId: trimmed,
+        ...(matchedAgent?.avatarShape ? { avatarShape: matchedAgent.avatarShape } : {}),
+        ...(matchedAgent?.avatarColor ? { avatarColor: matchedAgent.avatarColor } : {}),
+        ...(b.name === 'Grok Bot' && matchedAgent?.name ? { name: matchedAgent.name } : {})
+      }))
+      // Switching to a different agent clears the old agent's bubbles immediately
+      if (prevAgentId && prevAgentId !== trimmed) {
+        set((s) => ({
+          messages: {
+            ...s.messages,
+            [botId]: (s.messages[botId] ?? []).filter((m) => m.agentId === trimmed)
+          }
+        }))
+      }
       try {
         const bot = get().bots.find((b) => b.id === botId)
-        const account = bot ? get().accounts[bot.activeAccountId] : undefined
-        const adapter = account && adapterRegistry.get(account.platformId)
-        const grok = adapter as { bindConversationAgent?: (c: string, a: string) => void } | undefined
-        grok?.bindConversationAgent?.(botId, trimmed)
+        if (!bot) return
+        grokAdapter?.bindConversationAgent?.(botId, trimmed, bot.activeAccountId)
         const bridge = electronBridge()
-        if (bot?.platformId === 'grok' && bridge?.grok?.rpc) {
+        if (bot.platformId === 'grok' && bridge?.grok?.rpc) {
           void bridge.grok
             .rpc({
               accountId: bot.activeAccountId,
@@ -1094,87 +1231,50 @@ export const useBotStore = create<BotHubState>()(
               limit: 60
             })
             .then((res) => {
+              // Guard against stale response if user switched agents again before RPC resolved
+              const latestBot = get().bots.find((b) => b.id === botId)
+              if (!latestBot || latestBot.selectedAgentId !== trimmed) return
               if (!res.ok || !res.data || typeof res.data !== 'object') return
               const root = res.data as Record<string, unknown>
-              const entries = (Array.isArray(root['entries']) ? root['entries'] : []) as Record<string, unknown>[]
-              const hydrated: ChatMessage[] = []
-              for (const raw of entries) {
-                let e = raw
-                if (typeof raw['body'] === 'string' && raw['body']) {
-                  try {
-                    e = { ...raw, ...(JSON.parse(atob(raw['body'] as string)) as Record<string, unknown>) }
-                  } catch {
-                    /* ignore */
-                  }
-                }
-                const msgObj = e['message'] as Record<string, unknown> | undefined
-                const roleRaw = String(e['role'] ?? '')
-                const kindRaw = String(e['kind'] ?? e['entryKind'] ?? '')
-                if (/^event$/i.test(kindRaw)) continue
-                const isUser = /^user$/i.test(roleRaw) || /^user-attachment$/i.test(kindRaw)
-                const widgetObj = msgObj?.['widget'] as Record<string, unknown> | undefined
-                const text = String(
-                  e['text'] ??
-                    e['content'] ??
-                    msgObj?.['text'] ??
-                    msgObj?.['content'] ??
-                    widgetObj?.['prompt'] ??
-                    widgetObj?.['title'] ??
-                    ''
-                ).trim()
-
-                let widgets: ChatMessage['widgets']
-                if (widgetObj && Array.isArray(widgetObj['options'])) {
-                  const opts = (widgetObj['options'] as Array<Record<string, unknown>>)
-                    .map((o) => String(o['label'] ?? o['text'] ?? o['id'] ?? '').trim())
-                    .filter(Boolean)
-                  if (opts.length > 0) {
-                    const resp = widgetObj['response'] as Record<string, unknown> | undefined
-                    widgets = [
-                      {
-                        kind: 'option',
-                        widgetId: String(widgetObj['id'] ?? e['id'] ?? 'grok_w'),
-                        options: opts,
-                        buttonStyle: 'center_aligned_filled',
-                        baseVersion: 1,
-                        selectedText: resp?.['optionId'] ? String(resp['optionId']) : undefined
-                      }
-                    ]
-                  }
-                }
-
-                let media: ChatMessage['media']
-                const attObj = (msgObj?.['attachment'] ?? e['attachment']) as Record<string, unknown> | undefined
-                if (attObj && typeof attObj === 'object') {
-                  const attPath = String(attObj['path'] ?? attObj['url'] ?? '').trim()
-                  if (attPath) {
-                    media = [
-                      {
-                        kind: String(attObj['mimeType'] ?? '').startsWith('image/') ? 'image' : 'file',
-                        path: attPath,
-                        name: String(attObj['name'] ?? attPath.split('/').pop() ?? 'attachment'),
-                        mimeType: typeof attObj['mimeType'] === 'string' ? attObj['mimeType'] : undefined
-                      }
-                    ]
-                  }
-                }
-
-                if (!text && !widgets?.length && !media?.length) continue
-                const rawId = String(e['id'] ?? e['message_id'] ?? hydrated.length)
-                hydrated.push({
-                  id: isUser ? `grok_u_${rawId}` : `grok_${rawId}`,
+              // Prefer pre-decoded, chronological `hydrated` array with presigned media URLs from main
+              if (Array.isArray(root['hydrated'])) {
+                const hydrated: ChatMessage[] = (
+                  root['hydrated'] as Array<Record<string, unknown>>
+                ).map((item, idx) => ({
+                  id: String(item['id'] ?? `grok_h_${idx}`),
                   botId,
                   accountId: bot.activeAccountId,
-                  role: isUser ? 'user' : 'bot',
-                  text,
-                  createdAt: Number(e['timestampMs'] ?? e['created_at_ms'] ?? Date.now()) || Date.now(),
-                  delivery: isUser ? 'sent' : undefined,
-                  ...(widgets ? { widgets } : {}),
-                  ...(media ? { media } : {})
-                })
-              }
-              if (hydrated.length > 0) {
-                set((s) => ({ messages: { ...s.messages, [botId]: hydrated } }))
+                  agentId: trimmed,
+                  role: item['role'] === 'user' ? 'user' : 'bot',
+                  text: String(item['text'] ?? ''),
+                  createdAt: Number(item['createdAt'] ?? Date.now()) || Date.now(),
+                  delivery: item['role'] === 'user' ? 'sent' : undefined,
+                  ...(Array.isArray(item['widgets'])
+                    ? { widgets: item['widgets'] as ChatMessage['widgets'] }
+                    : {}),
+                  ...(Array.isArray(item['richWidgets'])
+                    ? { richWidgets: item['richWidgets'] as ChatMessage['richWidgets'] }
+                    : {}),
+                  ...(Array.isArray(item['media'])
+                    ? { media: item['media'] as ChatMessage['media'] }
+                    : {}),
+                  ...(Array.isArray(item['tools'])
+                    ? { tools: item['tools'] as ChatMessage['tools'] }
+                    : {})
+                }))
+                set((s) => ({
+                  messages: {
+                    ...s.messages,
+                    [botId]:
+                      hydrated.length === 0
+                        ? (s.messages[botId] ?? []).filter(
+                            (m) => !m.agentId || m.agentId === trimmed
+                          )
+                        : prevAgentId && prevAgentId !== trimmed
+                          ? hydrated
+                          : mergeHydratedMessages(s.messages[botId] ?? [], hydrated)
+                  }
+                }))
               }
             })
             .catch(() => undefined)
@@ -1200,6 +1300,7 @@ export const useBotStore = create<BotHubState>()(
           await bridge.muse.signOut(accountId)
         } else if (account.platformId === 'grok' && bridge?.grok?.clearAuth) {
           await bridge.grok.clearAuth(accountId)
+          await bridge.webViews?.clearPartition?.(accountId)
           const adapter = adapterRegistry.get('grok') as { clearAuth?: (id: string) => void }
           adapter?.clearAuth?.(accountId)
         } else if (account.platformId === 'dot' && bridge?.dot?.clearAuth) {
@@ -1410,6 +1511,21 @@ export const useBotStore = create<BotHubState>()(
               })
               .catch(() => undefined)
           }
+        } else if (account.platformId === 'grok' && (status === 'online' || status === 'busy')) {
+          const bridge = electronBridge()
+          void bridge?.grok
+            ?.authStatus(accountId)
+            .then((st) => {
+              if (st.accountSlot) {
+                const latestAcc = get().accounts[accountId]
+                patchAccount(accountId, {
+                  handle: st.accountSlot,
+                  displayName: latestAcc?.label || st.accountSlot
+                })
+              }
+            })
+            .catch(() => undefined)
+          await get().syncGrokAccountBots(accountId)
         }
       } catch (error) {
         patchAccount(accountId, { status: 'error', statusDetail: errorMessage(error) })
@@ -1441,8 +1557,7 @@ export const useBotStore = create<BotHubState>()(
       }
     },
 
-
-    openGrokLogin: async (accountId) => {
+    openGrokLogin: async (accountId, openInBrowser = false) => {
       const account = get().accounts[accountId]
       const adapter = account && adapterRegistry.get(account.platformId)
       if (!account || !adapter || account.pending) return
@@ -1451,20 +1566,257 @@ export const useBotStore = create<BotHubState>()(
         return
       }
       const bot = get().bots.find((b) => b.accountIds.includes(accountId))
-      patchAccount(accountId, { pending: true, statusDetail: '在登录窗口完成 Cursor / Grok 登录…' })
+      patchAccount(accountId, {
+        pending: true,
+        statusDetail: openInBrowser ? '请在浏览器完成 Grok Bot 授权确认…' : '请在弹出的窗口完成 Grok Bot 登录…'
+      })
       try {
         const bridge = electronBridge()
-        if (bridge?.grok?.openLogin) await bridge.grok.openLogin({ accountId })
-        else if (adapter.openLogin) await adapter.openLogin(accountId, bot?.id)
+        if (bridge?.grok?.openLogin) {
+          await bridge.grok.openLogin({ accountId, openInBrowser })
+        } else if (adapter.openLogin) {
+          await adapter.openLogin(accountId, bot?.id)
+        }
         patchAccount(accountId, {
-          status: 'busy',
-          statusDetail: '在弹出的窗口里完成 Cursor / Grok 登录，成功后会自动导入'
+          status: account.status === 'online' ? 'online' : 'offline',
+          statusDetail: openInBrowser
+            ? '已在默认浏览器打开授权页，点击确认后自动同步全部 Bot'
+            : '在弹出的窗口完成登录，成功后自动同步账号下全部 Bot'
         })
       } catch (error) {
         patchAccount(accountId, { status: 'error', statusDetail: errorMessage(error) })
       } finally {
         patchAccount(accountId, { pending: false })
       }
+    },
+
+    syncGrokAccountBots: async (accountId, opts) => {
+      const adapter = adapterRegistry.get('grok') as
+        | {
+            connect?: (id: string) => Promise<ConnectionStatus>
+            refreshAgents?: (id: string) => Promise<
+              Array<{
+                id: string
+                name: string
+                description?: string
+                avatarShape?: string
+                avatarColor?: string
+              }>
+            >
+            listCachedAgents?: (id: string) => Array<{
+              id: string
+              name: string
+              description?: string
+              avatarShape?: string
+              avatarColor?: string
+            }>
+            bindConversationAgent?: (convId: string, agentId: string, accId?: string) => void
+          }
+        | undefined
+      if (!adapter) return 0
+
+      // Materialize account if syncing straight from AddBotDialog before `addBot` ran
+      if (!get().accounts[accountId]) {
+        const bridge = electronBridge()
+        const authSt = await bridge?.grok?.authStatus?.(accountId).catch(() => null)
+        const slot = authSt?.accountSlot || ''
+        set((s) => ({
+          accounts: {
+            ...s.accounts,
+            [accountId]: {
+              id: accountId,
+              platformId: 'grok',
+              displayName: slot || 'Grok Bot',
+              handle: slot,
+              status: authSt?.signedIn ? 'online' : 'offline'
+            }
+          }
+        }))
+        await adapter.connect?.(accountId).catch(() => undefined)
+      }
+
+      if (opts?.includeDismissed) {
+        set((s) => {
+          if (!s.dismissedGrokAgents[accountId]) return s
+          const { [accountId]: _cleared, ...rest } = s.dismissedGrokAgents
+          return { dismissedGrokAgents: rest }
+        })
+      }
+
+      let agents = adapter.listCachedAgents?.(accountId) ?? []
+      if (agents.length === 0 && adapter.refreshAgents) {
+        agents = await adapter.refreshAgents(accountId).catch(() => [])
+      }
+
+      const state = get()
+      const dismissed = new Set(
+        opts?.includeDismissed ? [] : (state.dismissedGrokAgents[accountId] ?? [])
+      )
+      const visibleAgents = agents.filter((a) => !dismissed.has(a.id))
+      const allAgentIds = new Set(agents.map((a) => a.id))
+
+      let groups = state.groups
+      const existingForAccount = state.bots.filter(
+        (b) => b.platformId === 'grok' && b.accountIds.includes(accountId)
+      )
+      const selectedGroup = state.bots.find((b) => b.id === state.selectedBotId)?.groupId
+      let targetGroupId =
+        opts?.preferredGroupId ??
+        existingForAccount[0]?.groupId ??
+        selectedGroup ??
+        groups[0]?.id ??
+        createId('grp')
+      if (!groups.some((g) => g.id === targetGroupId)) {
+        groups = [...groups, { id: targetGroupId, name: 'Workspace' }]
+      }
+
+      // Brand-new Grok account with 0 server agents yet: ensure at least 1 placeholder Bot row
+      if (visibleAgents.length === 0) {
+        if (existingForAccount.length === 0 && agents.length === 0) {
+          const placeholderId = createId('bot')
+          const acc = get().accounts[accountId]
+          const bot: Bot = {
+            id: placeholderId,
+            name: acc?.handle ? `Grok · ${acc.handle}` : 'Grok Bot',
+            emoji: '🤖',
+            description: '',
+            platformId: 'grok',
+            groupId: targetGroupId,
+            accountIds: [accountId],
+            activeAccountId: accountId,
+            memory: [],
+            notes: '',
+            createdAt: Date.now(),
+            unread: 0
+          }
+          set((s) => ({
+            groups,
+            bots: [...s.bots, bot],
+            messages: { ...s.messages, [bot.id]: s.messages[bot.id] ?? [] },
+            selectedBotId: opts?.selectFirst || !s.selectedBotId ? bot.id : s.selectedBotId,
+            collapsedGroups: { ...s.collapsedGroups, [targetGroupId]: false }
+          }))
+          return 1
+        }
+        return existingForAccount.length
+      }
+
+      // Match or create one sidebar Bot per Grok Agent
+      const claimedBotIds = new Set<string>()
+      const botsToHydrate: Array<{ botId: string; agentId: string }> = []
+      let nextBots = [...state.bots]
+      const nextMessages = { ...state.messages }
+
+      const isGenericGrokName = (name: string) =>
+        /^Grok(?:\s+Bot)?(?:\s+\d+)?$/i.test(name.trim())
+
+      // Pass 1: exact selectedAgentId matches
+      const unmatchedAgents: typeof visibleAgents = []
+      for (const agent of visibleAgents) {
+        const exactIdx = nextBots.findIndex(
+          (b) =>
+            b.platformId === 'grok' &&
+            b.accountIds.includes(accountId) &&
+            b.selectedAgentId === agent.id &&
+            !claimedBotIds.has(b.id)
+        )
+        if (exactIdx >= 0) {
+          const prev = nextBots[exactIdx]!
+          claimedBotIds.add(prev.id)
+          nextBots[exactIdx] = {
+            ...prev,
+            name: isGenericGrokName(prev.name) && agent.name ? agent.name : prev.name,
+            description: agent.description ?? prev.description,
+            ...(agent.avatarShape ? { avatarShape: agent.avatarShape } : {}),
+            ...(agent.avatarColor ? { avatarColor: agent.avatarColor } : {})
+          }
+          adapter.bindConversationAgent?.(prev.id, agent.id, accountId)
+        } else {
+          unmatchedAgents.push(agent)
+        }
+      }
+
+      // Pass 2: bind unbound/stale placeholder bots first, then create dedicated Bots for remaining agents
+      for (const agent of unmatchedAgents) {
+        const placeholderIdx = nextBots.findIndex(
+          (b) =>
+            b.platformId === 'grok' &&
+            b.accountIds.includes(accountId) &&
+            !claimedBotIds.has(b.id) &&
+            (!b.selectedAgentId || !allAgentIds.has(b.selectedAgentId))
+        )
+        if (placeholderIdx >= 0) {
+          const prev = nextBots[placeholderIdx]!
+          claimedBotIds.add(prev.id)
+          nextBots[placeholderIdx] = {
+            ...prev,
+            name: agent.name || prev.name,
+            selectedAgentId: agent.id,
+            description: agent.description ?? prev.description,
+            ...(agent.avatarShape ? { avatarShape: agent.avatarShape } : {}),
+            ...(agent.avatarColor ? { avatarColor: agent.avatarColor } : {})
+          }
+          botsToHydrate.push({ botId: prev.id, agentId: agent.id })
+        } else {
+          const newBotId = createId('bot')
+          claimedBotIds.add(newBotId)
+          const newBot: Bot = {
+            id: newBotId,
+            name: agent.name || 'Grok Bot',
+            emoji: '🤖',
+            ...(agent.avatarShape ? { avatarShape: agent.avatarShape } : {}),
+            ...(agent.avatarColor ? { avatarColor: agent.avatarColor } : {}),
+            selectedAgentId: agent.id,
+            description: agent.description ?? '',
+            platformId: 'grok',
+            groupId: targetGroupId,
+            accountIds: [accountId],
+            activeAccountId: accountId,
+            memory: [],
+            notes: '',
+            createdAt: Date.now(),
+            unread: 0
+          }
+          nextBots.push(newBot)
+          nextMessages[newBotId] = nextMessages[newBotId] ?? []
+          botsToHydrate.push({ botId: newBotId, agentId: agent.id })
+        }
+      }
+
+      const accountBots = nextBots.filter(
+        (b) => b.platformId === 'grok' && b.accountIds.includes(accountId)
+      )
+      const firstAccountBot = accountBots[0]
+      const nextSelectedId =
+        opts?.selectFirst && firstAccountBot
+          ? firstAccountBot.id
+          : state.selectedBotId ?? firstAccountBot?.id ?? null
+
+      set((s) => ({
+        groups,
+        bots: nextBots,
+        messages: nextMessages,
+        selectedBotId: nextSelectedId,
+        collapsedGroups: { ...s.collapsedGroups, [targetGroupId]: false }
+      }))
+
+      // Hydrate newly bound bots + the currently selected Grok bot
+      const hydrateSet = new Map<string, string>()
+      for (const item of botsToHydrate) hydrateSet.set(item.botId, item.agentId)
+      const activeSelected = get().bots.find((b) => b.id === get().selectedBotId)
+      if (
+        activeSelected &&
+        activeSelected.platformId === 'grok' &&
+        activeSelected.accountIds.includes(accountId) &&
+        activeSelected.selectedAgentId
+      ) {
+        hydrateSet.set(activeSelected.id, activeSelected.selectedAgentId)
+      }
+      for (const [bId, agId] of hydrateSet.entries()) {
+        get().setSelectedAgent(bId, agId)
+      }
+
+      return accountBots.length
     },
 
     openHarkLogin: async (accountId) => {
@@ -1514,30 +1866,61 @@ export const useBotStore = create<BotHubState>()(
     },
 
     setGrokAccessToken: async (accountId, accessToken, accountSlot, machineId, refreshToken) => {
-      const account = get().accounts[accountId]
-      const adapter = account && adapterRegistry.get(account.platformId)
-      if (!account || account.platformId !== 'grok') return
-      patchAccount(accountId, { pending: true })
+      const existingAcc = get().accounts[accountId]
+      if (existingAcc && existingAcc.platformId !== 'grok') return
+      const adapter = adapterRegistry.get('grok')
+      if (!adapter) return
+      if (existingAcc) patchAccount(accountId, { pending: true })
       try {
         const bridge = electronBridge()
-        if (bridge?.grok?.setAccessToken) {
-          await bridge.grok.setAccessToken({ accountId, accessToken, refreshToken, accountSlot, machineId })
+        let resolvedSlot = accountSlot
+        if (accessToken?.trim() && bridge?.grok?.setAccessToken) {
+          const st = await bridge.grok.setAccessToken({
+            accountId,
+            accessToken: accessToken.trim(),
+            refreshToken,
+            accountSlot,
+            machineId
+          })
+          resolvedSlot = st.accountSlot ?? resolvedSlot
+        }
+        if (!get().accounts[accountId]) {
+          // Only auto-materialize if explicitly importing a raw token (not during AddBotDialog waiting step)
+          if (!accessToken?.trim()) return
+          set((s) => ({
+            accounts: {
+              ...s.accounts,
+              [accountId]: {
+                id: accountId,
+                platformId: 'grok',
+                displayName: resolvedSlot || 'Grok Bot',
+                handle: resolvedSlot || '',
+                status: 'offline'
+              }
+            }
+          }))
+        } else if (resolvedSlot) {
+          patchAccount(accountId, {
+            handle: resolvedSlot,
+            displayName: get().accounts[accountId]?.label || resolvedSlot
+          })
         }
         const grok = adapter as {
           setAuth?: (s: {
             accountId: string
-            accessToken: string
+            signedIn?: boolean
             accountSlot?: string
             machineId?: string
           }) => void
         }
-        grok.setAuth?.({ accountId, accessToken, accountSlot, machineId })
-        const status = await adapter?.connect(accountId)
-        patchAccount(accountId, { status: status ?? 'online', statusDetail: undefined })
-      } catch (error) {
-        patchAccount(accountId, { status: 'error', statusDetail: errorMessage(error) })
-      } finally {
+        grok.setAuth?.({ accountId, signedIn: true, accountSlot: resolvedSlot, machineId })
         patchAccount(accountId, { pending: false })
+        await get().connectAccount(accountId)
+      } catch (error) {
+        if (get().accounts[accountId]) {
+          patchAccount(accountId, { status: 'error', statusDetail: errorMessage(error), pending: false })
+        }
+        throw error
       }
     },
 
@@ -1565,6 +1948,14 @@ export const useBotStore = create<BotHubState>()(
       await bridge?.dot?.clearAuth?.('*').catch(() => undefined)
       await bridge?.grok?.clearAuth?.('*').catch(() => undefined)
       await bridge?.muse?.clearProxyPool?.().catch(() => undefined)
+      await bridge?.vault?.clearAll?.().catch(() => undefined)
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem('bothub.dot.memorySnapshot')
+        }
+      } catch {
+        /* ignore */
+      }
     },
 
     resetWorkspace: async () => {
@@ -1598,6 +1989,7 @@ export const useBotStore = create<BotHubState>()(
       messages: toPersistedMessages(state.messages),
       selectedBotId: state.selectedBotId,
       collapsedGroups: state.collapsedGroups,
+      dismissedGrokAgents: state.dismissedGrokAgents,
       infoPanelOpen: state.infoPanelOpen,
       sidebarCollapsed: state.sidebarCollapsed,
       sidebarWidth: state.sidebarWidth
