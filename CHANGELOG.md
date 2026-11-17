@@ -2,6 +2,12 @@
 
 All notable changes to **BotHub** are documented in this file.
 
+## [0.5.1] - 2026-11-17
+
+### Changed
+- **Redesigned Flagship 3D App Icon ("The Living Nexus")**: Brand-new macOS continuous-curvature squircle `.icns` (10-layer Retina iconset) and Windows `1024×1024` installer icon crafted with dark anodized titanium, four refractive dichroic glass petals, and a sculpted 3D ceramic Bot core.
+- **Refreshed Brand Assets & Documentation**: Updated README brand emblem, `1280×640` GitHub social preview card, 16-language README guides, and repository community health templates.
+
 ## [0.5.0] - 2026-11-16
 
 ### Added

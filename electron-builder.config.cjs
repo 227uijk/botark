@@ -36,6 +36,7 @@ module.exports = {
   asar: true,
   mac: {
     category: 'public.app-category.productivity',
+    icon: 'build/icon.icns',
     target: [
       { target: 'dmg', arch: macArchs },
       // zip is what electron-updater reads on macOS (latest-mac.yml).

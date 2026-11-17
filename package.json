@@ -1,6 +1,6 @@
 {
   "name": "bothub",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": false,
   "description": "BotHub — bring all your personal agents together and use them in one client, just like Grok Bot",
   "main": "./out/main/index.js",
