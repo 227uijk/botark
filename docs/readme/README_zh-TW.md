@@ -4,9 +4,10 @@
 
 # BotArk
 
-**把你所有的 Personal Agent，收進同一艘原生桌面方舟。**
+**把你常用的所有 Personal Agent，收進同一個原生桌面客戶端。**
 
-在一個清爽的 macOS / Windows 原生視窗裡並排使用 **Grok Bot**、**ChatGPT Dot**、**Meta Muse** 與 **Hark** —— 支援多帳號獨立在線、Grok 單號多 Bot 自動展開，以及像 Grok Bot 一樣順手的右側操作台。
+告別滿桌面的獨立應用與十幾個無痕瀏覽器視窗，<br />
+在一個乾淨順手的 macOS / Windows 視窗裡並排使用 **Grok Bot**、**ChatGPT Dot**、**Meta Muse** 與 **Hark**。
 
 <p>
   <a href="https://github.com/qybaihe/botark/releases/latest"><img src="https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=2563eb" alt="最新版本" /></a>
@@ -52,31 +53,33 @@
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp" />
-    <img src="../assets/botark-light.webp" alt="BotArk 三欄原生工作台" width="100%" />
+    <img src="../assets/botark-light.webp" alt="BotArk 三欄原生桌面工作台" width="100%" />
   </picture>
 </div>
 
 ---
 
-## ✨ 為什麼選擇 BotArk？
+## ✨ 核心體驗：從接入到日常協作
 
-每天重度使用多家 Personal Agent、甚至同一家還有多個工作號與主力號時，桌面上很快就會塞滿四五個客戶端和十幾個無痕瀏覽器視窗。**BotArk 用一個輕快、克制的原生桌面端徹底消除切換負擔：**
+現在的 Personal Agent 早已不只是簡單問答——它們有長期記憶、能跑背景子任務、會排程巡檢、還帶著各自的雲端電腦與檔案庫。但只要你同時在用兩三家平台，或者手裡有工作號、個人號好幾個帳號，每天光是找網頁、切無痕視窗、配代理就會被打斷無數次。
+
+**BotArk 把這套碎片化的日常重新理順成了三件事：**
 
 <table>
   <tr>
     <td width="46%" valign="middle">
-      <h3>🧭 四大平台聚合，兩種零門檻接入入口</h3>
-      <p>點擊左上角 <b><code>＋</code></b> 新建按鈕（<code>⌘N</code>）或打開左下角<b>「設定與帳號」</b>，靈活接入所有主力平台：</p>
+      <h3>1. 不管幾個平台、多少個帳號，輕鬆收進來</h3>
+      <p>無論是單號互動登入還是多號車隊匯入，都能用最順手的方式一步到位：</p>
       <ul>
-        <li><b>絲滑彈窗與瀏覽器一鍵授權</b>：自動遵循系統代理，OAuth 登入不亂跳</li>
-        <li><b>全格式憑據貼上直連</b>：支援 Access Token、Cookie、JSON 或 API Key 直接匯入</li>
-        <li><b>車隊級批次匯入</b>：支援 Meta Muse 信箱自動收碼批次匯入與 ChatGPT Dot 多行批次匯入</li>
+        <li><b>彈窗直登與預設瀏覽器一鍵授權</b>：自動遵循系統代理，OAuth 驗證不亂跳</li>
+        <li><b>全格式憑據貼上直連</b>：支援 Access Token、Cookie、JSON 或 API Key 貼上即用</li>
+        <li><b>批次自動匯入</b>：支援 Meta Muse 信箱自動讀取驗證碼批次登入，以及 ChatGPT Dot 多行批次匯入</li>
       </ul>
     </td>
     <td width="54%" valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="../assets/feature-platforms-dark.webp" />
-        <img src="../assets/feature-platforms-light.webp" alt="BotArk 四大平台接入規則與匯入方式全覽" width="100%" />
+        <img src="../assets/feature-platforms-light.webp" alt="BotArk 帳號匯入與四大平台概覽" width="100%" />
       </picture>
     </td>
   </tr>
@@ -84,39 +87,52 @@
     <td width="54%" valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="../assets/feature-accounts-dark.webp" />
-        <img src="../assets/feature-accounts-light.webp" alt="BotArk 多帳號隔離控制台與 Grok 單號多 Bot 自動展開" width="100%" />
+        <img src="../assets/feature-accounts-light.webp" alt="BotArk 多帳號控制台與 Grok 單號多 Bot 展開" width="100%" />
       </picture>
     </td>
     <td width="46%" valign="middle">
-      <h3>👥 多帳號並行不串號 &amp; 單號多 Bot 自動展開</h3>
-      <p>工作號、個人號、測試號同時在線，會話完全獨立互不干擾：</p>
-      <ul>
-        <li><b>Grok 單號自動展開全部 Bot</b>：登入 1 個 Grok 帳號，名下所有專業 Bot 與群聊房間自動逐個出現在左側列表，並可直接新建專屬 Bot</li>
-        <li><b>獨立沙盒分區隔離</b>：每個帳號運行在獨立 Chromium 會話分區，憑據由系統鑰匙圈加密儲存</li>
-        <li><b>一號一代理防洩漏</b>：支援批次匯入 <code>SOCKS5</code> / <code>HTTP</code> 代理池一對一綁定，代理異常自動阻斷絕不裸連暴露真實 IP</li>
-      </ul>
+      <h3>2. 底層帳號徹底隔離，列表按 Bot 直觀平鋪</h3>
+      <p>在底層，每個帳號都運行在獨立的 Chromium 沙盒分區與系統鑰匙圈加密槽位中，同一平台掛十幾個帳號也絕不串號，還支援在代理池中<b>一號一 IP 獨立綁定</b>（代理異常自動阻斷，絕不裸連暴露真實 IP）。</p>
+      <p>在介面上，左側始終以<b>單個 Bot</b> 為單位清爽排列：登入 1 個 <b>Grok Bot</b> 帳號，名下所有專業 Bot 與群聊房間會自動逐個展開到側邊欄，也能直接在已有帳號下新建專屬 Bot。</p>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h4>🗂️ 跨平台混編分組（<code>⌘K</code>）</h4>
+      按「日常助理 / 研究寫作 / 開發維運」而不是按廠商來歸類你的助手；常用 Bot 一鍵置頂，按 <code>⌘K</code> 秒搜秒切。
+    </td>
+    <td width="33%" valign="top">
+      <h4>🛠️ 按需展開右側操作台（<code>⌘I</code>）</h4>
+      平時收起面板保持聊天視野乾淨；需要查子任務進度、改長期記憶與技能、管排程任務或下載沙盒檔案時，一鍵呼出。
+    </td>
+    <td width="34%" valign="top">
+      <h4>🛡️ 防重發狀態機 &amp; 純本地隱私</h4>
+      精確區分「發送中 / 已接收 / 失敗」，平台已受理的訊息絕不誤判重發。無任何雲端中轉與遙測埋點，資料 100% 留在本機。
     </td>
   </tr>
 </table>
 
 ---
 
-## 🤖 支援的智慧體平台
+## 🤖 四大平台原生能力一覽
 
-| 平台 | 登入與憑據匯入方式 | 左側列表展示邏輯 | 右側專屬操作台能力（`⌘I`） |
+| 平台 | 支援的登入與匯入方式 | 帳號與側邊欄關係 | 右側專屬操作台（`⌘I`） |
 | :--- | :--- | :--- | :--- |
-| <img src="../../src/renderer/src/assets/platforms/grok.png" width="18" height="18" align="absmiddle" /> **Grok Bot** | 彈窗直連登入、**預設瀏覽器一鍵授權**，或貼上 Token / Cookie / JSON / API Key | **1 個帳號 → 多個 Bot**：自動同步帳號下全部 Bot 與群聊房間；可在已有帳號下直接新建 Bot | 歷史會話、背景子任務進度、自動化觸發器、記憶與技能編輯、生成檔案庫、雲端沙盒終端、MCP 連接器與配方匯入匯出 |
-| <img src="../../src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | 獨立視窗登入，或**信箱列表批次自動收碼匯入** | 1 個帳號對應 1 個獨立 Muse 助手 | 帳號額度監控、操作審批確認、多會話切換、排程任務、目標設定、記憶與技能、工作區檔案預覽與雲電腦控制 |
-| <img src="../../src/renderer/src/assets/platforms/dot.svg" width="18" height="18" align="absmiddle" /> **ChatGPT Dot** | 網頁彈窗登入，或**單條 / 多行批次貼上 AT、RT、JSON 匯入** | 1 個帳號對應 1 個 Dot 助手（內建 Refresh Token 自動續期） | Orbit 角色切換、Dot / Native 雙模式切換、核心目標編輯、**換號一鍵遷移目標與記憶**、Pages 頁面與檔案庫瀏覽 |
-| <img src="../../src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / 信箱視窗登入，或**直接貼上 Session Cookie 匯入** | 1 個帳號對應 1 個 Hark 助手 | 快捷工作流卡片、歷史會話切換、排程巡檢任務、生成資料庫下載、雲端瀏覽器即時畫面與工作區連接器 |
+| <img src="../../src/renderer/src/assets/platforms/grok.png" width="18" height="18" align="absmiddle" /> **Grok Bot** | 彈窗登入、**預設瀏覽器一鍵授權**，或貼上 Token / Cookie / JSON / API Key | **1 個帳號 → 自動展開多個 Bot**（支援直接在已有帳號下新建 Bot） | 歷史會話、背景子任務、自動化觸發器、記憶與技能編輯、檔案庫、雲端沙盒終端、MCP 連接器與配方匯入匯出 |
+| <img src="../../src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | 獨立分區視窗登入，或**信箱列表自動收碼批次匯入** | 1 個獨立帳號 → 1 個 Muse 助手（支援多號並行） | 額度即時監控、Sentinel 操作審批、多會話切換、排程任務、長期目標、記憶與技能、檔案預覽與雲電腦視圖 |
+| <img src="../../src/renderer/src/assets/platforms/dot.svg" width="18" height="18" align="absmiddle" /> **ChatGPT Dot** | 網頁彈窗登入，或**單條 / 多行批次貼上 AT、RT、JSON 匯入** | 1 個帳號 → 1 個 Dot 助手（內建 Refresh Token 自動續期） | Orbit 角色切換、Dot / Native 雙模式、核心目標編輯、**換號一鍵遷移目標與記憶**、Pages 頁面與檔案庫 |
+| <img src="../../src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / 信箱視窗登入，或**貼上 Session Cookie 匯入** | 1 個帳號 → 1 個 Hark 助手 | 快捷工作流卡片、歷史會話切換、排程巡檢任務、生成檔案下載、雲端瀏覽器即時畫面與工作區連接器 |
 
 ---
 
-## ⚡ 30 秒快速上手
+## ⚡ 30 秒快速開始
 
 前往 [**GitHub Releases 最新版本**](https://github.com/qybaihe/botark/releases/latest) 下載安裝包：
 
-- **macOS（Apple 晶片 / Intel）**：`BotArk-<版本號>-arm64.dmg` / `x64.dmg`（**Apple Developer ID 官方簽章與公證**，拖入「應用程式」即可直接開啟）
+- **macOS（Apple 晶片 / Intel）**：`BotArk-<版本號>-arm64.dmg` / `x64.dmg`（✅ **Apple Developer ID 官方簽章與公證**，拖入「應用程式」即可直接開啟）
 - **Windows 10 / 11（64 位元）**：`BotArk-Setup-<版本號>-x64.exe`
 
 ---
@@ -135,5 +151,6 @@
 ---
 
 <div align="center">
-  基於 <a href="../../LICENSE"><b>MIT 授權條款</b></a> 開源。歡迎點亮右上角的 <b>⭐ Star</b> 支持 <b>BotArk</b>！
+  基於 <a href="../../LICENSE"><b>MIT 授權條款</b></a> 開源。<br />
+  <sub>如果 <b>BotArk</b> 讓你的多 Agent 日常清爽了不少，歡迎點亮右上角的 <b>⭐ Star</b> 支持我們！</sub>
 </div>

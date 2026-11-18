@@ -14,15 +14,11 @@ permissions:
   contents: read
 
 jobs:
-  check:
-    name: Typecheck, test, build (${{ matrix.os }})
-    # Same-repo PRs already ran on push.
+  verify:
+    name: Typecheck, test & bundle
+    # Same-repo PRs already ran on branch push.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,11 +28,11 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npx electron-vite build
+      - run: npm run build
 
   package:
     name: Package (${{ matrix.os }})
-    needs: check
+    needs: verify
     strategy:
       fail-fast: false
       matrix:
@@ -58,6 +54,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
       - run: npx electron-vite build
       - name: Build installers (no publish)
         run: npx electron-builder --config electron-builder.config.cjs ${{ matrix.target }} --publish never
