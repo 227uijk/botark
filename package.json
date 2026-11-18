@@ -12,8 +12,10 @@
   "scripts": {
     "dev": "electron-vite dev",
     "dev:web": "vite --config vite.web.config.mts",
+    "dev:site": "vite --config vite.site.config.mts",
     "build": "npm run typecheck && electron-vite build",
     "build:web": "vite build --config vite.web.config.mts",
+    "build:site": "vite build --config vite.site.config.mts",
     "start": "electron-vite preview",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",

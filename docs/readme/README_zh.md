@@ -18,6 +18,8 @@
 </p>
 
 <h4>
+  <a href="https://qybaihe.github.io/botark/">🌐 官方网站</a>
+  &nbsp;·&nbsp;
   <a href="https://github.com/qybaihe/botark/releases/latest">🍎 下载 macOS 版 (Apple 芯片)</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/qybaihe/botark/releases/latest">💻 下载 macOS 版 (Intel)</a>

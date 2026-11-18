@@ -18,6 +18,8 @@ Run **Grok Bot**, **ChatGPT Dot**, **Meta Muse**, and **Hark** side by side on m
 </p>
 
 <h4>
+  <a href="https://qybaihe.github.io/botark/">🌐 Official Website</a>
+  &nbsp;·&nbsp;
   <a href="https://github.com/qybaihe/botark/releases/latest">🍎 Download for Mac (Apple Silicon)</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/qybaihe/botark/releases/latest">💻 Download for Mac (Intel)</a>

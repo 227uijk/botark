@@ -20,5 +20,5 @@
       "@shared/*": ["./src/shared/*"]
     }
   },
-  "include": ["src/renderer/src/**/*", "src/adapters/**/*", "src/shared/**/*"]
+  "include": ["src/renderer/src/**/*", "src/adapters/**/*", "src/shared/**/*", "site/src/**/*"]
 }
