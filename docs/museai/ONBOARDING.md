@@ -1,6 +1,6 @@
 # Muse onboarding welcome + clickable name chips (Kai / Juno)
 
-**Goal:** new-account welcome (“嘿 Brian…你想叫我什么？”) with tappable options (Kai / Juno / custom) must appear in BotHub’s transcript and send a reply on tap.
+**Goal:** new-account welcome (“嘿 Brian…你想叫我什么？”) with tappable options (Kai / Juno / custom) must appear in BotArk’s transcript and send a reply on tap.
 
 **Sources:** `js/3prk5wftwnh26.js` (widget kinds + parsers), `js/219ussi2x3jcn.js` (option UI + click → send), `js/1p-4zwr-bo7um.js` (`delta.presentation` / widgets on messages, `widgets.state.set`), gateway catalog.  
 **Confidence:** **high** for `kind:"option"` wire + click behavior; **medium** that the exact Kai/Juno copy is always this widget (could also be plain text + same widget); **medium** for dedicated `onboarding.*` HTTP helpers vs chat-driven naming.
@@ -68,7 +68,7 @@ Kai/Juno naming UI matches **`option`** + optional `customInput`.
 
 ### 1.3 `delta.presentation`
 
-Creates/updates an assistant (often `presentationCarrier: true` if content empty) with `presentations[]` / `widgets[]`. BotHub must insert a bubble even when `content === ""` if widgets/presentations exist.
+Creates/updates an assistant (often `presentationCarrier: true` if content empty) with `presentations[]` / `widgets[]`. BotArk must insert a bubble even when `content === ""` if widgets/presentations exist.
 
 ---
 
@@ -108,7 +108,7 @@ From `219ussi2x3jcn.js` `t9`:
 
 5. **Custom:** “Something else…” focuses composer with placeholder; user types a name; same send path with that text (and state `selectedText`).
 
-Analytics event name: `CHAT_OPTION_SELECT` / `chat_option_select` (optional for BotHub).
+Analytics event name: `CHAT_OPTION_SELECT` / `chat_option_select` (optional for BotArk).
 
 **Confidence: high.**
 
@@ -130,11 +130,11 @@ Gateway (not required to render chips):
 | `onboarding.pages.start` | POST | `/onboarding/pages` |
 | `onboarding.variants` | GET | `/api/onboarding/variants` |
 
-`activity_code: "guided_onboarding"` may appear on `agent.status` during this flow (**medium**). Prefer chat widgets for BotHub MVP; call `onboarding.identity.set` only if product needs parity with muse.ai settings.
+`activity_code: "guided_onboarding"` may appear on `agent.status` during this flow (**medium**). Prefer chat widgets for BotArk MVP; call `onboarding.identity.set` only if product needs parity with muse.ai settings.
 
 ---
 
-## 4. BotHub UI adaptation
+## 4. BotArk UI adaptation
 
 ### Render
 - When an assistant message has `widgets`/`presentations` with `kind === "option"`, show the welcome markdown/text **and** a row of chips from `data.options`.

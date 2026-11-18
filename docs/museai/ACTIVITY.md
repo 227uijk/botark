@@ -1,6 +1,6 @@
 # Muse live agent activity / status phrase
 
-**Goal:** show a short “what Muse is doing now” line on BotHub (sidebar bot row + chat header) so a long-running turn does not look idle.
+**Goal:** show a short “what Muse is doing now” line on BotArk (sidebar bot row + chat header) so a long-running turn does not look idle.
 
 **Sources:** muse.ai JS (`js/1p-4zwr-bo7um.js`, `js/2fyj1z6br3l32.js`, `js/21rnprfgq7_go.js`, `js/27wd-rri0o3qg.js`, `js/0ja3zn5uqpyi9.js`, `js/139ad6to7j8dj.js`), `samples/gateway_methods.json`, native notes in `/workspace/mn/src/main/muse-native/chat.ts`.  
 **Live wire samples:** none captured this turn (Noise encrypts). Field names = frontend reducer. **Confidence: high** for event/field names; **medium** for exact idle/`online` terminal codes beyond the busy set below.
@@ -92,7 +92,7 @@ needs_approval | out_of_credits | guided_onboarding
 | streaming | pending | cancelled | failed | …
 ```
 
-Native settle heuristic also watches `activity_code === "online"` after all assistant messages complete (**medium** — observed in BotHub native `chat.ts`, not in the busy Set above).
+Native settle heuristic also watches `activity_code === "online"` after all assistant messages complete (**medium** — observed in BotArk native `chat.ts`, not in the busy Set above).
 
 **UI rule of thumb:**
 
@@ -113,7 +113,7 @@ Status chip under avatar / sidebar bubble (`27wd-rri0o3qg.js` / `0osmq1-xopdhu.j
 
 ---
 
-## 5. BotHub UI advice
+## 5. BotArk UI advice
 
 ### Sidebar bot row
 - Under bot name: one truncated line  

@@ -321,7 +321,7 @@ export class MuseNativeGateway extends EventEmitter {
           const payload2 = hs.readMessage2(new Uint8Array(data))
           if (isOwnerRvChallenge(payload2)) {
             throw new MuseGatewayError(
-              'This Muse VM is a confidential VM (Owner RV challenge). Open muse.ai in the browser to enroll it, or use a standard VM — BotHub does not handle CVM recovery keys.',
+              'This Muse VM is a confidential VM (Owner RV challenge). Open muse.ai in the browser to enroll it, or use a standard VM — BotArk does not handle CVM recovery keys.',
               'cvm_required'
             )
           }

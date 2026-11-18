@@ -1,38 +1,36 @@
 <div align="center">
 
-[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · [Tiếng Việt](README_vi.md) · [Türkçe](README_tr.md) · [العربية](README_ar.md) · **Bahasa Indonesia** · [हिन्दी](README_hi.md)
+<img src="../assets/logo.png" alt="BotArk" width="108" />
 
-<br />
-
-<img src="../assets/logo.png" alt="BotHub" width="88" />
-
-# BotHub
+# BotArk
 
 ### **Satukan semua agen pribadi Anda dan gunakan dalam satu klien, seperti di Grok Bot**
 
 **Aplikasi macOS dan Windows yang menyatukan bot Meta Muse, Grok Bot, Hark, dan Dot Anda dalam satu jendela, masing-masing masuk dengan akunnya sendiri yang terisolasi.**
 
-[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=Rilis&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/bothub/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/qybaihe/bothub/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/Platform-macOS_%7C_Windows-6e56cf?style=for-the-badge)](#-mulai-cepat)
-[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![MIT License](https://img.shields.io/badge/Lisensi-MIT-38bdf8?style=for-the-badge)](../../LICENSE)
+[![Release](https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=Rilis&color=2563eb)](https://github.com/qybaihe/botark/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/botark/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/qybaihe/botark/actions/workflows/ci.yml)
+[![Platform](https://img.shields.io/badge/Platform-macOS_%7C_Windows-6e56cf?style=flat-square)](#-mulai-cepat)
+[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![MIT License](https://img.shields.io/badge/Lisensi-MIT-38bdf8?style=flat-square)](../../LICENSE)
 
-**[⬇️ Unduh untuk macOS](https://github.com/qybaihe/bothub/releases/latest) · [⬇️ Unduh untuk Windows](https://github.com/qybaihe/bothub/releases/latest) · [📦 Semua rilis](https://github.com/qybaihe/bothub/releases) · [🐛 Laporkan masalah](https://github.com/qybaihe/bothub/issues)**
+**[⬇️ Unduh untuk macOS](https://github.com/qybaihe/botark/releases/latest) · [⬇️ Unduh untuk Windows](https://github.com/qybaihe/botark/releases/latest) · [📦 Semua rilis](https://github.com/qybaihe/botark/releases) · [🐛 Laporkan masalah](https://github.com/qybaihe/botark/issues)**
 
 [Mulai cepat](#-mulai-cepat) · [Platform](#-platform-yang-didukung) · [Fitur](#-fitur) · [Pengembangan](#-pengembangan) · [Rilis](#-merilis-versi) · [Protokol](#-dokumentasi-protokol) · [Tanya jawab](#-tanya-jawab)
+
+<sub>[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · [Tiếng Việt](README_vi.md) · [Türkçe](README_tr.md) · [العربية](README_ar.md) · **Bahasa Indonesia** · [हिन्दी](README_hi.md)</sub>
 
 </div>
 
 ---
 
 > [!NOTE]
-> BotHub adalah klien independen dan tidak berafiliasi dengan Meta, xAI, Hark, atau OpenAI. Anda masuk dengan akun sendiri, dan kredensial tetap tersimpan di komputer Anda.
+> BotArk adalah klien independen dan tidak berafiliasi dengan Meta, xAI, Hark, atau OpenAI. Anda masuk dengan akun sendiri, dan kredensial tetap tersimpan di komputer Anda.
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/bothub-dark.webp">
-  <img src="../assets/bothub-light.webp" alt="BotHub: bot Muse, Dot, Hark, dan Grok Bot yang dikelompokkan di bilah samping, sebuah percakapan, dan panel detail bot (data contoh)" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp">
+  <img src="../assets/botark-light.webp" alt="BotArk: bot Muse, Dot, Hark, dan Grok Bot yang dikelompokkan di bilah samping, sebuah percakapan, dan panel detail bot (data contoh)" width="100%">
 </picture>
 <sub>Tangkapan layar dengan data contoh fiktif.</sub>
 </div>
@@ -66,20 +64,20 @@ Pesan menampilkan status *mengirim*, *terkirim · sedang membalas*, *tidak ada b
 
 ## ⚡ Mulai cepat
 
-Unduh berkas untuk sistem Anda dari [rilis terbaru](https://github.com/qybaihe/bothub/releases/latest):
+Unduh berkas untuk sistem Anda dari [rilis terbaru](https://github.com/qybaihe/botark/releases/latest):
 
 | Sistem | Berkas |
 | :--- | :--- |
-| macOS, Apple silicon | `BotHub-<versi>-arm64.dmg` |
-| macOS, Intel | `BotHub-<versi>-x64.dmg` |
-| Windows 10/11 (x64) | `BotHub-Setup-<versi>-x64.exe` |
+| macOS, Apple silicon | `BotArk-<versi>-arm64.dmg` |
+| macOS, Intel | `BotArk-<versi>-x64.dmg` |
+| Windows 10/11 (x64) | `BotArk-Setup-<versi>-x64.exe` |
 
 > [!TIP]
-> **Build macOS telah ditandatangani dan dinotariskan dengan Apple Developer ID.** Cukup seret `BotHub.app` ke `Applications` dan buka langsung.
+> **Build macOS telah ditandatangani dan dinotariskan dengan Apple Developer ID.** Cukup seret `BotArk.app` ke `Applications` dan buka langsung.
 
 Setelah itu klik **+** di bilah samping, pilih platform, lalu masuk. Setiap bot memakai akunnya sendiri.
 
-**Pembaruan**: di Windows, BotHub mengunduh versi baru di latar belakang dan memasangnya dengan satu klik. Di macOS, BotHub memberi tahu saat ada versi baru dan membuka halaman unduhan.
+**Pembaruan**: di Windows, BotArk mengunduh versi baru di latar belakang dan memasangnya dengan satu klik. Di macOS, BotArk memberi tahu saat ada versi baru dan membuka halaman unduhan.
 
 ## 🤖 Platform yang didukung
 
@@ -162,17 +160,30 @@ Protokol dan catatan API setiap platform ada di [`docs/`](../README.md):
 <details>
 <summary><b>Pesan lama sekali berstatus "terkirim · sedang membalas". Apakah mencoba lagi akan mengirimnya dua kali?</b></summary>
 
-Tidak. Begitu platform menerima pesan, BotHub tidak pernah menganggapnya belum terkirim. Jika balasan tidak datang, muncul *tidak ada balasan* dengan tombol **Kirim lagi** yang jelas menyatakan akan mengirim salinan kedua.
+Tidak. Begitu platform menerima pesan, BotArk tidak pernah menganggapnya belum terkirim. Jika balasan tidak datang, muncul *tidak ada balasan* dengan tombol **Kirim lagi** yang jelas menyatakan akan mengirim salinan kedua.
 
 </details>
 
 <details>
 <summary><b>Bisakah setiap akun memakai proxy sendiri?</b></summary>
 
-Bisa, untuk akun Muse dan Dot (HTTP atau SOCKS5). Jika proxy tidak bisa diterapkan, BotHub memblokir lalu lintas akun tersebut alih-alih beralih ke koneksi langsung.
+Bisa, untuk akun Muse dan Dot (HTTP atau SOCKS5). Jika proxy tidak bisa diterapkan, BotArk memblokir lalu lintas akun tersebut alih-alih beralih ke koneksi langsung.
 
 </details>
 
 ## 📄 Lisensi
 
 Dirilis dengan [Lisensi MIT](../../LICENSE).
+
+---
+
+## 📈 Star History
+
+<div align="center">
+  <a href="https://star-history.com/#qybaihe/botark&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date&theme=dark" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date" width="100%" />
+    </picture>
+  </a>
+</div>

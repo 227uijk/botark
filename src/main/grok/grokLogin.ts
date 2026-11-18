@@ -74,7 +74,7 @@ export function accessTokenFromWorkosCookie(
 function cleanChromeUserAgent(rawUa: string): string {
   return rawUa
     .replace(/\s*Electron\/[^\s]+/gi, '')
-    .replace(/\s*BotHub\/[^\s]+/gi, '')
+    .replace(/\s*(?:BotArk|BotHub)\/[^\s]+/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim()
 }

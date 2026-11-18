@@ -1,4 +1,4 @@
-# Handoff → Claude：Hark（hark.com）接入 BotHub
+# Handoff → Claude：Hark（hark.com）接入 BotArk
 
 ## 已完成（本轮 Grok 逆向，未登录 live）
 
@@ -16,7 +16,7 @@
 ## 你要做的
 
 ### P0 — 登录打通（需用户 GUI / Google）
-1. BotHub 加 `hark` 平台：登录用 **WebContentsView** → `https://app.hark.com/login` → **Continue with Google**（账号 `<your-google-account@example.com>`）。
+1. BotArk 加 `hark` 平台：登录用 **WebContentsView** → `https://app.hark.com/login` → **Continue with Google**（账号 `<your-google-account@example.com>`）。
 2. 成功判据：`GET /api/auth/get-session` 非 `null`，或 partition 出现 session 类 `__Secure-hark.*` cookie（**名字以 Set-Cookie 为准，写入 samples**）。
 3. 若落到 email OTP：parent/Grok 可读 Gmail；发码接口要 **Turnstile**（`x-captcha-response`），嵌入页比自己打 captcha 现实。
 4. Cookie 进 safeStorage / partition；**禁止明文 token 文件**。

@@ -1,38 +1,36 @@
 <div align="center">
 
-[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · **Italiano** · [Tiếng Việt](README_vi.md) · [Türkçe](README_tr.md) · [العربية](README_ar.md) · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)
+<img src="../assets/logo.png" alt="BotArk" width="108" />
 
-<br />
-
-<img src="../assets/logo.png" alt="BotHub" width="88" />
-
-# BotHub
+# BotArk
 
 ### **Riunisci tutti i tuoi agenti personali e usali in un unico client, proprio come Grok Bot**
 
 **Un'app per macOS e Windows che riunisce i tuoi bot di Meta Muse, Grok Bot, Hark e Dot in un'unica finestra, ciascuno con il proprio account isolato.**
 
-[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=Versione&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/bothub/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/qybaihe/bothub/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/Piattaforma-macOS_%7C_Windows-6e56cf?style=for-the-badge)](#-avvio-rapido)
-[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![MIT License](https://img.shields.io/badge/Licenza-MIT-38bdf8?style=for-the-badge)](../../LICENSE)
+[![Release](https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=Versione&color=2563eb)](https://github.com/qybaihe/botark/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/botark/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/qybaihe/botark/actions/workflows/ci.yml)
+[![Platform](https://img.shields.io/badge/Piattaforma-macOS_%7C_Windows-6e56cf?style=flat-square)](#-avvio-rapido)
+[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![MIT License](https://img.shields.io/badge/Licenza-MIT-38bdf8?style=flat-square)](../../LICENSE)
 
-**[⬇️ Scarica per macOS](https://github.com/qybaihe/bothub/releases/latest) · [⬇️ Scarica per Windows](https://github.com/qybaihe/bothub/releases/latest) · [📦 Tutte le versioni](https://github.com/qybaihe/bothub/releases) · [🐛 Segnala un problema](https://github.com/qybaihe/bothub/issues)**
+**[⬇️ Scarica per macOS](https://github.com/qybaihe/botark/releases/latest) · [⬇️ Scarica per Windows](https://github.com/qybaihe/botark/releases/latest) · [📦 Tutte le versioni](https://github.com/qybaihe/botark/releases) · [🐛 Segnala un problema](https://github.com/qybaihe/botark/issues)**
 
 [Avvio rapido](#-avvio-rapido) · [Piattaforme](#-piattaforme-supportate) · [Funzionalità](#-funzionalità) · [Sviluppo](#-sviluppo) · [Rilascio](#-rilascio) · [Protocolli](#-documentazione-dei-protocolli) · [Domande frequenti](#-domande-frequenti)
+
+<sub>[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · **Italiano** · [Tiếng Việt](README_vi.md) · [Türkçe](README_tr.md) · [العربية](README_ar.md) · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)</sub>
 
 </div>
 
 ---
 
 > [!NOTE]
-> BotHub è un client indipendente e non è affiliato a Meta, xAI, Hark o OpenAI. Accedi con i tuoi account e le credenziali restano sul tuo computer.
+> BotArk è un client indipendente e non è affiliato a Meta, xAI, Hark o OpenAI. Accedi con i tuoi account e le credenziali restano sul tuo computer.
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/bothub-dark.webp">
-  <img src="../assets/bothub-light.webp" alt="BotHub: bot di Muse, Dot, Hark e Grok Bot raggruppati nella barra laterale, una conversazione e il pannello dei dettagli del bot (dati di esempio)" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp">
+  <img src="../assets/botark-light.webp" alt="BotArk: bot di Muse, Dot, Hark e Grok Bot raggruppati nella barra laterale, una conversazione e il pannello dei dettagli del bot (dati di esempio)" width="100%">
 </picture>
 <sub>Screenshot con dati di esempio fittizi.</sub>
 </div>
@@ -66,20 +64,20 @@ I messaggi mostrano *invio*, *consegnato · in risposta*, *nessuna risposta* o *
 
 ## ⚡ Avvio rapido
 
-Scarica il file per il tuo sistema dall'[ultima versione](https://github.com/qybaihe/bothub/releases/latest):
+Scarica il file per il tuo sistema dall'[ultima versione](https://github.com/qybaihe/botark/releases/latest):
 
 | Sistema | File |
 | :--- | :--- |
-| macOS, Apple silicon | `BotHub-<versione>-arm64.dmg` |
-| macOS, Intel | `BotHub-<versione>-x64.dmg` |
-| Windows 10/11 (x64) | `BotHub-Setup-<versione>-x64.exe` |
+| macOS, Apple silicon | `BotArk-<versione>-arm64.dmg` |
+| macOS, Intel | `BotArk-<versione>-x64.dmg` |
+| Windows 10/11 (x64) | `BotArk-Setup-<versione>-x64.exe` |
 
 > [!TIP]
-> **Le build per macOS sono firmate e autenticate (Notarized) con Apple Developer ID.** Trascina `BotHub.app` in `Applications` e aprila direttamente.
+> **Le build per macOS sono firmate e autenticate (Notarized) con Apple Developer ID.** Trascina `BotArk.app` in `Applications` e aprila direttamente.
 
 Poi fai clic su **+** nella barra laterale, scegli una piattaforma e accedi. Ogni bot mantiene il proprio account.
 
-**Aggiornamenti**: su Windows, BotHub scarica le nuove versioni in background e le installa con un clic. Su macOS ti avvisa quando esce una nuova versione e apre la pagina di download.
+**Aggiornamenti**: su Windows, BotArk scarica le nuove versioni in background e le installa con un clic. Su macOS ti avvisa quando esce una nuova versione e apre la pagina di download.
 
 ## 🤖 Piattaforme supportate
 
@@ -162,17 +160,30 @@ I protocolli e le note sulle API di ogni piattaforma si trovano in [`docs/`](../
 <details>
 <summary><b>Un messaggio resta a lungo su "consegnato · in risposta". Riprovare lo invierà due volte?</b></summary>
 
-No. Una volta che la piattaforma ha accettato un messaggio, BotHub non lo presenta mai come non inviato. Se la risposta non arriva, mostra *nessuna risposta* con un pulsante **Invia di nuovo** che indica chiaramente l'invio di una seconda copia.
+No. Una volta che la piattaforma ha accettato un messaggio, BotArk non lo presenta mai come non inviato. Se la risposta non arriva, mostra *nessuna risposta* con un pulsante **Invia di nuovo** che indica chiaramente l'invio di una seconda copia.
 
 </details>
 
 <details>
 <summary><b>Ogni account può usare un proprio proxy?</b></summary>
 
-Sì, per gli account Muse e Dot (HTTP o SOCKS5). Se il proxy non può essere applicato, BotHub blocca il traffico di quell'account invece di passare a una connessione diretta.
+Sì, per gli account Muse e Dot (HTTP o SOCKS5). Se il proxy non può essere applicato, BotArk blocca il traffico di quell'account invece di passare a una connessione diretta.
 
 </details>
 
 ## 📄 Licenza
 
 Distribuito con [licenza MIT](../../LICENSE).
+
+---
+
+## 📈 Star History
+
+<div align="center">
+  <a href="https://star-history.com/#qybaihe/botark&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date&theme=dark" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date" width="100%" />
+    </picture>
+  </a>
+</div>

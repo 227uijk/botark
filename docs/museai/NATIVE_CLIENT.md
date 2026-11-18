@@ -1,6 +1,6 @@
-# Muse native Noise client — implementation brief for BotHub
+# Muse native Noise client — implementation brief for BotArk
 
-**Audience:** Claude (BotHub) implementing a main-process Node/Electron client.  
+**Audience:** Claude (BotArk) implementing a main-process Node/Electron client.  
 **Goal:** Stable `chat.stream` send + live streaming **without** WebContentsView `sendRequest` hooks.  
 **Do not** commit raw cookies / auth_token / notary_token. Redact in logs.
 
@@ -10,14 +10,14 @@ Companion deep dive: `protocol.md`. Protos: `samples/proto/`. Stream shapes: `sa
 
 ## Why the embedded path is unstable (fix this first)
 
-Evidence from BotHub `src/main/muse/*` + muse.ai JS:
+Evidence from BotArk `src/main/muse/*` + muse.ai JS:
 
 | Failure | Cause | Evidence |
 |---|---|---|
 | Messages fail to send | Hook never finds page `sendRequest` → falls to DOM composer | `hookScript.ts` scans React fiber/webpack; official client does **not** put `sendRequest` on `window` |
 | Hook lost after nav / reload | `did-finish-load` reinstalls hook, but gateway may not be up yet; cold start up to ~600s rediscover | `hookScript.ts` interval; `museSessionManager.installHook` |
 | Gateway never boots | Detached/hidden `WebContentsView` → `visibilityState=hidden` → SSR `$RC`/`$RV` rAF never runs → React never hydrates | `museKeepAlive.ts` comment + CDP focus/lifecycle hack |
-| Streaming “drops” | BotHub treats `chat.stream` ack as done, then **polls `chat.history`** instead of consuming the subscription NDJSON on the same Noise stream | `museSessionManager.chatStreamAndCollect` |
+| Streaming “drops” | BotArk treats `chat.stream` ack as done, then **polls `chat.history`** instead of consuming the subscription NDJSON on the same Noise stream | `museSessionManager.chatStreamAndCollect` |
 | Wrong request shape | `capabilities: {}` (object) and `node_id: accountId` | Official: `capabilities: string[]`, `node_id: deviceContext.local.deviceId` (`0nq-jlgnc05xv.js`) |
 | WS/Noise death | Decrypt/encrypt error poisons transport; close `4004`/`4005`; heartbeat timeout `4002` | `1ffa2q4wayepu.js` |
 | Auth flake | `auth_token` (`s0:` JWT) expires; needs `/api/hatch/token` refresh + full Noise re-handshake | control plane + reconnect in `3elf2yytnj4zr.js` |
@@ -83,9 +83,9 @@ Handshake initiator (standard `hatch_vm`, non-CVM):
 1. `initialize()` prologue `Noise_XX_25519_AESGCM_SHA256`.
 2. Msg1 = `e` ‖ `encryptAndHash(payload)`.  
    - Personal VM: payload = freshness client nonce encoded by Hatch helper (32+ random OK to start; match JS `(0,s.r)/(0,s.S)` when bringing up CVM).  
-   - Shared-agent path: protobuf field2=int32(1) — skip for BotHub personal accounts.
+   - Shared-agent path: protobuf field2=int32(1) — skip for BotArk personal accounts.
 3. Wait binary WS msg2; `readMessage2`.
-4. If msg2 payload parses as Owner RV challenge → **CVM path** (needs recovery key in IndexedDB). For BotHub v1: detect + surface error “open muse.ai once to enroll CVM / use non-confidential VM”, do not invent keys.
+4. If msg2 payload parses as Owner RV challenge → **CVM path** (needs recovery key in IndexedDB). For BotArk v1: detect + surface error “open muse.ai once to enroll CVM / use non-confidential VM”, do not invent keys.
 5. Else treat payload as attestation bundle; **v1 policy:** accept `Platform.NON_TEE` with valid `auth_token` binding; optionally verify notary endorsement later. SEV-SNP full verify is P3.
 6. Msg3 = `writeMessage3(empty)` for standard personal VM.
 7. `split()` → sendCipher / recvCipher. AES-GCM AD = **empty**. IV = 12 bytes, nonce u64 BE in bytes 4..11.
@@ -128,7 +128,7 @@ Request:
 ```json
 {
   "items": [{"type": "text", "text": "<user text>"}],
-  "node_id": "<stable device uuid per BotHub account partition>",
+  "node_id": "<stable device uuid per BotArk account partition>",
   "session_id": "<optional existing thread>",
   "capabilities": []
 }
@@ -149,7 +149,7 @@ Handle at least:
 | `delta.tool_start` / `delta.tool_done` | optional tool chip |
 | `delta.placeholder` / `delta.presentation` | ignore or map later |
 
-Emit BotHub `message_delta` / `message` from these events — **do not** poll `chat.history` for streaming (history is fine for backfill only).
+Emit BotArk `message_delta` / `message` from these events — **do not** poll `chat.history` for streaming (history is fine for backfill only).
 
 Also implement:
 
@@ -171,7 +171,7 @@ Mirror official client (`3elf2yytnj4zr.js`):
 
 ---
 
-## Suggested module layout (BotHub)
+## Suggested module layout (BotArk)
 
 ```
 src/main/muse-native/
@@ -206,7 +206,7 @@ Replace `MuseSessionManager.rpcRaw` / `chatStreamAndCollect` with `MuseNativeGat
 
 - Do **not** extract Keychain / sand-secrets / CVM recovery keys from the user’s browser profile.
 - Do **not** ship a cracked SEV-SNP verifier that accepts forged attestations for shared-agent.
-- Confidential VM (`owner_rv_challenge` / chip binding): show actionable error; user opens muse.ai once, or BotHub stays on `hatch_vm` NON_TEE.
+- Confidential VM (`owner_rv_challenge` / chip binding): show actionable error; user opens muse.ai once, or BotArk stays on `hatch_vm` NON_TEE.
 
 ---
 

@@ -13,7 +13,7 @@
 |---|---|
 | 主 API | `tasks.list` / `tasks.runs` / `tasks.run` / `tasks.delete` / `tasks.subscribe` |
 | 列表形状 | `tasks.list` → **`{ schedules: Schedule[] }`**（Settings 权限页直接 `.schedules`） |
-| 创建 RPC？ | **网关无 `tasks.create`**。创建靠对话里 agent 落库，活动类型 `scheduled_task_created_activity`；BotHub 创建 = 发 chat 指令或后续补发现 |
+| 创建 RPC？ | **网关无 `tasks.create`**。创建靠对话里 agent 落库，活动类型 `scheduled_task_created_activity`；BotArk 创建 = 发 chat 指令或后续补发现 |
 | UI 入口 | 导航 `scheduled.tasks` / `scheduled.task`（`task_id`）；Settings 权限里 `scopeType:"schedule"` |
 | 易混 | `browser_task.*` = 浏览器会话；`goals.*` = 目标/简报；`pin.*` = PIN 提醒；`feed.prompt.*` = Feed 刷新节奏 |
 
@@ -29,10 +29,10 @@
 | `tasks.delete` | DELETE | `/api/tasks/{job_id}` | false | unary | 删除；`requestBody: empty` |
 | `tasks.subscribe` | POST | `/tasks/subscribe` | **true** | **subscription** | 任务变更推送 |
 
-均走现有 Noise 网关（与 `chat.stream` 同一 `sendRequest` / BotHub `muse-native/gateway`）。  
+均走现有 Noise 网关（与 `chat.stream` 同一 `sendRequest` / BotArk `muse-native/gateway`）。  
 `job_id` 路径参数 = schedule 的 `id`（UI/关联里也写作 cron id）。
 
-BotHub `src/main/muse-native/methods.ts` 已注册 `tasks.list` 与 `tasks.subscribe`；需补 **`tasks.runs` / `tasks.run` / `tasks.delete`**。
+BotArk `src/main/muse-native/methods.ts` 已注册 `tasks.list` 与 `tasks.subscribe`；需补 **`tasks.runs` / `tasks.run` / `tasks.delete`**。
 
 ---
 
@@ -127,7 +127,7 @@ Sentry surface：`hatch.scheduled_task.list` / `hatch.scheduled_task.result`。
 
 ## 5. 相关但非「定时任务面板」的 API
 
-| 家族 | 用途 | BotHub |
+| 家族 | 用途 | BotArk |
 |---|---|---|
 | `goals.*` / `goal_prompt` | 长期目标、briefing；association 可挂 `cron`/`job_id` | 可选第二期 |
 | `feed.prompt.*` | Feed 自动刷新节奏 | 非用户 cron 列表 |
@@ -137,7 +137,7 @@ Sentry surface：`hatch.scheduled_task.list` / `hatch.scheduled_task.result`。
 
 ---
 
-## 6. BotHub 适配建议（定时任务 UI）
+## 6. BotArk 适配建议（定时任务 UI）
 
 ### 6.1 数据层
 
@@ -165,7 +165,7 @@ Sentry surface：`hatch.scheduled_task.list` / `hatch.scheduled_task.result`。
 ### 6.4 验收
 
 1. 已登录 Muse 原生连接下 `tasks.list` 返回数组（可空）  
-2. 在 muse.ai 网页建一条定时任务后，BotHub 订阅/刷新能看到  
+2. 在 muse.ai 网页建一条定时任务后，BotArk 订阅/刷新能看到  
 3. `tasks.run` / `tasks.delete` 与网页列表一致  
 4. 脱敏日志：不打 cookie / auth token
 

@@ -1,109 +1,139 @@
 <div align="center">
 
-[English](../../README.md) · [简体中文](README_zh.md) · **繁體中文** · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · [Tiếng Việt](README_vi.md) · [Türkçe](README_tr.md) · [العربية](README_ar.md) · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)
+<img src="../assets/logo.png" alt="BotArk" width="108" />
+
+# BotArk
+
+**把你所有的 Personal Agent，收進同一艘原生桌面方舟。**
+
+在一個清爽的 macOS / Windows 原生視窗裡並排使用 **Grok Bot**、**ChatGPT Dot**、**Meta Muse** 與 **Hark** —— 支援多帳號獨立在線、Grok 單號多 Bot 自動展開，以及像 Grok Bot 一樣順手的右側操作台。
+
+<p>
+  <a href="https://github.com/qybaihe/botark/releases/latest"><img src="https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=2563eb" alt="最新版本" /></a>
+  <a href="https://github.com/qybaihe/botark/releases/latest"><img src="https://img.shields.io/badge/macOS-%E8%98%8B%E6%9E%9C%E7%B0%BD%E7%AB%A0%E8%88%87%E5%85%AC%E8%AD%89-16a34a?style=flat-square&logo=apple&logoColor=white" alt="蘋果簽章與公證" /></a>
+  <a href="https://github.com/qybaihe/botark/releases/latest"><img src="https://img.shields.io/badge/Windows-10%2F11_x64-0078d4?style=flat-square&logo=windows&logoColor=white" alt="Windows 10/11" /></a>
+  <a href="https://github.com/qybaihe/botark/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/qybaihe/botark/ci.yml?branch=main&style=flat-square&label=CI" alt="CI 狀態" /></a>
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/%E6%8E%88%E6%AC%8A-MIT-0ea5e9?style=flat-square" alt="MIT 授權" /></a>
+</p>
+
+<h4>
+  <a href="https://github.com/qybaihe/botark/releases/latest">🍎 下載 macOS 版 (Apple 晶片)</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/qybaihe/botark/releases/latest">💻 下載 macOS 版 (Intel)</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/qybaihe/botark/releases/latest">🪟 下載 Windows 版</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/qybaihe/botark/discussions">💬 社群討論</a>
+</h4>
+
+<sub>
+  <a href="../../README.md">English</a> ·
+  <a href="README_zh.md">简体中文</a> ·
+  <b>繁體中文</b> ·
+  <a href="README_ja.md">日本語</a> ·
+  <a href="README_ko.md">한국어</a> ·
+  <a href="README_es.md">Español</a> ·
+  <a href="README_fr.md">Français</a> ·
+  <a href="README_de.md">Deutsch</a> ·
+  <a href="README_pt-BR.md">Português</a> ·
+  <a href="README_ru.md">Русский</a> ·
+  <a href="README_it.md">Italiano</a> ·
+  <a href="README_vi.md">Tiếng Việt</a> ·
+  <a href="README_tr.md">Türkçe</a> ·
+  <a href="README_ar.md">العربية</a> ·
+  <a href="README_id.md">Indonesia</a> ·
+  <a href="README_hi.md">हिन्दी</a>
+</sub>
+
+</div>
 
 <br />
 
-<img src="../assets/logo.png" alt="BotHub" width="88" />
-
-# BotHub
-
-### **把你所有的 Personal Agent 收進同一個原生桌面工作台**
-
-**在同一個視窗裡同時使用 Grok Bot、ChatGPT Dot、Meta Muse 與 Hark —— 支援多帳號獨立在線、單帳號多 Bot 自動展開，以及像 Grok Bot 一樣順手的右側操作台。**
-
-[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
-[![Apple Notarized](https://img.shields.io/badge/macOS-Apple_%E7%B0%BD%E7%AB%A0%E8%88%87%E5%85%AC%E8%AD%89-16a34a?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/qybaihe/bothub/releases/latest)
-[![Windows](https://img.shields.io/badge/Windows-10%2F11_x64-0078d4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/qybaihe/bothub/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/bothub/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/qybaihe/bothub/actions/workflows/ci.yml)
-[![MIT License](https://img.shields.io/badge/%E6%8E%88%E6%AC%8A%E6%A2%9D%E6%AC%BE-MIT-38bdf8?style=for-the-badge)](../../LICENSE)
-
-<br />
-
-**[🍎 下載 macOS 版 (Apple 晶片)](https://github.com/qybaihe/bothub/releases/latest) · [💻 下載 macOS 版 (Intel)](https://github.com/qybaihe/bothub/releases/latest) · [🪟 下載 Windows 版](https://github.com/qybaihe/bothub/releases/latest) · [💬 社群討論](https://github.com/qybaihe/bothub/discussions)**
-
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp" />
+    <img src="../assets/botark-light.webp" alt="BotArk 三欄原生工作台" width="100%" />
+  </picture>
 </div>
 
 ---
 
-<div align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/bothub-dark.webp">
-  <img src="../assets/bothub-light.webp" alt="BotHub 工作台：左側分組管理所有 Bot，中間串流對話，右側展開專屬操作台" width="100%">
-</picture>
-</div>
+## ✨ 為什麼選擇 BotArk？
 
-<br />
-
-## 💡 為什麼選擇 BotHub？
+每天重度使用多家 Personal Agent、甚至同一家還有多個工作號與主力號時，桌面上很快就會塞滿四五個客戶端和十幾個無痕瀏覽器視窗。**BotArk 用一個輕快、克制的原生桌面端徹底消除切換負擔：**
 
 <table>
-<tr>
-<td width="33%" valign="top">
-
-### 🗂️ 左側以 Bot 為單位統一排布
-將 **Grok Bot**、**ChatGPT Dot**、**Meta Muse**、**Hark** 放進自訂分組並排管理。登入 **1 個 Grok Bot 帳號**，名下全部專業 Bot 會**自動逐個展開在左側列表**，點擊或按 `⌘K` 秒切對話。
-
-</td>
-<td width="33%" valign="top">
-
-### 👥 多帳號並行，靈活匯入不串號
-同一平台同時登入多個帳號也完全獨立運作。支援**視窗登入**、**預設瀏覽器一鍵授權**、**貼上 Token / Cookie 匯入**、**信箱驗證碼批次匯入**，並支援單帳號獨立綁定代理池 IP。
-
-</td>
-<td width="33%" valign="top">
-
-### 🛠️ 右側專屬操作台（`⌘I`）
-像 Grok Bot 一樣保持中間對話視野清爽；需要檢視子任務進度、整理記憶與技能、管理排程任務、下載檔案或檢視雲端電腦沙盒時，隨時展開右側操作台即可。
-
-</td>
-</tr>
+  <tr>
+    <td width="46%" valign="middle">
+      <h3>🧭 四大平台聚合，兩種零門檻接入入口</h3>
+      <p>點擊左上角 <b><code>＋</code></b> 新建按鈕（<code>⌘N</code>）或打開左下角<b>「設定與帳號」</b>，靈活接入所有主力平台：</p>
+      <ul>
+        <li><b>絲滑彈窗與瀏覽器一鍵授權</b>：自動遵循系統代理，OAuth 登入不亂跳</li>
+        <li><b>全格式憑據貼上直連</b>：支援 Access Token、Cookie、JSON 或 API Key 直接匯入</li>
+        <li><b>車隊級批次匯入</b>：支援 Meta Muse 信箱自動收碼批次匯入與 ChatGPT Dot 多行批次匯入</li>
+      </ul>
+    </td>
+    <td width="54%" valign="middle">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="../assets/feature-platforms-dark.webp" />
+        <img src="../assets/feature-platforms-light.webp" alt="BotArk 四大平台接入規則與匯入方式全覽" width="100%" />
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="54%" valign="middle">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="../assets/feature-accounts-dark.webp" />
+        <img src="../assets/feature-accounts-light.webp" alt="BotArk 多帳號隔離控制台與 Grok 單號多 Bot 自動展開" width="100%" />
+      </picture>
+    </td>
+    <td width="46%" valign="middle">
+      <h3>👥 多帳號並行不串號 &amp; 單號多 Bot 自動展開</h3>
+      <p>工作號、個人號、測試號同時在線，會話完全獨立互不干擾：</p>
+      <ul>
+        <li><b>Grok 單號自動展開全部 Bot</b>：登入 1 個 Grok 帳號，名下所有專業 Bot 與群聊房間自動逐個出現在左側列表，並可直接新建專屬 Bot</li>
+        <li><b>獨立沙盒分區隔離</b>：每個帳號運行在獨立 Chromium 會話分區，憑據由系統鑰匙圈加密儲存</li>
+        <li><b>一號一代理防洩漏</b>：支援批次匯入 <code>SOCKS5</code> / <code>HTTP</code> 代理池一對一綁定，代理異常自動阻斷絕不裸連暴露真實 IP</li>
+      </ul>
+    </td>
+  </tr>
 </table>
+
+---
+
+## 🤖 支援的智慧體平台
+
+| 平台 | 登入與憑據匯入方式 | 左側列表展示邏輯 | 右側專屬操作台能力（`⌘I`） |
+| :--- | :--- | :--- | :--- |
+| <img src="../../src/renderer/src/assets/platforms/grok.png" width="18" height="18" align="absmiddle" /> **Grok Bot** | 彈窗直連登入、**預設瀏覽器一鍵授權**，或貼上 Token / Cookie / JSON / API Key | **1 個帳號 → 多個 Bot**：自動同步帳號下全部 Bot 與群聊房間；可在已有帳號下直接新建 Bot | 歷史會話、背景子任務進度、自動化觸發器、記憶與技能編輯、生成檔案庫、雲端沙盒終端、MCP 連接器與配方匯入匯出 |
+| <img src="../../src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | 獨立視窗登入，或**信箱列表批次自動收碼匯入** | 1 個帳號對應 1 個獨立 Muse 助手 | 帳號額度監控、操作審批確認、多會話切換、排程任務、目標設定、記憶與技能、工作區檔案預覽與雲電腦控制 |
+| <img src="../../src/renderer/src/assets/platforms/dot.svg" width="18" height="18" align="absmiddle" /> **ChatGPT Dot** | 網頁彈窗登入，或**單條 / 多行批次貼上 AT、RT、JSON 匯入** | 1 個帳號對應 1 個 Dot 助手（內建 Refresh Token 自動續期） | Orbit 角色切換、Dot / Native 雙模式切換、核心目標編輯、**換號一鍵遷移目標與記憶**、Pages 頁面與檔案庫瀏覽 |
+| <img src="../../src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / 信箱視窗登入，或**直接貼上 Session Cookie 匯入** | 1 個帳號對應 1 個 Hark 助手 | 快捷工作流卡片、歷史會話切換、排程巡檢任務、生成資料庫下載、雲端瀏覽器即時畫面與工作區連接器 |
 
 ---
 
 ## ⚡ 30 秒快速上手
 
-從 [**最新版本下載頁**](https://github.com/qybaihe/bothub/releases/latest) 下載對應系統的安裝檔：
+前往 [**GitHub Releases 最新版本**](https://github.com/qybaihe/botark/releases/latest) 下載安裝包：
 
-| 系統 | 安裝檔 | 說明 |
-| :--- | :--- | :--- |
-| **macOS（Apple 晶片 M1–M4）** | `BotHub-<版本號>-arm64.dmg` | **已通過 Apple Developer ID 官方簽章與公證**，拖入「應用程式」即可直接開啟 |
-| **macOS（Intel 晶片）** | `BotHub-<版本號>-x64.dmg` | **已通過 Apple Developer ID 官方簽章與公證**，無需額外指令解鎖 |
-| **Windows 10 / 11（x64）** | `BotHub-Setup-<版本號>-x64.exe` | 一鍵安裝精靈，支援背景自動檢查更新 |
-
-1. **新增或匯入帳號**：點擊左上角 **`＋`**（`⌘N`）選擇平台登入，或點擊左下角 **「設定與帳號」** 集中匯入與管理全部帳號。
-2. **全螢幕操作指南**：點擊左下角 **✦ 星標按鈕** 可隨時開啟全螢幕分步指南。
-3. **對話與右側操作台**：左側點選 Bot 開始對話，按 **`⌘I`**（Windows 為 `Ctrl+I`）展開右側專屬操作台。
+- **macOS（Apple 晶片 / Intel）**：`BotArk-<版本號>-arm64.dmg` / `x64.dmg`（**Apple Developer ID 官方簽章與公證**，拖入「應用程式」即可直接開啟）
+- **Windows 10 / 11（64 位元）**：`BotArk-Setup-<版本號>-x64.exe`
 
 ---
 
-## 🤖 支援的平台
+## 📈 Star 增長趨勢
 
-| 平台 | 登入與匯入方式 | 左側列表呈現 | 右側專屬操作台能力（`⌘I`） |
-| :--- | :--- | :--- | :--- |
-| **Grok Bot**（`grok.com`） | 彈窗登入、**預設瀏覽器一鍵授權**，或貼上 Token / Cookie / JSON / API Key | **1 個帳號 → 多個 Bot**：自動將帳號下全部 Bot 與群組房間同步至左側列表；可直接在現有帳號下新建 Bot | 歷史會話、背景子任務、自動化觸發器、記憶與技能、檔案庫、雲端沙盒終端與配方匯入匯出 |
-| **Meta Muse**（`muse.ai`） | 獨立視窗登入，或**信箱清單批次自動收碼匯入** | 1 個帳號對應 1 個獨立 Muse 助手 | 額度監控、操作審批、多會話切換、排程任務、目標與記憶、工作區檔案預覽與雲端電腦 |
-| **ChatGPT Dot**（`chatgpt.com/dots`） | 網頁視窗登入，或**單筆 / 多行批次貼上 AT、RT、JSON** | 1 個帳號對應 1 個 Dot 助手（支援 RT 自動續期） | Orbit 角色切換、Dot / Native 雙模式、核心目標編輯、**換號一鍵遷移記憶**、Pages 與檔案庫 |
-| **Hark**（`hark.com`） | Google / 信箱視窗登入，或**貼上 Session Cookie** | 1 個帳號對應 1 個 Hark 助手 | 快捷工作流卡片、歷史對話、排程巡檢任務、檔案庫下載、雲端瀏覽器即時畫面與連接器 |
-
----
-
-## 🧰 本地開發
-
-需要 **Node.js 22.19+**（建議 Node 24，見 [`.nvmrc`](../../.nvmrc)）：
-
-```bash
-git clone https://github.com/qybaihe/bothub.git
-cd bothub
-npm ci
-npm run dev
-```
-
-更多開發與貢獻說明請參閱 [**CONTRIBUTING.md**](../../CONTRIBUTING.md) 與 [**`docs/` 協議文件**](../README.md)。
+<div align="center">
+  <a href="https://star-history.com/#qybaihe/botark&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date&theme=dark" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date" width="100%" />
+    </picture>
+  </a>
+</div>
 
 ---
 
-## 📄 授權條款
-
-基於 [MIT 授權條款](../../LICENSE) 開源。如果 BotHub 幫你省下了滿桌面的瀏覽器分頁，歡迎在右上角點亮一顆 **⭐ Star**！
+<div align="center">
+  基於 <a href="../../LICENSE"><b>MIT 授權條款</b></a> 開源。歡迎點亮右上角的 <b>⭐ Star</b> 支持 <b>BotArk</b>！
+</div>

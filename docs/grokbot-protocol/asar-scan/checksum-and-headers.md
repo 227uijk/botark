@@ -53,7 +53,7 @@ darwin UA 片段：`(Macintosh; Intel Mac OS X 10_15_7)`
 - `x-request-id: uuid`
 - 可能还有 lineage / inference 相关头
 
-## 对 BotHub 401 的含义
+## 对 BotArk 401 的含义
 
 List 能过、Send/Transcript 401，优先怀疑：
 

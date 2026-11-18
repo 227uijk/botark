@@ -1,10 +1,10 @@
-# Muse / Hatch protocol gaps vs BotHub
+# Muse / Hatch protocol gaps vs BotArk
 
 > Source: `samples/gateway_methods.json` (387 RPCs) + frontend JS (`js/1xb3yb2v9z58-.js`, `0nq-jlgnc05xv.js`, `3fiky3z_50g3-.js`, `00z4km9l8x5ty.js` / `0wy3rr-t8mqid.js`, `2a5inne9oca8a.js`, `139ad6to7j8dj.js`).  
 > Date: 2026-11-03 (Asia/Shanghai). Tokens/cookies/invite codes **redacted**.  
 > No live Noise capture for peers/shared_agents in this pass — wire shapes from JS contracts + method table. Confidence tagged per section.
 
-## 0. BotHub already covered (baseline)
+## 0. BotArk already covered (baseline)
 
 | Area | How | Notes |
 |---|---|---|
@@ -18,13 +18,13 @@
 | Hatch invite badge / copy | HTTPS + UI | product invite, ≠ Trusted Network peers |
 | Add-account login | WebContentsView | signedIn-before-reload fix |
 
-**Not covered** below. Gateway still has ~300+ methods unused by BotHub.
+**Not covered** below. Gateway still has ~300+ methods unused by BotArk.
 
 ---
 
 ## 1. Cross-account / bot-to-bot messaging  **[USER PRIORITY]**
 
-Muse exposes **three related but different** cross-account surfaces. BotHub has **none** of them wired.
+Muse exposes **three related but different** cross-account surfaces. BotArk has **none** of them wired.
 
 ### 1.A Trusted Network — `peers.*` (26 methods)  confidence: **high** (JS contract + method table)
 
@@ -134,7 +134,7 @@ Shareable agent definitions owned by one account, granted to others.
 
 Send ack shape check: `{accepted:true, client_message_id, message_id}` with ids equal.
 
-**Noise note:** Shared Agent connections use a **different Noise connection class** (`shared_agent`) and handshake payload variant already documented in `protocol.md` §3.3 (Msg1 field2=1, Msg3 ticket). BotHub native client today assumes personal `hatch_vm` — **must extend** for remote Shared Agent sessions.
+**Noise note:** Shared Agent connections use a **different Noise connection class** (`shared_agent`) and handshake payload variant already documented in `protocol.md` §3.3 (Msg1 field2=1, Msg3 ticket). BotArk native client today assumes personal `hatch_vm` — **must extend** for remote Shared Agent sessions.
 
 JS comment path: `"Shared Agents are retired"` guard exists on some create paths — capabilities may report unsupported on some accounts. Probe `shared_agents.capabilities` first.
 
@@ -146,23 +146,23 @@ Also: `sharing.eligibility` / `sharing.attempt` (daemon, noiseOnly) — product 
 
 ### 1.D External channels (not Muse↔Muse)
 
-| Prefix | Role | BotHub |
+| Prefix | Role | BotArk |
 |---|---|---|
 | `channels.*` | Link/unlink messaging channels | no |
 | `whatsapp*` / `messenger*` | Companion link / unlock | no |
 | `email.*` (19) | Muse mailbox for the agent | no |
 | `foa.*` | Facebook/Meta FOA accounts | no |
 
-These are **human chat apps ↔ Muse**, not BotHub multi-account routing.
+These are **human chat apps ↔ Muse**, not BotArk multi-account routing.
 
-### 1.E BotHub adaptation notes (cross-account)
+### 1.E BotArk adaptation notes (cross-account)
 
-1. **Product meaning for BotHub:**  
+1. **Product meaning for BotArk:**  
    - **Trusted Network** = connect two (or more) Muse accounts you manage so their agents can pair / chat / share spaces.  
    - **Shared Agents** = publish one agent definition and remote-message it from another account/session.  
-   - **BotHub-local routing** (A’s chat result → B’s inbox without Muse peers) is **not** a Muse RPC — that would be BotHub orchestration only.
+   - **BotArk-local routing** (A’s chat result → B’s inbox without Muse peers) is **not** a Muse RPC — that would be BotArk orchestration only.
 
-2. **Suggested BotHub MVP:**  
+2. **Suggested BotArk MVP:**  
    - Per Muse account: Trusted Network panel → `peers.status` → list contacts/invites/inbox.  
    - Cross-account invite: Account A `peers.invites.create` → show URL/`fragment` or inbox-deliver to B’s pending → B accept + SAS confirm.  
    - Optional v2: Shared Agent create + `remote.open` subscription + `remote.send` (needs Shared Agent Noise class).  
@@ -176,11 +176,11 @@ These are **human chat apps ↔ Muse**, not BotHub multi-account routing.
 
 **Two layers — do not mix them.**
 
-### 2.A BotHub client-side proxy (what the user asked)  confidence: **n/a (product), not a Muse RPC**
+### 2.A BotArk client-side proxy (what the user asked)  confidence: **n/a (product), not a Muse RPC**
 
 > “每个账号访问 Muse 可以单独配置一个代理”
 
-This is **BotHub transport config**, not a Hatch method:
+This is **BotArk transport config**, not a Hatch method:
 
 | Traffic | Must honor per-account proxy |
 |---|---|
@@ -198,7 +198,7 @@ This is **BotHub transport config**, not a Hatch method:
 
 ### 2.B Muse VM egress policy (protocol, different meaning)  confidence: **high**
 
-Controls how the **Muse VM / Sentinel** reaches the internet (transparent proxy, MITM, host rules) — **not** BotHub’s path to muse.ai.
+Controls how the **Muse VM / Sentinel** reaches the internet (transparent proxy, MITM, host rules) — **not** BotArk’s path to muse.ai.
 
 | method | Body (from JS) | UI meaning |
 |---|---|---|
@@ -211,9 +211,9 @@ Controls how the **Muse VM / Sentinel** reaches the internet (transparent proxy,
 | `permissions.settings` / `update` | `connector_default`, `network_default`, `protocols[]` | Defaults `auto_allow` / `always_ask`; protocol rows mode `deny`\|`ask` |
 | `egress.permissions.active*` / `revoke` / `reset` | Active grants; reset returns `{connector_overrides, network_rules}` counts | |
 
-BotHub already uses **approvals** subset of egress; **tproxy / mitm / network_rules / settings** are unimplemented.
+BotArk already uses **approvals** subset of egress; **tproxy / mitm / network_rules / settings** are unimplemented.
 
-**When to expose in BotHub:** optional “VM network policy” advanced panel — **separate** from per-account client proxy. Label clearly: “Muse 出站策略” vs “BotHub 访问代理”.
+**When to expose in BotArk:** optional “VM network policy” advanced panel — **separate** from per-account client proxy. Label clearly: “Muse 出站策略” vs “BotArk 访问代理”.
 
 ---
 
@@ -221,7 +221,7 @@ BotHub already uses **approvals** subset of egress; **tproxy / mitm / network_ru
 
 Confidence: **high** = method table + JS usage; **medium** = table + partial JS; **low** = table only.
 
-| Area | Methods (count) | Confidence | BotHub status | Notes |
+| Area | Methods (count) | Confidence | BotArk status | Notes |
 |---|---|---|---|---|
 | **Trusted Network `peers.*`** | 26 | high | none | §1.A |
 | **Shared Agents** | 15 | high/med | none | §1.B; remote needs shared_agent Noise |
@@ -254,11 +254,11 @@ Confidence: **high** = method table + JS usage; **medium** = table + partial JS;
 
 ---
 
-## 4. Prioritized backlog (for Claude / BotHub)
+## 4. Prioritized backlog (for Claude / BotArk)
 
 ### P0 — User-asked
 
-1. **Per-account BotHub proxy** (§2.A): account settings UI + wire HTTPS+WSS+partition; e2e two accounts different SOCKS.  
+1. **Per-account BotArk proxy** (§2.A): account settings UI + wire HTTPS+WSS+partition; e2e two accounts different SOCKS.  
 2. **Trusted Network MVP** (§1.A): `peers.status` → list contacts/invites/inbox → create/accept invite (+ SAS if required) → show pairing state. Document live samples under `samples/peers/` (redacted).
 
 ### P1 — Cross-account messaging depth

@@ -25,9 +25,9 @@ const macArchs = cliArgs.has('--arm64')
 
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
-  appId: 'com.qybaihe.bothub',
-  productName: 'BotHub',
-  copyright: 'Copyright © 2026 BotHub contributors',
+  appId: 'com.qybaihe.botark',
+  productName: 'BotArk',
+  copyright: 'Copyright © 2026 BotArk contributors',
   directories: {
     output: 'release',
     buildResources: 'build'
@@ -76,7 +76,7 @@ module.exports = {
     {
       provider: 'github',
       owner: 'qybaihe',
-      repo: 'bothub',
+      repo: 'botark',
       // CI creates the draft first and every platform job uploads into it,
       // then one final step publishes. No job ever creates the release, so
       // parallel uploads cannot race into a 422.

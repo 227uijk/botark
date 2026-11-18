@@ -1,8 +1,8 @@
-# BotHub Documentation
+# BotArk Documentation
 
-Welcome to the **BotHub** documentation directory.
+Welcome to the **BotArk** documentation directory.
 
-## 🌍 User Guides (Multi-Language READMEs)
+## 🌍 User Guides (16-Language READMEs)
 
 - [English (Main README)](../README.md)
 - [简体中文](./readme/README_zh.md) · [繁體中文](./readme/README_zh-TW.md)
@@ -12,7 +12,7 @@ Welcome to the **BotHub** documentation directory.
 
 ## 🔌 Platform Integration & Protocol Notes
 
-Technical documentation for the four personal agent platforms supported in BotHub:
+Technical documentation for the four personal agent platforms supported in BotArk:
 
 | Platform | Reference Doc | Highlights |
 | :--- | :--- | :--- |

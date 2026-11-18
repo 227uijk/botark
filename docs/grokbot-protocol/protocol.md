@@ -1,6 +1,6 @@
 # Grok Bot（xAI / Anysphere `sand`）协议分析
 
-> 来源：Antigravity 会话（2026-11-02，`0.78.1`）+ BotHub 二次深度逆向（2026-11-11，针对 `/Applications/Grok Bot.app` **`0.79.3`**，Electron `42.11.16`，内部代号 **sand**）。  
+> 来源：Antigravity 会话（2026-11-02，`0.78.1`）+ BotArk 二次深度逆向（2026-11-11，针对 `/Applications/Grok Bot.app` **`0.79.3`**，Electron `42.11.16`，内部代号 **sand**）。  
 > ConnectRPC 服务与消息字段直接提取自 `0.79.3` `app.asar` 内 `/dist/electron-main/proto.cjs`（共 **7 个 ConnectRPC Service**，其中 `aiserver.v1.GrokBotService` 已扩展至 **464 个 RPC**，`SandBoxService` **55 个 RPC**，`AgentStoreService` **25 个 RPC**，`DashboardService` **92 个 RPC**）。  
 > **所有 token / cookie / refresh / machine-id / 账号 UUID 已脱敏为 `REDACTED`。**
 
@@ -26,7 +26,7 @@ Grok Bot.app (Electron)
 
 与 **muse.ai** 对比：Muse 是 Noise_XX WebSocket 网关，裸客户端极难；Grok Bot 是 **标准 ConnectRPC + Protobuf**，字段可从 `proto.cjs` 还原，**裸客户端可行度远高于 Muse**，但仍需合法登录拿到 `accessToken`（存在 safeStorage，不建议拆钥匙串）。
 
-**BotHub 建议（与 Muse 不同）：**
+**BotArk 建议（与 Muse 不同）：**
 
 | 方案 | 说明 | 推荐 |
 |---|---|---|
@@ -82,7 +82,7 @@ Grok Bot.app (Electron)
 
 | 文件 | 作用 |
 |---|---|
-| `sand-secrets.json` | `version`、`cursor-machine-id`、`cursor-accounts`、`local-exec-file-key`（**safeStorage 加密字段，禁止在 BotHub 里破解 Keychain**） |
+| `sand-secrets.json` | `version`、`cursor-machine-id`、`cursor-accounts`、`local-exec-file-key`（**safeStorage 加密字段，禁止在 BotArk 里破解 Keychain**） |
 | `Cookies` / `Partitions/` | Chromium 会话；分区名见下 |
 | `desktop-status.json` | `{version,pid,appVersion,startedAtMs,signedIn}` |
 | `sand-client-persistence/` | 账户维度 UI/副本缓存（明文 JSON blob） |
@@ -312,11 +312,11 @@ Host capabilities 缓存示例：
 - 服务端「原声气泡」100% 逐条注入依赖 `CommitGrokBotTranscriptEntries` 与 generation/epoch 对齐，会话结束时**未证明**已对所有 Bot 跑通。  
 - `sand-secrets.json` 未（也不应）解密；新账号 token 只能通过正规登录获得。  
 - GitHub App / 连接器授权、本机 daemon 凭据**不会**随 recipe 自动过户。  
-- Antigravity 线程是「迁移」不是「BotHub 适配」——**没有现成 GrokAdapter 代码**。
+- Antigravity 线程是「迁移」不是「BotArk 适配」——**没有现成 GrokAdapter 代码**。
 
 ---
 
-## 9. BotHub 适配建议（给实现者）
+## 9. BotArk 适配建议（给实现者）
 
 ### 9.1 推荐架构（第一期）
 
@@ -328,13 +328,13 @@ Host capabilities 缓存示例：
    - 发消息：`SendGrokBotUserMessage`（+ `GetGrokBotSendStatus`）
    - 收流：`WatchGrokBotTranscripts` / `ListGrokBotTranscriptEntries`
    - 状态灯：`ListGrokBotAgentStatuses`、unread 字段、`awaitingUserResponse`
-   - 审批：`ResolveGrokBotAutoReviewApproval` 等（UI 卡对接 BotHub 确认条）
-5. **多账号**：一 accountSlot 一 partition + 一 token 存储项（BotHub 自己的安全存储，不是改 Grok Bot 的 sand-secrets）。  
+   - 审批：`ResolveGrokBotAutoReviewApproval` 等（UI 卡对接 BotArk 确认条）
+5. **多账号**：一 accountSlot 一 partition + 一 token 存储项（BotArk 自己的安全存储，不是改 Grok Bot 的 sand-secrets）。  
 6. **不要**第一期复刻 Noise 式「整页嵌入 Grok Bot.app」；桌面 asar 无法当普通 URL 嵌。若只要「看着像官方 UI」，二期可评估嵌 `https://x.ai/bot/...` 已登录页，但仍需 RPC 做 Hub 侧控制。
 
 ### 9.2 与 MuseAdapter 对齐的接口期望
 
-| BotHub 能力 | Grok 侧 |
+| BotArk 能力 | Grok 侧 |
 |---|---|
 | `homeUrl` / 嵌入 | 登录页 URL 或 `https://x.ai/bot`；主聊天走 RPC |
 | `sendMessage` | `SendGrokBotUserMessage` |
@@ -352,7 +352,7 @@ Host capabilities 缓存示例：
 
 ---
 
-## 10. `0.79.3` 全协议升级与 BotHub 落地清单（2026-11-11）
+## 10. `0.79.3` 全协议升级与 BotArk 落地清单（2026-11-11）
 
 1. **真实请求头与双轨鉴权**：
    - 真实 `User-Agent`: `Mozilla/5.0 ... AppleWebKit/537.36 (KHTML, like Gecko) Sand/0.79.3 Safari/537.36`（无 `Chrome/` / `Electron/` 伪装，无 `sec-fetch-*`）。

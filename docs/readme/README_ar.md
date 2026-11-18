@@ -2,27 +2,25 @@
 
 <div align="center">
 
-[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · [Tiếng Việt](README_vi.md) · [Türkçe](README_tr.md) · **العربية** · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)
+<img src="../assets/logo.png" alt="BotArk" width="108" />
 
-<br />
-
-<img src="../assets/logo.png" alt="BotHub" width="88" />
-
-# BotHub
+# BotArk
 
 ### **اجمع كل وكلائك الشخصيين واستخدمهم في عميل واحد، تمامًا مثل Grok Bot**
 
 **تطبيق لنظامي macOS وWindows يجمع بوتاتك على Meta Muse وGrok Bot وHark وDot في نافذة واحدة، ويسجّل كل بوت دخوله بحسابه المعزول الخاص.**
 
-[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=%D8%A7%D9%84%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/bothub/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/qybaihe/bothub/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/%D8%A7%D9%84%D9%85%D9%86%D8%B5%D8%A9-macOS_%7C_Windows-6e56cf?style=for-the-badge)](#-البدء-السريع)
-[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![MIT License](https://img.shields.io/badge/%D8%A7%D9%84%D8%AA%D8%B1%D8%AE%D9%8A%D8%B5-MIT-38bdf8?style=for-the-badge)](../../LICENSE)
+[![Release](https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=%D8%A7%D9%84%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1&color=2563eb)](https://github.com/qybaihe/botark/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/botark/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/qybaihe/botark/actions/workflows/ci.yml)
+[![Platform](https://img.shields.io/badge/%D8%A7%D9%84%D9%85%D9%86%D8%B5%D8%A9-macOS_%7C_Windows-6e56cf?style=flat-square)](#-البدء-السريع)
+[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![MIT License](https://img.shields.io/badge/%D8%A7%D9%84%D8%AA%D8%B1%D8%AE%D9%8A%D8%B5-MIT-38bdf8?style=flat-square)](../../LICENSE)
 
-**[⬇️ تنزيل لنظام macOS](https://github.com/qybaihe/bothub/releases/latest) · [⬇️ تنزيل لنظام Windows](https://github.com/qybaihe/bothub/releases/latest) · [📦 كل الإصدارات](https://github.com/qybaihe/bothub/releases) · [🐛 الإبلاغ عن مشكلة](https://github.com/qybaihe/bothub/issues)**
+**[⬇️ تنزيل لنظام macOS](https://github.com/qybaihe/botark/releases/latest) · [⬇️ تنزيل لنظام Windows](https://github.com/qybaihe/botark/releases/latest) · [📦 كل الإصدارات](https://github.com/qybaihe/botark/releases) · [🐛 الإبلاغ عن مشكلة](https://github.com/qybaihe/botark/issues)**
 
 [البدء السريع](#-البدء-السريع) · [المنصات](#-المنصات-المدعومة) · [الميزات](#-الميزات) · [التطوير](#-التطوير) · [إصدار النسخ](#-إصدار-النسخ) · [البروتوكولات](#-توثيق-البروتوكولات) · [الأسئلة الشائعة](#-الأسئلة-الشائعة)
+
+<sub>[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · [Tiếng Việt](README_vi.md) · [Türkçe](README_tr.md) · **العربية** · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)</sub>
 
 </div>
 
@@ -31,14 +29,14 @@
 </div>
 
 > [!NOTE]
-> BotHub عميل مستقل ولا يرتبط بـ Meta أو xAI أو Hark أو OpenAI. تسجّل الدخول بحساباتك الخاصة، وتبقى بيانات الاعتماد على جهازك فقط.
+> BotArk عميل مستقل ولا يرتبط بـ Meta أو xAI أو Hark أو OpenAI. تسجّل الدخول بحساباتك الخاصة، وتبقى بيانات الاعتماد على جهازك فقط.
 
 <div dir="rtl">
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/bothub-dark.webp">
-  <img src="../assets/bothub-light.webp" alt="BotHub: بوتات Muse وDot وHark وGrok Bot مجمّعة في الشريط الجانبي، ومحادثة، ولوحة تفاصيل البوت (بيانات تجريبية)" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp">
+  <img src="../assets/botark-light.webp" alt="BotArk: بوتات Muse وDot وHark وGrok Bot مجمّعة في الشريط الجانبي، ومحادثة، ولوحة تفاصيل البوت (بيانات تجريبية)" width="100%">
 </picture>
 <sub>لقطة شاشة ببيانات تجريبية خيالية.</sub>
 </div>
@@ -72,24 +70,24 @@
 
 ## ⚡ البدء السريع
 
-نزّل الملف المناسب لنظامك من [أحدث إصدار](https://github.com/qybaihe/bothub/releases/latest):
+نزّل الملف المناسب لنظامك من [أحدث إصدار](https://github.com/qybaihe/botark/releases/latest):
 
 | النظام | الملف |
 | :--- | :--- |
-| macOS، شرائح Apple | `BotHub-<الإصدار>-arm64.dmg` |
-| macOS، Intel | `BotHub-<الإصدار>-x64.dmg` |
-| Windows 10/11 (x64) | `BotHub-Setup-<الإصدار>-x64.exe` |
+| macOS، شرائح Apple | `BotArk-<الإصدار>-arm64.dmg` |
+| macOS، Intel | `BotArk-<الإصدار>-x64.dmg` |
+| Windows 10/11 (x64) | `BotArk-Setup-<الإصدار>-x64.exe` |
 
 </div>
 
 > [!TIP]
-> **إصدارات macOS موقّعة وموثّقة رسميًا (Notarized) بشهادة Apple Developer ID.** اسحب `BotHub.app` إلى مجلد `Applications` وافتحه مباشرةً.
+> **إصدارات macOS موقّعة وموثّقة رسميًا (Notarized) بشهادة Apple Developer ID.** اسحب `BotArk.app` إلى مجلد `Applications` وافتحه مباشرةً.
 
 <div dir="rtl">
 
 بعد ذلك انقر على **+** في الشريط الجانبي، واختر منصة، وسجّل الدخول. يحتفظ كل بوت بحسابه الخاص.
 
-**التحديثات**: على Windows، ينزّل BotHub الإصدارات الجديدة في الخلفية ويثبّتها بنقرة واحدة. وعلى macOS، ينبّهك عند صدور إصدار جديد ويفتح صفحة التنزيل.
+**التحديثات**: على Windows، ينزّل BotArk الإصدارات الجديدة في الخلفية ويثبّتها بنقرة واحدة. وعلى macOS، ينبّهك عند صدور إصدار جديد ويفتح صفحة التنزيل.
 
 ## 🤖 المنصات المدعومة
 
@@ -188,14 +186,14 @@ scripts/screenshot/  لقطة شاشة README من بيانات تجريبية �
 <details>
 <summary><b>تظهر رسالة «تم التسليم · جارٍ الرد» لوقت طويل. هل ستُرسل مرتين إذا أعدت المحاولة؟</b></summary>
 
-لا. بمجرد أن تقبل المنصة الرسالة، لا يعرضها BotHub أبدًا على أنها غير مُرسلة. وإذا لم يصل رد، تظهر حالة *لا يوجد رد* مع زر **إرسال مجددًا** يوضّح أنه سيرسل نسخة ثانية.
+لا. بمجرد أن تقبل المنصة الرسالة، لا يعرضها BotArk أبدًا على أنها غير مُرسلة. وإذا لم يصل رد، تظهر حالة *لا يوجد رد* مع زر **إرسال مجددًا** يوضّح أنه سيرسل نسخة ثانية.
 
 </details>
 
 <details>
 <summary><b>هل يمكن لكل حساب استخدام وكيل خاص به؟</b></summary>
 
-نعم، لحسابات Muse وDot (HTTP أو SOCKS5). وإذا تعذّر تطبيق الوكيل، يحظر BotHub حركة ذلك الحساب بدل التحول إلى اتصال مباشر.
+نعم، لحسابات Muse وDot (HTTP أو SOCKS5). وإذا تعذّر تطبيق الوكيل، يحظر BotArk حركة ذلك الحساب بدل التحول إلى اتصال مباشر.
 
 </details>
 
@@ -203,4 +201,17 @@ scripts/screenshot/  لقطة شاشة README من بيانات تجريبية �
 
 منشور بموجب [ترخيص MIT](../../LICENSE).
 
+</div>
+
+---
+
+## 📈 Star History
+
+<div align="center">
+  <a href="https://star-history.com/#qybaihe/botark&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date&theme=dark" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date" width="100%" />
+    </picture>
+  </a>
 </div>

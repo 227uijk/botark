@@ -1,38 +1,36 @@
 <div align="center">
 
-[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · **Tiếng Việt** · [Türkçe](README_tr.md) · [العربية](README_ar.md) · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)
+<img src="../assets/logo.png" alt="BotArk" width="108" />
 
-<br />
-
-<img src="../assets/logo.png" alt="BotHub" width="88" />
-
-# BotHub
+# BotArk
 
 ### **Tập hợp mọi agent cá nhân của bạn và dùng chúng trong một ứng dụng duy nhất, giống như Grok Bot**
 
 **Ứng dụng cho macOS và Windows gom các bot Meta Muse, Grok Bot, Hark và Dot của bạn vào một cửa sổ, mỗi bot đăng nhập bằng một tài khoản riêng, tách biệt.**
 
-[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=Phi%C3%AAn%20b%E1%BA%A3n&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/bothub/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/qybaihe/bothub/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/N%E1%BB%81n_t%E1%BA%A3ng-macOS_%7C_Windows-6e56cf?style=for-the-badge)](#-bắt-đầu-nhanh)
-[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![MIT License](https://img.shields.io/badge/Gi%E1%BA%A5y_ph%C3%A9p-MIT-38bdf8?style=for-the-badge)](../../LICENSE)
+[![Release](https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=Phi%C3%AAn%20b%E1%BA%A3n&color=2563eb)](https://github.com/qybaihe/botark/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/botark/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/qybaihe/botark/actions/workflows/ci.yml)
+[![Platform](https://img.shields.io/badge/N%E1%BB%81n_t%E1%BA%A3ng-macOS_%7C_Windows-6e56cf?style=flat-square)](#-bắt-đầu-nhanh)
+[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![MIT License](https://img.shields.io/badge/Gi%E1%BA%A5y_ph%C3%A9p-MIT-38bdf8?style=flat-square)](../../LICENSE)
 
-**[⬇️ Tải cho macOS](https://github.com/qybaihe/bothub/releases/latest) · [⬇️ Tải cho Windows](https://github.com/qybaihe/bothub/releases/latest) · [📦 Tất cả phiên bản](https://github.com/qybaihe/bothub/releases) · [🐛 Báo lỗi](https://github.com/qybaihe/bothub/issues)**
+**[⬇️ Tải cho macOS](https://github.com/qybaihe/botark/releases/latest) · [⬇️ Tải cho Windows](https://github.com/qybaihe/botark/releases/latest) · [📦 Tất cả phiên bản](https://github.com/qybaihe/botark/releases) · [🐛 Báo lỗi](https://github.com/qybaihe/botark/issues)**
 
 [Bắt đầu nhanh](#-bắt-đầu-nhanh) · [Nền tảng](#-nền-tảng-được-hỗ-trợ) · [Tính năng](#-tính-năng) · [Phát triển](#-phát-triển) · [Phát hành](#-phát-hành) · [Giao thức](#-tài-liệu-giao-thức) · [Câu hỏi thường gặp](#-câu-hỏi-thường-gặp)
+
+<sub>[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · **Tiếng Việt** · [Türkçe](README_tr.md) · [العربية](README_ar.md) · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)</sub>
 
 </div>
 
 ---
 
 > [!NOTE]
-> BotHub là ứng dụng độc lập, không liên kết với Meta, xAI, Hark hay OpenAI. Bạn đăng nhập bằng tài khoản của chính mình và thông tin đăng nhập chỉ lưu trên máy tính của bạn.
+> BotArk là ứng dụng độc lập, không liên kết với Meta, xAI, Hark hay OpenAI. Bạn đăng nhập bằng tài khoản của chính mình và thông tin đăng nhập chỉ lưu trên máy tính của bạn.
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/bothub-dark.webp">
-  <img src="../assets/bothub-light.webp" alt="BotHub: các bot Muse, Dot, Hark và Grok Bot được nhóm ở thanh bên, một cuộc trò chuyện và bảng chi tiết bot (dữ liệu mẫu)" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp">
+  <img src="../assets/botark-light.webp" alt="BotArk: các bot Muse, Dot, Hark và Grok Bot được nhóm ở thanh bên, một cuộc trò chuyện và bảng chi tiết bot (dữ liệu mẫu)" width="100%">
 </picture>
 <sub>Ảnh chụp màn hình với dữ liệu mẫu hư cấu.</sub>
 </div>
@@ -66,20 +64,20 @@ Tin nhắn hiển thị *đang gửi*, *đã gửi tới · đang trả lời*, 
 
 ## ⚡ Bắt đầu nhanh
 
-Tải tệp phù hợp với hệ điều hành của bạn từ [phiên bản mới nhất](https://github.com/qybaihe/bothub/releases/latest):
+Tải tệp phù hợp với hệ điều hành của bạn từ [phiên bản mới nhất](https://github.com/qybaihe/botark/releases/latest):
 
 | Hệ điều hành | Tệp |
 | :--- | :--- |
-| macOS, Apple silicon | `BotHub-<phiên bản>-arm64.dmg` |
-| macOS, Intel | `BotHub-<phiên bản>-x64.dmg` |
-| Windows 10/11 (x64) | `BotHub-Setup-<phiên bản>-x64.exe` |
+| macOS, Apple silicon | `BotArk-<phiên bản>-arm64.dmg` |
+| macOS, Intel | `BotArk-<phiên bản>-x64.dmg` |
+| Windows 10/11 (x64) | `BotArk-Setup-<phiên bản>-x64.exe` |
 
 > [!TIP]
-> **Bản macOS đã được ký số và công chứng (Notarized) bởi Apple Developer ID.** Chỉ cần kéo `BotHub.app` vào `Applications` và mở trực tiếp.
+> **Bản macOS đã được ký số và công chứng (Notarized) bởi Apple Developer ID.** Chỉ cần kéo `BotArk.app` vào `Applications` và mở trực tiếp.
 
 Sau đó bấm **+** ở thanh bên, chọn nền tảng và đăng nhập. Mỗi bot giữ tài khoản riêng của mình.
 
-**Cập nhật**: trên Windows, BotHub tải phiên bản mới ở chế độ nền và cài đặt chỉ với một cú nhấp. Trên macOS, ứng dụng báo khi có phiên bản mới và mở trang tải xuống.
+**Cập nhật**: trên Windows, BotArk tải phiên bản mới ở chế độ nền và cài đặt chỉ với một cú nhấp. Trên macOS, ứng dụng báo khi có phiên bản mới và mở trang tải xuống.
 
 ## 🤖 Nền tảng được hỗ trợ
 
@@ -162,17 +160,30 @@ Giao thức và ghi chú API của từng nền tảng nằm trong [`docs/`](../
 <details>
 <summary><b>Tin nhắn hiện "đã gửi tới · đang trả lời" rất lâu. Thử lại có gửi hai lần không?</b></summary>
 
-Không. Khi nền tảng đã nhận tin nhắn, BotHub không bao giờ coi nó là chưa gửi. Nếu không có phản hồi, ứng dụng hiển thị *không có phản hồi* kèm nút **Gửi lại**, nói rõ rằng sẽ gửi thêm một bản nữa.
+Không. Khi nền tảng đã nhận tin nhắn, BotArk không bao giờ coi nó là chưa gửi. Nếu không có phản hồi, ứng dụng hiển thị *không có phản hồi* kèm nút **Gửi lại**, nói rõ rằng sẽ gửi thêm một bản nữa.
 
 </details>
 
 <details>
 <summary><b>Mỗi tài khoản có thể dùng proxy riêng không?</b></summary>
 
-Có, với tài khoản Muse và Dot (HTTP hoặc SOCKS5). Nếu không áp dụng được proxy, BotHub sẽ chặn lưu lượng của tài khoản đó thay vì chuyển sang kết nối trực tiếp.
+Có, với tài khoản Muse và Dot (HTTP hoặc SOCKS5). Nếu không áp dụng được proxy, BotArk sẽ chặn lưu lượng của tài khoản đó thay vì chuyển sang kết nối trực tiếp.
 
 </details>
 
 ## 📄 Giấy phép
 
 Phát hành theo [Giấy phép MIT](../../LICENSE).
+
+---
+
+## 📈 Star History
+
+<div align="center">
+  <a href="https://star-history.com/#qybaihe/botark&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date&theme=dark" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date" width="100%" />
+    </picture>
+  </a>
+</div>

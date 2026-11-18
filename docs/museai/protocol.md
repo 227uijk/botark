@@ -12,7 +12,7 @@
 **真正的 Meta Muse 是 https://muse.ai（Hatch），不是 https://www.meta.ai。**
 
 ```
-浏览器/BotHub
+浏览器/BotArk
   ──HTTPS──► muse.ai          控制面：OIDC、cookie、租 VM、auth_token、notary
   ──WSS────► hatch.metaaivm.com/v1/noise
                 Noise_XX_25519_AESGCM_SHA256
@@ -22,7 +22,7 @@
                    └─ egress.*（service=sentinel）
 ```
 
-发消息与流式回复**全部**走 Noise 上的网关 RPC。BotHub 现有「内嵌页 + hook `sendRequest` / DOM」路径不稳定（见 §11）；应用 **main-process 原生 Noise 客户端**（`NATIVE_CLIENT.md`）。
+发消息与流式回复**全部**走 Noise 上的网关 RPC。BotArk 现有「内嵌页 + hook `sendRequest` / DOM」路径不稳定（见 §11）；应用 **main-process 原生 Noise 客户端**（`NATIVE_CLIENT.md`）。
 
 ---
 
@@ -115,7 +115,7 @@ wss://hatch.metaaivm.com/v1/noise
 
 **payload2（Msg2）**
 
-- 能解成 Owner RV challenge → `observed_type = confidential`（CVM）：需要 IndexedDB recovery key / chip binding。BotHub v1 **不要硬解**，应报错引导用户用网页完成 enroll 或使用普通 `hatch_vm`。
+- 能解成 Owner RV challenge → `observed_type = confidential`（CVM）：需要 IndexedDB recovery key / chip binding。BotArk v1 **不要硬解**，应报错引导用户用网页完成 enroll 或使用普通 `hatch_vm`。
 - 否则视为 attestation 原始字节 → `observed_type = standard`。Attestation bundle schema：`samples/proto/attestation_bundle.proto`（`NON_TEE` / `AMD_SEV_SNP`，`ReportDataInput{x25519_public_key, client_nonce}`）。
 
 **payload3（Msg3）**
@@ -210,7 +210,7 @@ Unary：`end_body=true` 一次 request。
 
 - `POST /chat/stream`，`noiseOnly`，service=`daemon`
 - 额外头常带业务侧 `x-request-id`（与默认头合并）
-- **`capabilities` 是数组**，不是 `{}`（BotHub 旧适配器曾误传对象）
+- **`capabilities` 是数组**，不是 `{}`（BotArk 旧适配器曾误传对象）
 
 ### 4.2 Ack
 
@@ -243,7 +243,7 @@ Unary：`end_body=true` 一次 request。
 
 内部 perf 标记（非 wire）：`DELTA_MESSAGE_START` / `DELTA_FIRST_TEXT` / `DELTA_TEXT_APPEND` / `DELTA_MESSAGE_DONE`。
 
-**稳定流式的正确做法**：消费 `chat.stream` 同一 subscription 的 NDJSON；**不要**只靠轮询 `chat.history`（BotHub 现状，导致“流式断掉/丢字”）。
+**稳定流式的正确做法**：消费 `chat.stream` 同一 subscription 的 NDJSON；**不要**只靠轮询 `chat.history`（BotArk 现状，导致“流式断掉/丢字”）。
 
 ### 4.4 取消 / 历史
 
@@ -313,7 +313,7 @@ Sentinel decide / 列表形状：`samples/approval_*.json`（前文 Allow 抓包
 
 ## 9. 状态灯建议
 
-| BotHub | 信号 |
+| BotArk | 信号 |
 |---|---|
 | Idle | Noise 已连接且无 stream / 无 pending approval |
 | Running | 有未完成 `chat.stream` subscription 或 activity |
@@ -330,7 +330,7 @@ Sentinel decide / 列表形状：`samples/approval_*.json`（前文 Allow 抓包
 
 ---
 
-## 11. 为何内嵌 `sendRequest` 不稳定（对照 BotHub 代码）
+## 11. 为何内嵌 `sendRequest` 不稳定（对照 BotArk 代码）
 
 | 问题 | 机制 |
 |---|---|
@@ -338,7 +338,7 @@ Sentinel decide / 列表形状：`samples/approval_*.json`（前文 Allow 抓包
 | 流式丢 | `museSessionManager.chatStreamAndCollect` 只取 ack，再轮询 `chat.history`，**不读 subscription NDJSON** |
 | 页面空白 / hook 永不上 | 隐藏 `WebContentsView` → `visibilityState=hidden` → SSR rAF 不跑（`museKeepAlive.ts`） |
 | 导航丢 hook | `did-navigate` / reload 后 gateway 冷启动；rediscover 有窗口期 |
-| WS 断 | 心跳/解密 poison；内嵌页重连与 BotHub 发送队列不同步 |
+| WS 断 | 心跳/解密 poison；内嵌页重连与 BotArk 发送队列不同步 |
 | 参数错 | `capabilities:{}`、`node_id=accountId` 与官方不符 |
 
 → 结论：聊天路径改为 **原生 Noise**（`NATIVE_CLIENT.md`）；WebContentsView 仅保留登录与“打开网页”。
@@ -359,7 +359,7 @@ Sentinel decide / 列表形状：`samples/approval_*.json`（前文 Allow 抓包
 ```
 museai/
   protocol.md           ← 本文件
-  NATIVE_CLIENT.md      ← Claude/BotHub 实现简报
+  NATIVE_CLIENT.md      ← Claude/BotArk 实现简报
   muse_client.py        ← 控制面草图
   samples/
     gateway_methods.json

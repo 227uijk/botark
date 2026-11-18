@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, BrowserWindow, shell } from 'electron'
 import { attachWebViewManager, registerWebViewIpc } from './webViewIpc'
@@ -15,6 +16,20 @@ import { hardenVaultFilePermissions, registerVaultIpc } from './securityVault'
 const isMac = process.platform === 'darwin'
 let mainWindow: BrowserWindow | null = null
 let quitting = false
+
+// Seamless upgrade from legacy "bothub" userData directory: if an existing user
+// already has accounts/sessions in Application Support/bothub and no new botark
+// directory yet, preserve their exact userData directory automatically.
+try {
+  const appData = app.getPath('appData')
+  const newUserData = join(appData, 'botark')
+  const legacyUserData = join(appData, 'bothub')
+  if (!existsSync(newUserData) && existsSync(legacyUserData)) {
+    app.setPath('userData', legacyUserData)
+  }
+} catch {
+  /* ignore */
+}
 
 // Two instances share userData and race on every JSON store and on
 // Chromium's profile; hand the second launch over to the first.
@@ -49,7 +64,7 @@ function createMainWindow(): BrowserWindow {
     minWidth: 1080,
     minHeight: 620,
     show: false,
-    title: 'BotHub',
+    title: 'BotArk',
     backgroundColor: '#f7f7f8',
     autoHideMenuBar: true,
     ...(isMac ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 18, y: 28 } } : {}),

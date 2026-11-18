@@ -18,7 +18,7 @@
 | Send 请求形状（`timezone` + `conversationId` query `cid`） | **中高** | client 源码；**响应 JSON schema 未 live 验证** |
 | 流式回复通道 | **中低** | send 走 `fetch→json()`（非 SSE reader）；有 `conversations/status`、push `message_received`；**缺登录后 netlog** |
 | Session cookie 确切名字 | **中** | 见 `__Secure-hark.*` 前缀 + better-auth + `set-auth-token` expose；**未在已登录 Set-Cookie 上确认** |
-| 每账号代理 | n/a（BotHub 本地能力，非 Hark 服务端协议） | — |
+| 每账号代理 | n/a（BotArk 本地能力，非 Hark 服务端协议） | — |
 
 ---
 
@@ -78,7 +78,7 @@ CORS（auth + Go API）：
 客户端：`better-auth` createClient，`baseURL = window.location.origin`，`basePath` 默认 `/api/auth`，`credentials: "include"`。  
 插件（login bundle）：`username`, `magic-link`, `email-otp`, `generic-oauth-client`, `two-factor`, `multi-session`。
 
-### 2.2 Google 登录（推荐 BotHub 路径）
+### 2.2 Google 登录（推荐 BotArk 路径）
 
 1. 打开 `https://app.hark.com/login`，点 Continue with Google →  
    `POST /api/auth/sign-in/social`  
@@ -112,7 +112,7 @@ Session 名大概率同前缀（如 `__Secure-hark.session_token`）或 better-a
 
 ### 2.5 多账号
 
-前端有 `hark.pendingAccountAdd` localStorage + `/login?addAccount=1` 流程；`set-active` 对普通账号可能员工限定（live 报 `ACCOUNT_SWITCH_EMPLOYEES_ONLY`）。BotHub 多账号更稳妥的做法：**每账号独立 partition cookie jar**（与 Muse 相同），不要依赖 Hark 官方 multi-session，除非登录后证实对消费者开放。
+前端有 `hark.pendingAccountAdd` localStorage + `/login?addAccount=1` 流程；`set-active` 对普通账号可能员工限定（live 报 `ACCOUNT_SWITCH_EMPLOYEES_ONLY`）。BotArk 多账号更稳妥的做法：**每账号独立 partition cookie jar**（与 Muse 相同），不要依赖 Hark 官方 multi-session，除非登录后证实对消费者开放。
 
 ---
 
@@ -126,7 +126,7 @@ Session 名大概率同前缀（如 `__Secure-hark.session_token`）或 better-a
 - POST `gt`, GET `pt`, PATCH `yt`, PUT `ft`, DELETE `It`
 - 完整路径表：`samples/api_paths.json`（约 100+）
 
-### 3.2 BotHub 关键路径
+### 3.2 BotArk 关键路径
 
 | 能力 | Method | Path | 备注 |
 |---|---|---|---|
@@ -146,7 +146,7 @@ Session 名大概率同前缀（如 `__Secure-hark.session_token`）或 better-a
 | 账单/额度 | GET/POST | `/billing/summary`, `/billing/options`, checkout/topup/portal | |
 | 浏览器 feature flags | GET | `/browser-flags` | |
 | Home cards | GET/POST | `/home/cards`… | |
-| Secrets / Secured by Hark | CRUD | `/secrets`… `/reveal` | **高敏感，BotHub 慎代理** |
+| Secrets / Secured by Hark | CRUD | `/secrets`… `/reveal` | **高敏感，BotArk 慎代理** |
 | Realtime 观测（语音） | GET | `/realtime/observability/sessions`… | 需 `X-Hark-Access-Reason`；含 transcript schema |
 
 未登录：`GET /api/profile` 等 → `{"error":"unauthorized"}`；`POST /api/messages/send` 无 body/未登录 → 401 或 405。
@@ -184,11 +184,11 @@ Send 的其余 body 字段（text/attachments/…）在登录页 chunk 无 call 
 
 ---
 
-## 5. BotHub 集成建议
+## 5. BotArk 集成建议
 
 ### 推荐形状（v1）
 
-**WebContentsView / 分区嵌入 `https://app.hark.com` 做登录 + cookie 持久化**，主进程用 **同源 cookie 调 Go REST**（native HTTP 客户端），UI 用 BotHub 自己的 chat chrome——与早期 Muse hook 不同：Hark 的 REST 表面干净，**值得原生发消息**；但 **OAuth/Turnstile/2FA 必须嵌入浏览器**。
+**WebContentsView / 分区嵌入 `https://app.hark.com` 做登录 + cookie 持久化**，主进程用 **同源 cookie 调 Go REST**（native HTTP 客户端），UI 用 BotArk 自己的 chat chrome——与早期 Muse hook 不同：Hark 的 REST 表面干净，**值得原生发消息**；但 **OAuth/Turnstile/2FA 必须嵌入浏览器**。
 
 | 层 | 做法 |
 |---|---|
@@ -197,7 +197,7 @@ Send 的其余 body 字段（text/attachments/…）在登录页 chunk 无 call 
 | List / transcript | `GET /conversations` + `/conversations/main` |
 | Send | `POST /messages/send?cid=` + Locale + cookie |
 | Stream | v1：send 后 poll `conversations/status` + `/main`；有 push 再接；确认 SSE 后再升级 |
-| 代理 | **BotHub 本地 per-account HTTP(S)/SOCKS** 挂到该 partition / net session（非 Hark API） |
+| 代理 | **BotArk 本地 per-account HTTP(S)/SOCKS** 挂到该 partition / net session（非 Hark API） |
 | 风险 | `/secrets/reveal`、支付、Handoff 自动操作——默认只读或需用户确认 |
 
 ### 不推荐

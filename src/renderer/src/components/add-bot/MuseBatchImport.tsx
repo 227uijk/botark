@@ -43,7 +43,7 @@ const REASON: Record<string, string> = {
   timeout: 'Timed out',
   error: 'Unexpected error',
   'window-closed': 'Login window was closed',
-  unavailable: 'Needs the BotHub desktop app'
+  unavailable: 'Needs the BotArk desktop app'
 }
 
 const PARSE_REASON: Record<MuseBatchParseError['reason'], string> = {
@@ -259,7 +259,7 @@ export function MuseBatchImport({ onDone, onBusyChange }: { onDone: () => void; 
     return (
       <div className="flex animate-veil-in flex-col gap-3">
         <p className="rounded-lg bg-hover px-3 py-2 text-[12px] leading-[17px] text-ink-secondary">
-          {t('One account per line: email | inbox link. BotHub signs each one in with the emailed code (read from the inbox page) and makes it its own bot. Inbox links stay on this device and are not saved.')}
+          {t('One account per line: email | inbox link. BotArk signs each one in with the emailed code (read from the inbox page) and makes it its own bot. Inbox links stay on this device and are not saved.')}
         </p>
         <textarea
           value={text}

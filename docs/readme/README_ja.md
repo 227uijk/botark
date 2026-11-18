@@ -4,21 +4,21 @@
 
 <br />
 
-<img src="../assets/logo.png" alt="BotHub" width="88" />
+<img src="../assets/logo.png" alt="BotArk" width="108" />
 
-# BotHub
+# BotArk
 
 ### **あらゆるパーソナルエージェントを集めて、ひとつのクライアントで Grok Bot のように使いこなす**
 
 **Meta Muse・Grok Bot・Hark・Dot の Bot をひとつのウィンドウにまとめる macOS / Windows アプリ。Bot ごとに分離されたアカウントでサインインします。**
 
-[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=%E6%9C%80%E6%96%B0%E7%89%88&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/bothub/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/qybaihe/bothub/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/%E5%AF%BE%E5%BF%9COS-macOS_%7C_Windows-6e56cf?style=for-the-badge)](#-クイックスタート)
-[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![MIT License](https://img.shields.io/badge/%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9-MIT-38bdf8?style=for-the-badge)](../../LICENSE)
+[![Release](https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=%E6%9C%80%E6%96%B0%E7%89%88&color=2563eb)](https://github.com/qybaihe/botark/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/botark/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/qybaihe/botark/actions/workflows/ci.yml)
+[![Platform](https://img.shields.io/badge/%E5%AF%BE%E5%BF%9COS-macOS_%7C_Windows-6e56cf?style=flat-square)](#-クイックスタート)
+[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![MIT License](https://img.shields.io/badge/%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9-MIT-38bdf8?style=flat-square)](../../LICENSE)
 
-**[⬇️ macOS 版をダウンロード](https://github.com/qybaihe/bothub/releases/latest) · [⬇️ Windows 版をダウンロード](https://github.com/qybaihe/bothub/releases/latest) · [📦 すべてのリリース](https://github.com/qybaihe/bothub/releases) · [🐛 問題を報告](https://github.com/qybaihe/bothub/issues)**
+**[⬇️ macOS 版をダウンロード](https://github.com/qybaihe/botark/releases/latest) · [⬇️ Windows 版をダウンロード](https://github.com/qybaihe/botark/releases/latest) · [📦 すべてのリリース](https://github.com/qybaihe/botark/releases) · [🐛 問題を報告](https://github.com/qybaihe/botark/issues)**
 
 [クイックスタート](#-クイックスタート) · [対応プラットフォーム](#-対応プラットフォーム) · [主な機能](#-主な機能) · [開発](#-開発) · [リリース手順](#-リリース手順) · [プロトコル資料](#-プロトコル資料) · [よくある質問](#-よくある質問)
 
@@ -27,12 +27,12 @@
 ---
 
 > [!NOTE]
-> BotHub は独立したクライアントで、Meta・xAI・Hark・OpenAI とは関係ありません。ご自身のアカウントでサインインし、認証情報はお使いのコンピューターにのみ保存されます。
+> BotArk は独立したクライアントで、Meta・xAI・Hark・OpenAI とは関係ありません。ご自身のアカウントでサインインし、認証情報はお使いのコンピューターにのみ保存されます。
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/bothub-dark.webp">
-  <img src="../assets/bothub-light.webp" alt="BotHub：サイドバーにグループ分けされた Muse・Dot・Hark・Grok Bot の Bot、会話画面、Bot の詳細パネル（サンプルデータ）" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp">
+  <img src="../assets/botark-light.webp" alt="BotArk：サイドバーにグループ分けされた Muse・Dot・Hark・Grok Bot の Bot、会話画面、Bot の詳細パネル（サンプルデータ）" width="100%">
 </picture>
 <sub>スクリーンショットは架空のサンプルデータです。</sub>
 </div>
@@ -66,16 +66,16 @@ Muse・Grok Bot・Hark・Dot の Bot をサイドバーにグループごとに�
 
 ## ⚡ クイックスタート
 
-[最新リリース](https://github.com/qybaihe/bothub/releases/latest) からお使いの OS 用のファイルをダウンロードしてください。
+[最新リリース](https://github.com/qybaihe/botark/releases/latest) からお使いの OS 用のファイルをダウンロードしてください。
 
 | OS | ファイル |
 | :--- | :--- |
-| macOS（Apple シリコン） | `BotHub-<バージョン>-arm64.dmg` |
-| macOS（Intel） | `BotHub-<バージョン>-x64.dmg` |
-| Windows 10/11（x64） | `BotHub-Setup-<バージョン>-x64.exe` |
+| macOS（Apple シリコン） | `BotArk-<バージョン>-arm64.dmg` |
+| macOS（Intel） | `BotArk-<バージョン>-x64.dmg` |
+| Windows 10/11（x64） | `BotArk-Setup-<バージョン>-x64.exe` |
 
 > [!TIP]
-> **macOS 版は Apple Developer ID による署名・公証（Notarized）済みです。** `BotHub.app` を `Applications` フォルダにドラッグしてそのまま起動できます。
+> **macOS 版は Apple Developer ID による署名・公証（Notarized）済みです。** `BotArk.app` を `Applications` フォルダにドラッグしてそのまま起動できます。
 
 インストール後、サイドバーの **+** をクリックしてプラットフォームを選び、サインインします。Bot ごとに個別のアカウントを使います。
 
@@ -162,7 +162,7 @@ scripts/screenshot/  架空のデータから README のスクリーンショッ
 <details>
 <summary><b>「配信済み · 返信待ち」のままです。再試行すると二重送信されますか？</b></summary>
 
-いいえ。プラットフォームが受け付けたメッセージを BotHub が未送信として扱うことはありません。返信が届かない場合は「返信なし」と表示され、同じ内容をもう一度送ることがはっきり分かる「もう一度送信」ボタンが出ます。
+いいえ。プラットフォームが受け付けたメッセージを BotArk が未送信として扱うことはありません。返信が届かない場合は「返信なし」と表示され、同じ内容をもう一度送ることがはっきり分かる「もう一度送信」ボタンが出ます。
 
 </details>
 
@@ -176,3 +176,16 @@ scripts/screenshot/  架空のデータから README のスクリーンショッ
 ## 📄 ライセンス
 
 [MIT ライセンス](../../LICENSE)で公開しています。
+
+---
+
+## 📈 Star History
+
+<div align="center">
+  <a href="https://star-history.com/#qybaihe/botark&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date&theme=dark" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date" width="100%" />
+    </picture>
+  </a>
+</div>

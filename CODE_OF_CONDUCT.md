@@ -59,8 +59,8 @@ online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainers via [GitHub Discussions](https://github.com/qybaihe/bothub/discussions)
-or [Security Advisories](https://github.com/qybaihe/bothub/security/advisories/new).
+reported to the project maintainers via [GitHub Discussions](https://github.com/qybaihe/botark/discussions)
+or [Security Advisories](https://github.com/qybaihe/botark/security/advisories/new).
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the

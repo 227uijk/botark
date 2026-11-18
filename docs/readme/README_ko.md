@@ -1,38 +1,36 @@
 <div align="center">
 
-[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · **한국어** · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · [Tiếng Việt](README_vi.md) · [Türkçe](README_tr.md) · [العربية](README_ar.md) · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)
+<img src="../assets/logo.png" alt="BotArk" width="108" />
 
-<br />
-
-<img src="../assets/logo.png" alt="BotHub" width="88" />
-
-# BotHub
+# BotArk
 
 ### **흩어진 개인 에이전트를 한데 모아, 하나의 클라이언트에서 Grok Bot처럼 사용하세요**
 
 **Meta Muse, Grok Bot, Hark, Dot의 봇을 하나의 창에 모아 주는 macOS·Windows 앱입니다. 봇마다 서로 분리된 계정으로 로그인합니다.**
 
-[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=%EC%B5%9C%EC%8B%A0%20%EB%B2%84%EC%A0%84&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/bothub/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/qybaihe/bothub/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/%ED%94%8C%EB%9E%AB%ED%8F%BC-macOS_%7C_Windows-6e56cf?style=for-the-badge)](#-빠른-시작)
-[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![MIT License](https://img.shields.io/badge/%EB%9D%BC%EC%9D%B4%EC%84%A0%EC%8A%A4-MIT-38bdf8?style=for-the-badge)](../../LICENSE)
+[![Release](https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=%EC%B5%9C%EC%8B%A0%20%EB%B2%84%EC%A0%84&color=2563eb)](https://github.com/qybaihe/botark/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/botark/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/qybaihe/botark/actions/workflows/ci.yml)
+[![Platform](https://img.shields.io/badge/%ED%94%8C%EB%9E%AB%ED%8F%BC-macOS_%7C_Windows-6e56cf?style=flat-square)](#-빠른-시작)
+[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![MIT License](https://img.shields.io/badge/%EB%9D%BC%EC%9D%B4%EC%84%A0%EC%8A%A4-MIT-38bdf8?style=flat-square)](../../LICENSE)
 
-**[⬇️ macOS용 다운로드](https://github.com/qybaihe/bothub/releases/latest) · [⬇️ Windows용 다운로드](https://github.com/qybaihe/bothub/releases/latest) · [📦 전체 릴리스](https://github.com/qybaihe/bothub/releases) · [🐛 문제 신고](https://github.com/qybaihe/bothub/issues)**
+**[⬇️ macOS용 다운로드](https://github.com/qybaihe/botark/releases/latest) · [⬇️ Windows용 다운로드](https://github.com/qybaihe/botark/releases/latest) · [📦 전체 릴리스](https://github.com/qybaihe/botark/releases) · [🐛 문제 신고](https://github.com/qybaihe/botark/issues)**
 
 [빠른 시작](#-빠른-시작) · [지원 플랫폼](#-지원-플랫폼) · [주요 기능](#-주요-기능) · [개발](#-개발) · [릴리스](#-릴리스) · [프로토콜 문서](#-프로토콜-문서) · [FAQ](#-자주-묻는-질문)
+
+<sub>[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · **한국어** · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · [Tiếng Việt](README_vi.md) · [Türkçe](README_tr.md) · [العربية](README_ar.md) · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)</sub>
 
 </div>
 
 ---
 
 > [!NOTE]
-> BotHub는 독립적으로 개발된 클라이언트이며 Meta, xAI, Hark, OpenAI와 관련이 없습니다. 본인의 계정으로 로그인하며, 인증 정보는 사용자의 컴퓨터에만 저장됩니다.
+> BotArk는 독립적으로 개발된 클라이언트이며 Meta, xAI, Hark, OpenAI와 관련이 없습니다. 본인의 계정으로 로그인하며, 인증 정보는 사용자의 컴퓨터에만 저장됩니다.
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/bothub-dark.webp">
-  <img src="../assets/bothub-light.webp" alt="BotHub: 사이드바에 그룹별로 정리된 Muse, Dot, Hark, Grok Bot 봇과 대화 화면, 봇 상세 패널(샘플 데이터)" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp">
+  <img src="../assets/botark-light.webp" alt="BotArk: 사이드바에 그룹별로 정리된 Muse, Dot, Hark, Grok Bot 봇과 대화 화면, 봇 상세 패널(샘플 데이터)" width="100%">
 </picture>
 <sub>가상의 샘플 데이터로 찍은 스크린샷입니다.</sub>
 </div>
@@ -66,16 +64,16 @@ Muse, Grok Bot, Hark, Dot 봇이 사이드바에 그룹별로 나란히 놓이�
 
 ## ⚡ 빠른 시작
 
-[최신 릴리스](https://github.com/qybaihe/bothub/releases/latest)에서 사용 중인 운영체제에 맞는 파일을 내려받으세요.
+[최신 릴리스](https://github.com/qybaihe/botark/releases/latest)에서 사용 중인 운영체제에 맞는 파일을 내려받으세요.
 
 | 운영체제 | 파일 |
 | :--- | :--- |
-| macOS, Apple 실리콘 | `BotHub-<버전>-arm64.dmg` |
-| macOS, Intel | `BotHub-<버전>-x64.dmg` |
-| Windows 10/11 (x64) | `BotHub-Setup-<버전>-x64.exe` |
+| macOS, Apple 실리콘 | `BotArk-<버전>-arm64.dmg` |
+| macOS, Intel | `BotArk-<버전>-x64.dmg` |
+| Windows 10/11 (x64) | `BotArk-Setup-<버전>-x64.exe` |
 
 > [!TIP]
-> **macOS 빌드는 Apple Developer ID 서명 및 공증(Notarized)이 완료되어 있습니다.** `BotHub.app`을 `Applications` 폴더로 드래그해 바로 실행하세요.
+> **macOS 빌드는 Apple Developer ID 서명 및 공증(Notarized)이 완료되어 있습니다.** `BotArk.app`을 `Applications` 폴더로 드래그해 바로 실행하세요.
 
 설치 후 사이드바의 **+**를 눌러 플랫폼을 고르고 로그인하면 됩니다. 봇마다 각자의 계정을 사용합니다.
 
@@ -162,7 +160,7 @@ scripts/screenshot/  가상의 샘플 데이터로 README 스크린샷 생성
 <details>
 <summary><b>메시지가 오랫동안 "전달됨 · 답변 중"으로 표시돼요. 다시 시도하면 두 번 전송되나요?</b></summary>
 
-아니요. 플랫폼이 메시지를 받으면 BotHub는 그 메시지를 미전송으로 다루지 않습니다. 답변이 오지 않으면 *답변 없음*과 함께 **다시 보내기** 버튼이 표시되며, 이 버튼은 같은 내용을 한 번 더 보낸다는 점이 명확합니다.
+아니요. 플랫폼이 메시지를 받으면 BotArk는 그 메시지를 미전송으로 다루지 않습니다. 답변이 오지 않으면 *답변 없음*과 함께 **다시 보내기** 버튼이 표시되며, 이 버튼은 같은 내용을 한 번 더 보낸다는 점이 명확합니다.
 
 </details>
 
@@ -176,3 +174,16 @@ scripts/screenshot/  가상의 샘플 데이터로 README 스크린샷 생성
 ## 📄 라이선스
 
 [MIT 라이선스](../../LICENSE)로 배포됩니다.
+
+---
+
+## 📈 Star History
+
+<div align="center">
+  <a href="https://star-history.com/#qybaihe/botark&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date&theme=dark" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date" width="100%" />
+    </picture>
+  </a>
+</div>

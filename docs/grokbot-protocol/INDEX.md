@@ -4,7 +4,7 @@
 
 | 文件 | 说明 | 置信度 |
 |---|---|---|
-| `protocol.md` | 中文完整协议 + BotHub 建议 | **高**（asar + 本地 blob + 迁移实操交叉验证） |
+| `protocol.md` | 中文完整协议 + BotArk 建议 | **高**（asar + 本地 blob + 迁移实操交叉验证） |
 | `HANDOFF_CLAUDE.md` | Claude 实现 brief | 高 |
 | `samples/` | 脱敏 JSON / 方法表 / recipe / transcript | 高（字段来自 proto；请求样例为描述符重建） |
 | `checkpoint_*.md` | Antigravity 压缩检查点原文 | 高（会话自我总结） |
@@ -39,7 +39,7 @@
 | `resolution` 枚举完整列表 | **中低** | 知有 AutoReview 等；枚举值需再抽 JS |
 | `https://x.ai/bot` 网页能否替代桌面全功能 | **中低** | 有深链；主路径仍是桌面 RPC |
 | CommitTranscript 可无痛注入历史 | **中** | API 存在；迁移未闭环证明 |
-| BotHub 应走 RPC 而非纯 WebContents 嵌 App | **高** | 产品形态决定 |
+| BotArk 应走 RPC 而非纯 WebContents 嵌 App | **高** | 产品形态决定 |
 
 ## 额外提取的样本文件
 

@@ -1,8 +1,8 @@
 {
-  "name": "bothub",
-  "version": "0.5.1",
+  "name": "botark",
+  "version": "0.6.0",
   "private": false,
-  "description": "BotHub — bring all your personal agents together and use them in one client, just like Grok Bot",
+  "description": "BotArk — all your personal AI agents in one native desktop workspace",
   "main": "./out/main/index.js",
   "author": "qybaihe",
   "license": "MIT",
@@ -59,10 +59,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/qybaihe/bothub.git"
+    "url": "https://github.com/qybaihe/botark.git"
   },
-  "homepage": "https://github.com/qybaihe/bothub",
+  "homepage": "https://github.com/qybaihe/botark",
   "bugs": {
-    "url": "https://github.com/qybaihe/bothub/issues"
+    "url": "https://github.com/qybaihe/botark/issues"
   }
 }

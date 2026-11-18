@@ -1,6 +1,12 @@
 # Changelog
 
-All notable changes to **BotHub** are documented in this file.
+All notable changes to **BotArk** (formerly BotHub) are documented in this file.
+
+## [0.6.0] - 2026-11-18
+
+### Changed
+- **Rebranded to BotArk**: Official project, repository (`qybaihe/botark`), macOS signed & notarized `.dmg`/`.zip`, and Windows NSIS installer renamed to **BotArk** — with automatic local `userData` migration so existing accounts and sessions carry over seamlessly.
+- **Flagship Documentation Overhaul**: Upgraded all 16 localized READMEs with visual Bento workflow galleries, inline platform icons, streamlined quick-start guides, and updated `1280×640` social preview cards.
 
 ## [0.5.1] - 2026-11-17
 

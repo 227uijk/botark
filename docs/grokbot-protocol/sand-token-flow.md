@@ -49,7 +49,7 @@ Authorization: Bearer <user API key>
 body {}
 → {accessToken, refreshToken?}
 ```
-sand 的 `loginWithApiKey` 也会调它。BotHub 如果有用户的 Cursor API key，可以直接走这条。
+sand 的 `loginWithApiKey` 也会调它。BotArk 如果有用户的 Cursor API key，可以直接走这条。
 
 ## 5. RPC 时带哪个 token（@~ `W9t` / `Ha` / `mOe`）
 - `getValidAccessToken()`：有 xAI 会话时用 xAI token，否则用 `getValidCursorAccessToken`（读存储的 pair，需要时先 refresh）。
@@ -57,7 +57,7 @@ sand 的 `loginWithApiKey` 也会调它。BotHub 如果有用户的 Cursor API k
 - 唯一特例：`aiserver.v1.InferenceService/Stream` 用 `getGrokBotAccessToken` 覆盖 authorization。GrokBotService 不走这个特例。
 - 其余头见 checksum-and-headers.md。不需要 Cookie。
 
-## BotHub 应该怎么做
+## BotArk 应该怎么做
 1. 实现 PKCE 登录：生成 verifier、challenge、uuid → 在 BrowserWindow 或外部浏览器打开 loginDeepControl（redirectTarget=sand）→ main 进程轮询 /auth/poll → 存 accessToken 和 refreshToken（用 safeStorage）。
 2. 用这个 accessToken 调所有 GrokBotService 方法；exp 剩不到 5 分钟时调 /oauth/token 刷新，并保存轮换后的 refresh_token。
 3. 弃用 web 的 WorkosCursorSessionToken。

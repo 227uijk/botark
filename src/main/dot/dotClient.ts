@@ -149,9 +149,13 @@ function resolveStorePath(): string {
     /* standalone node */
   }
   if (process.platform === 'darwin') {
-    return join(homedir(), 'Library', 'Application Support', 'bothub', 'dot-accounts.json')
+    const legacy = join(homedir(), 'Library', 'Application Support', 'bothub', 'dot-accounts.json')
+    const next = join(homedir(), 'Library', 'Application Support', 'botark', 'dot-accounts.json')
+    return !existsSync(next) && existsSync(legacy) ? legacy : next
   }
-  return join(homedir(), '.bothub', 'dot-accounts.json')
+  const legacyDot = join(homedir(), '.bothub', 'dot-accounts.json')
+  const nextDot = join(homedir(), '.botark', 'dot-accounts.json')
+  return !existsSync(nextDot) && existsSync(legacyDot) ? legacyDot : nextDot
 }
 
 const accountStore = new Map<string, DotStoredAccount>()

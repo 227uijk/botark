@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: 📦 Download Latest Release / 下载最新安装包
-    url: https://github.com/qybaihe/bothub/releases/latest
+    url: https://github.com/qybaihe/botark/releases/latest
     about: Grab signed macOS (.dmg) and Windows (.exe) installers
   - name: 💬 Community Discussions / 社区交流与经验分享
-    url: https://github.com/qybaihe/bothub/discussions
+    url: https://github.com/qybaihe/botark/discussions
     about: Ask questions, share bot workflows, and discuss ideas

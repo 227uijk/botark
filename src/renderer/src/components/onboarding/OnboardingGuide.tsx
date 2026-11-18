@@ -217,7 +217,7 @@ function FullScreenGuideBody({
               sizePx={24}
             />
           </button>
-          <span className="text-[14px] font-semibold tracking-tight text-ink">BotHub 操作指南</span>
+          <span className="text-[14px] font-semibold tracking-tight text-ink">BotArk 操作指南</span>
         </div>
 
         {/* Step Pills */}
@@ -638,7 +638,7 @@ function FullScreenGuideBody({
                 variant="primary"
                 onClick={() => (onClose ? onClose() : dismissAndAddBot('grok'))}
               >
-                {onClose ? '开始使用 BotHub' : '立即添加第一个账号'}
+                {onClose ? '开始使用 BotArk' : '立即添加第一个账号'}
               </Button>
             </>
           )}
@@ -672,7 +672,7 @@ export function OnboardingDialog() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="BotHub 操作指南"
+      aria-label="BotArk 操作指南"
       className="fixed inset-0 z-50 animate-veil-in"
     >
       <FullScreenGuideBody isOverlay onClose={() => setOpen(false)} />

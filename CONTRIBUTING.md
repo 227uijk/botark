@@ -1,6 +1,6 @@
-# Contributing to BotHub
+# Contributing to BotArk
 
-Thanks for helping make **BotHub** better! Whether you're fixing a UI bug, improving platform login/streaming stability, or adding a brand-new personal AI agent platform, contributions are very welcome.
+Thanks for helping make **BotArk** better! Whether you're fixing a UI bug, improving platform login/streaming stability, or adding a brand-new personal AI agent platform, contributions are very welcome.
 
 ---
 
@@ -10,8 +10,8 @@ Thanks for helping make **BotHub** better! Whether you're fixing a UI bug, impro
 2. **Install & start hot reload**:
 
 ```bash
-git clone https://github.com/qybaihe/bothub.git
-cd bothub
+git clone https://github.com/qybaihe/botark.git
+cd botark
 npm ci
 npm run dev
 ```

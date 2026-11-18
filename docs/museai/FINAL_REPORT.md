@@ -1,8 +1,8 @@
-# Muse final reply / “report” missing from BotHub chat
+# Muse final reply / “report” missing from BotArk chat
 
-**Symptom (user):** send message → Muse answers quickly → works a long time → final “回复报告” never appears in the BotHub transcript.
+**Symptom (user):** send message → Muse answers quickly → works a long time → final “回复报告” never appears in the BotArk transcript.
 
-**Confidence:** **high** for event names and official reducer behavior; **high** for BotHub native drop paths in `muse-native/chat.ts`; **medium** for which exact product surface Muse calls a “report” (often a **second** assistant message and/or `option` / `text_with_button` / presentation widgets after a long tool run).
+**Confidence:** **high** for event names and official reducer behavior; **high** for BotArk native drop paths in `muse-native/chat.ts`; **medium** for which exact product surface Muse calls a “report” (often a **second** assistant message and/or `option` / `text_with_button` / presentation widgets after a long tool run).
 
 ---
 
@@ -26,7 +26,7 @@ Official may **remove** an interrupted empty stub; completed messages get `isTex
 
 ---
 
-## 2. Why BotHub drops the final report
+## 2. Why BotArk drops the final report
 
 Primary implementation under analysis: `/workspace/mn/src/main/muse-native/chat.ts` (`streamChat`).
 
@@ -79,13 +79,13 @@ Only accepts `completed|complete|done`. If the gateway sends another success spe
 
 Official UI rehydrates with `chat.history` / `chat.history_window` and merges **all** `chat_events`, including widgets (`eR.cH` / `vQ`).
 
-### 2.7 Premature `chat/stop_stream` mirroring — **low–medium** for BotHub
+### 2.7 Premature `chat/stop_stream` mirroring — **low–medium** for BotArk
 
-Official clears expecting-response when `agent.status` leaves the busy set **and** there is already a non-empty assistant message. That is correct for their live subscription (they keep listening). Copying “stop = unsubscribe” into BotHub would reproduce this bug.
+Official clears expecting-response when `agent.status` leaves the busy set **and** there is already a non-empty assistant message. That is correct for their live subscription (they keep listening). Copying “stop = unsubscribe” into BotArk would reproduce this bug.
 
 ---
 
-## 3. Fix recommendations (BotHub)
+## 3. Fix recommendations (BotArk)
 
 1. **Do not end the turn on first `message_done`.**  
    End only when:

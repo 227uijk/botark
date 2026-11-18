@@ -1,12 +1,12 @@
 # OpenAI Dot Protocol & API Reference (`chatgpt.com/dots`)
 
-This document describes the authentication, REST endpoints, Server-Sent Events (SSE), and real-time WebSocket JSON-RPC 2.0 protocol used by **OpenAI Dot** (`chatgpt.com/dots`, internally codenamed **Calpico / Orbit / Aeon**) and implemented in BotHub's Dot adapter (`src/main/dot/`).
+This document describes the authentication, REST endpoints, Server-Sent Events (SSE), and real-time WebSocket JSON-RPC 2.0 protocol used by **OpenAI Dot** (`chatgpt.com/dots`, internally codenamed **Calpico / Orbit / Aeon**) and implemented in BotArk's Dot adapter (`src/main/dot/`).
 
 ---
 
 ## 1. Authentication & Credential Lifecycle
 
-Dot shares the `chatgpt.com` identity layer and supports three authentication flows in BotHub:
+Dot shares the `chatgpt.com` identity layer and supports three authentication flows in BotArk:
 
 ### 1.1 OAuth 2.0 Authorization Code + PKCE
 - **Authorization Endpoint**: `https://auth.openai.com/oauth/authorize`
@@ -31,7 +31,7 @@ Dot shares the `chatgpt.com` identity layer and supports three authentication fl
 
 ### 1.3 Direct Token Import (`AT` / `RT`)
 - Users can paste a single account or batch list of `access_token` (`eyJ...`), `refresh_token` (`rt_...`), or JSON credential objects (`{ access_token, refresh_token, account_id }`).
-- If a `refresh_token` is provided, BotHub automatically refreshes the `access_token` before expiry.
+- If a `refresh_token` is provided, BotArk automatically refreshes the `access_token` before expiry.
 
 ### 1.4 Required Request Headers
 All `/backend-api/*` requests require:
@@ -133,7 +133,7 @@ In addition to REST/SSE, Dot uses a bidirectional WebSocket channel for low-late
     ```
   - Server notifications (`method: "session.event"` / `"turn.delta"` / `"turn.completed"`):
     - Stream assistant text deltas, tool invocations, Dynamic Page updates, and file creation events in real time.
-    - BotHub keeps the room SSE/WebSocket listener open across turns so asynchronous follow-up messages and background task completions arrive automatically.
+    - BotArk keeps the room SSE/WebSocket listener open across turns so asynchronous follow-up messages and background task completions arrive automatically.
 
 ---
 
@@ -142,7 +142,7 @@ In addition to REST/SSE, Dot uses a bidirectional WebSocket channel for low-late
 ### 5.1 Dynamic Pages (Interactive Canvas / Articles)
 - **List Pages**: `GET https://chatgpt.com/backend-api/pages?room_id={roomId}`
 - **Get Page Content**: `GET https://chatgpt.com/backend-api/pages/{pageKey}`
-  - Returns structured page blocks/markdown/HTML that BotHub renders in its side-by-side **Document Canvas**.
+  - Returns structured page blocks/markdown/HTML that BotArk renders in its side-by-side **Document Canvas**.
 
 ### 5.2 File Library & Downloads
 - **List Library Nodes**: `GET https://chatgpt.com/backend-api/files/library/nodes?limit=50`
@@ -161,7 +161,7 @@ In addition to REST/SSE, Dot uses a bidirectional WebSocket channel for low-late
   - `secondary_window`: `{ used_percent, limit_window_seconds, reset_at }` (7d window)
 
 ### 6.2 Cross-Account Memory Snapshot & Restore
-BotHub supports migrating a Dot agent's state when switching or rotating OpenAI accounts:
+BotArk supports migrating a Dot agent's state when switching or rotating OpenAI accounts:
 1. **Export Snapshot** (`exportDotMemorySnapshot`):
    - Captures the room's `goal`, recent conversation threads/messages, Dynamic Pages, and local notes into a portable JSON snapshot.
 2. **Import Snapshot** (`importDotMemorySnapshot`):

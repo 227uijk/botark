@@ -8,7 +8,7 @@ import { inspectMacCodeSignature } from './securityVault'
 
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000
 const GITHUB_OWNER = 'qybaihe'
-const GITHUB_REPO = 'bothub'
+const GITHUB_REPO = 'botark'
 const RELEASES_LATEST = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`
 const GITHUB_API_LATEST = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`
 
@@ -88,7 +88,7 @@ async function checkViaGitHubApi(manual: boolean): Promise<void> {
     const res = await fetch(GITHUB_API_LATEST, {
       headers: {
         Accept: 'application/vnd.github+json',
-        'User-Agent': `BotHub/${currentVersion}`
+        'User-Agent': `BotArk/${currentVersion}`
       },
       signal: AbortSignal.timeout(12_000)
     })

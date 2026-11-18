@@ -6,7 +6,7 @@ labels: ["enhancement"]
 assignees: []
 ---
 
-### What would you like to see in BotHub? / 你希望增加什么能力或接入哪个平台？
+### What would you like to see in BotArk? / 你希望增加什么能力或接入哪个平台？
 <!-- Describe the agent platform or workflow feature and how it helps daily use -->
 
 ### Additional Context / 补充说明（可选）

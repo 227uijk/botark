@@ -545,7 +545,7 @@ function RichWidgets({
                   </li>
                 ))}
               </ul>
-              <p className="mt-1.5 text-[11px] text-ink-muted">{t('Read-only — checkout not available in BotHub')}</p>
+              <p className="mt-1.5 text-[11px] text-ink-muted">{t('Read-only — checkout not available in BotArk')}</p>
             </li>
           )
         }
@@ -571,7 +571,7 @@ function RichWidgets({
                   {t('Subtotal')}: {w.subtotal}
                 </p>
               ) : null}
-              <p className="mt-1 text-[11px] text-ink-muted">{t('Read-only — checkout not available in BotHub')}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">{t('Read-only — checkout not available in BotArk')}</p>
             </li>
           )
         }
@@ -635,7 +635,7 @@ function RichWidgets({
                   </li>
                 ))}
               </ul>
-              <p className="mt-1 text-[11px] text-ink-muted">{t('Read-only — checkout not available in BotHub')}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">{t('Read-only — checkout not available in BotArk')}</p>
             </li>
           )
         }

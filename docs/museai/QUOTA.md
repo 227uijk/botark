@@ -6,7 +6,7 @@
 
 ---
 
-## 0. 结论（给 BotHub）
+## 0. 结论（给 BotArk）
 
 | 问题 | 答案 |
 |---|---|
@@ -101,7 +101,7 @@
 | `mintPaymentPortalAction` | `4044828cc13246369b51358c92a32d4f7ebe139ff5` | 打开支付/账单门户 |
 | `redeemComplimentarySubscriptionAction` | `002b2a359b5be86d507c0f7bbdd140b56270360317` | 兑换赠送订阅（设置入口） |
 
-BotHub **第一版只接 `fetchSubscriptionAction`（只读额度）**；购买/取消走官方站点或后续再做。
+BotArk **第一版只接 `fetchSubscriptionAction`（只读额度）**；购买/取消走官方站点或后续再做。
 
 实现注意：hash 变更时可用「登录态下打开 Settings → Usage，抓 `Next-Action`」热更新；或优先封装「用 Electron session 的 cookie 打开 `/` 后调用与网页相同的 server action 通道」。
 
@@ -142,11 +142,11 @@ OIDC / `POST /api/auth/check` / VM wake·lease·token：见 `protocol.md`。额�
 1. Settings → **Usage**（埋点 `SETTINGS_USAGE_IMPRESSION`）  
 2. Hook：`useSubscription({ includeAgreement })` → `fetchSubscriptionAction`  
 3. 渲染：`usage.state===METERED` → 进度条 + `usageRowValueLabel`；另渲染 topup 行「Additional tokens」  
-4. Upgrade / Buy additional usage → plans action + Stripe checkout（BotHub 可外链 muse.ai Settings）
+4. Upgrade / Buy additional usage → plans action + Stripe checkout（BotArk 可外链 muse.ai Settings）
 
 ---
 
-## 6. BotHub 适配计划（「额度管理」）
+## 6. BotArk 适配计划（「额度管理」）
 
 ### 6.1 存储
 

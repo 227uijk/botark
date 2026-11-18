@@ -1,4 +1,4 @@
-# HANDOFF：BotHub 接入 Grok Bot（给 Claude）
+# HANDOFF：BotArk 接入 Grok Bot（给 Claude）
 
 > 读者：Mac mini 上 `~/projects/bothub` 的实现同学（claude）。  
 > 协议全文：同目录 `protocol.md`。样例：`samples/`。  
@@ -6,7 +6,7 @@
 
 ## 目标
 
-在 BotHub 增加 **Grok Bot** 平台适配，使 Hub 内出现 Grok Bot 账号下的 Bots，并能：登录（或导入已登录态）、列 Bot、发消息、收流式抄本、处理审批卡；再按用户账号做一轮冒烟。
+在 BotArk 增加 **Grok Bot** 平台适配，使 Hub 内出现 Grok Bot 账号下的 Bots，并能：登录（或导入已登录态）、列 Bot、发消息、收流式抄本、处理审批卡；再按用户账号做一轮冒烟。
 
 ## 必读
 
@@ -68,14 +68,14 @@ src/adapters/platforms.ts   # 注册 grokbot：显示名、图标、homeUrl/logi
 
 用户本机已有 Grok Bot（`grok|user_…` 槽）。建议：
 
-1. BotHub 添加「Grok Bot」平台 → 完成登录（用户配合 2FA/浏览器）。  
+1. BotArk 添加「Grok Bot」平台 → 完成登录（用户配合 2FA/浏览器）。  
 2. 拉到至少一个 agent（默认 Grok Bot）。  
 3. 发送 `hi`，确认 Hub 侧出现流式/最终气泡（对拍官方客户端）。  
 4. 若出现 Auto-review / 本机权限卡：在 Hub 点 Allow 一次、Deny 一次。  
 5. 切换第二个 partition 账号（若有）确认隔离。  
 6. **不要**在测试里提交真实 token。
 
-登录若卡在官方桌面 App：可临时用「用户在 Grok Bot 已登录，BotHub 仅深链打开某个 bot」作为 milestone 0，但第一期仍应落地 RPC。
+登录若卡在官方桌面 App：可临时用「用户在 Grok Bot 已登录，BotArk 仅深链打开某个 bot」作为 milestone 0，但第一期仍应落地 RPC。
 
 ## 把协议文件弄到 Mac mini
 

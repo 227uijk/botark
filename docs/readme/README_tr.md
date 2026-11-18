@@ -1,38 +1,36 @@
 <div align="center">
 
-[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · [Tiếng Việt](README_vi.md) · **Türkçe** · [العربية](README_ar.md) · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)
+<img src="../assets/logo.png" alt="BotArk" width="108" />
 
-<br />
-
-<img src="../assets/logo.png" alt="BotHub" width="88" />
-
-# BotHub
+# BotArk
 
 ### **Tüm kişisel ajanlarınızı bir araya getirin ve hepsini tek bir istemcide, tıpkı Grok Bot gibi kullanın**
 
 **Meta Muse, Grok Bot, Hark ve Dot botlarınızı tek bir pencerede toplayan macOS ve Windows uygulaması; her bot kendi yalıtılmış hesabıyla oturum açar.**
 
-[![Release](https://img.shields.io/github/v/release/qybaihe/bothub?style=for-the-badge&label=S%C3%BCr%C3%BCm&color=2563eb)](https://github.com/qybaihe/bothub/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/bothub/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/qybaihe/bothub/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/Platform-macOS_%7C_Windows-6e56cf?style=for-the-badge)](#-hızlı-başlangıç)
-[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![MIT License](https://img.shields.io/badge/Lisans-MIT-38bdf8?style=for-the-badge)](../../LICENSE)
+[![Release](https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=S%C3%BCr%C3%BCm&color=2563eb)](https://github.com/qybaihe/botark/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/qybaihe/botark/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/qybaihe/botark/actions/workflows/ci.yml)
+[![Platform](https://img.shields.io/badge/Platform-macOS_%7C_Windows-6e56cf?style=flat-square)](#-hızlı-başlangıç)
+[![Electron](https://img.shields.io/badge/Electron-45-47848f?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![MIT License](https://img.shields.io/badge/Lisans-MIT-38bdf8?style=flat-square)](../../LICENSE)
 
-**[⬇️ macOS için indir](https://github.com/qybaihe/bothub/releases/latest) · [⬇️ Windows için indir](https://github.com/qybaihe/bothub/releases/latest) · [📦 Tüm sürümler](https://github.com/qybaihe/bothub/releases) · [🐛 Sorun bildir](https://github.com/qybaihe/bothub/issues)**
+**[⬇️ macOS için indir](https://github.com/qybaihe/botark/releases/latest) · [⬇️ Windows için indir](https://github.com/qybaihe/botark/releases/latest) · [📦 Tüm sürümler](https://github.com/qybaihe/botark/releases) · [🐛 Sorun bildir](https://github.com/qybaihe/botark/issues)**
 
 [Hızlı başlangıç](#-hızlı-başlangıç) · [Platformlar](#-desteklenen-platformlar) · [Özellikler](#-özellikler) · [Geliştirme](#-geliştirme) · [Sürüm yayınlama](#-sürüm-yayınlama) · [Protokoller](#-protokol-belgeleri) · [SSS](#-sık-sorulan-sorular)
+
+<sub>[English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Français](README_fr.md) · [Deutsch](README_de.md) · [Português (Brasil)](README_pt-BR.md) · [Русский](README_ru.md) · [Italiano](README_it.md) · [Tiếng Việt](README_vi.md) · **Türkçe** · [العربية](README_ar.md) · [Bahasa Indonesia](README_id.md) · [हिन्दी](README_hi.md)</sub>
 
 </div>
 
 ---
 
 > [!NOTE]
-> BotHub bağımsız bir istemcidir; Meta, xAI, Hark veya OpenAI ile bağlantısı yoktur. Kendi hesaplarınızla oturum açarsınız ve kimlik bilgileriniz yalnızca bilgisayarınızda kalır.
+> BotArk bağımsız bir istemcidir; Meta, xAI, Hark veya OpenAI ile bağlantısı yoktur. Kendi hesaplarınızla oturum açarsınız ve kimlik bilgileriniz yalnızca bilgisayarınızda kalır.
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/bothub-dark.webp">
-  <img src="../assets/bothub-light.webp" alt="BotHub: kenar çubuğunda gruplanmış Muse, Dot, Hark ve Grok Bot botları, bir sohbet ve bot ayrıntı paneli (örnek veriler)" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp">
+  <img src="../assets/botark-light.webp" alt="BotArk: kenar çubuğunda gruplanmış Muse, Dot, Hark ve Grok Bot botları, bir sohbet ve bot ayrıntı paneli (örnek veriler)" width="100%">
 </picture>
 <sub>Kurgusal örnek verilerle alınmış ekran görüntüsü.</sub>
 </div>
@@ -66,20 +64,20 @@ Mesajlarda *gönderiliyor*, *teslim edildi · yanıtlanıyor*, *yanıt yok* veya
 
 ## ⚡ Hızlı başlangıç
 
-Sisteminize uygun dosyayı [en son sürümden](https://github.com/qybaihe/bothub/releases/latest) indirin:
+Sisteminize uygun dosyayı [en son sürümden](https://github.com/qybaihe/botark/releases/latest) indirin:
 
 | Sistem | Dosya |
 | :--- | :--- |
-| macOS, Apple Silicon | `BotHub-<sürüm>-arm64.dmg` |
-| macOS, Intel | `BotHub-<sürüm>-x64.dmg` |
-| Windows 10/11 (x64) | `BotHub-Setup-<sürüm>-x64.exe` |
+| macOS, Apple Silicon | `BotArk-<sürüm>-arm64.dmg` |
+| macOS, Intel | `BotArk-<sürüm>-x64.dmg` |
+| Windows 10/11 (x64) | `BotArk-Setup-<sürüm>-x64.exe` |
 
 > [!TIP]
-> **macOS sürümleri Apple Developer ID ile imzalanmış ve noter onaylıdır (Notarized).** `BotHub.app` dosyasını `Applications` klasörüne sürükleyip doğrudan açabilirsiniz.
+> **macOS sürümleri Apple Developer ID ile imzalanmış ve noter onaylıdır (Notarized).** `BotArk.app` dosyasını `Applications` klasörüne sürükleyip doğrudan açabilirsiniz.
 
 Ardından kenar çubuğundaki **+** düğmesine tıklayın, bir platform seçin ve oturum açın. Her bot kendi hesabını kullanır.
 
-**Güncellemeler**: Windows'ta BotHub yeni sürümleri arka planda indirir ve tek tıklamayla kurar. macOS'ta yeni sürüm çıktığında haber verir ve indirme sayfasını açar.
+**Güncellemeler**: Windows'ta BotArk yeni sürümleri arka planda indirir ve tek tıklamayla kurar. macOS'ta yeni sürüm çıktığında haber verir ve indirme sayfasını açar.
 
 ## 🤖 Desteklenen platformlar
 
@@ -162,17 +160,30 @@ Her platformun protokolleri ve API notları [`docs/`](../README.md) içinde:
 <details>
 <summary><b>Bir mesaj uzun süredir "teslim edildi · yanıtlanıyor" durumunda. Yeniden denersem iki kez gider mi?</b></summary>
 
-Hayır. Platform bir mesajı kabul ettiğinde BotHub onu asla gönderilmemiş gibi göstermez. Yanıt gelmezse *yanıt yok* durumu ve ikinci bir kopya gönderileceğini açıkça belirten **Tekrar gönder** düğmesi görünür.
+Hayır. Platform bir mesajı kabul ettiğinde BotArk onu asla gönderilmemiş gibi göstermez. Yanıt gelmezse *yanıt yok* durumu ve ikinci bir kopya gönderileceğini açıkça belirten **Tekrar gönder** düğmesi görünür.
 
 </details>
 
 <details>
 <summary><b>Her hesap kendi proxy'sini kullanabilir mi?</b></summary>
 
-Evet, Muse ve Dot hesapları için (HTTP veya SOCKS5). Proxy uygulanamazsa BotHub doğrudan bağlantıya geçmek yerine o hesabın trafiğini engeller.
+Evet, Muse ve Dot hesapları için (HTTP veya SOCKS5). Proxy uygulanamazsa BotArk doğrudan bağlantıya geçmek yerine o hesabın trafiğini engeller.
 
 </details>
 
 ## 📄 Lisans
 
 [MIT Lisansı](../../LICENSE) ile yayımlanmıştır.
+
+---
+
+## 📈 Star History
+
+<div align="center">
+  <a href="https://star-history.com/#qybaihe/botark&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date&theme=dark" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=qybaihe/botark&type=Date" width="100%" />
+    </picture>
+  </a>
+</div>

@@ -1,6 +1,6 @@
 # Muse × Grok Bot UI parity
 
-> Goal: make BotHub's Muse experience feel nearly pixel/UX-aligned with the official
+> Goal: make BotArk's Muse experience feel nearly pixel/UX-aligned with the official
 > **Grok Bot** desktop app (Electron `sand` / `com.anysphere.sand`), without inventing
 > fake Grok-native data. Prefer look-and-feel + navigation structure first; wire Muse
 > RPCs only where they honestly map.
@@ -57,9 +57,9 @@ Hero (avatar / rename) + **chip/tab strip**. Observed product surfaces from bund
 
 ---
 
-## 2. Current Muse / BotHub map
+## 2. Current Muse / BotArk map
 
-| Grok surface | BotHub today | Files | Gap |
+| Grok surface | BotArk today | Files | Gap |
 |---|---|---|---|
 | Sidebar sections | Always-on headers + New/Configure (local groups) | `sidebar/BotList.tsx`, `ConfigureSectionsDialog.tsx`, `botStore` group APIs | No host sync / pin row / compact sidebar / drag-reorder yet |
 | Bot row + activity | Activity + **Move to section** | `BotListItem.tsx`, store `activity` | Pin chrome / density still diverge |
@@ -76,7 +76,7 @@ Hero (avatar / rename) + **chip/tab strip**. Observed product surfaces from bund
 
 ## 3. API / capability constraints
 
-| Capability | Grok Bot native | Muse in BotHub | Rule |
+| Capability | Grok Bot native | Muse in BotArk | Rule |
 |---|---|---|---|
 | Cloud computer / screen preview | First-class | **No** equivalent RPC | Shell + honest empty copy only |
 | Library pages / pins / visual docs | Host media APIs | Partial: `fs.*` file list | Map files → Library; no fake pages |
@@ -125,7 +125,7 @@ Never surface Grok-only host RPCs through Muse adapters. Never fabricate Compute
 **Members chip (shell)** or **Library body** (richer files list) — then Create Bot template-style gallery.
 
 ## 5c. Slice 3 — Create Bot template gallery ✅
-- New bot opens on a **Bot templates** grid (Blank + 6 local presets in `src/renderer/src/data/botTemplates.ts`, written for BotHub).
+- New bot opens on a **Bot templates** grid (Blank + 6 local presets in `src/renderer/src/data/botTemplates.ts`, written for BotArk).
 - Pick → platform → sign-in → name step prefilled (name, emoji); description + starter brief saved locally (Notes).
 - **Muse RPC limits:** gateway has no persona/instructions/agent-profile write (`identity` is read/subscribe; `memory.*` is search/get/consolidate). Starter brief is therefore local + user-sent as first message; never auto-sent.
 

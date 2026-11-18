@@ -364,7 +364,7 @@ export function GrokAgentsAndRoomsSection({
       await callGrok(accountId, 'CreateGrokBotRoom', {
         agent_id: roomId,
         name: roomName.trim(),
-        description: 'BotHub Group Room',
+        description: 'BotArk Group Room',
         member_agent_ids: roomMemberIds,
         human_member_user_ids: []
       })

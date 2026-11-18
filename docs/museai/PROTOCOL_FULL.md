@@ -1,13 +1,13 @@
-# Muse / Hatch — full protocol map (BotHub)
+# Muse / Hatch — full protocol map (BotArk)
 
 > Generated 2026-11-04 (Asia/Shanghai); slice 90 matrix recount. Sources: official muse.ai JS (`docs` companions under `/workspace/muse/museai/js*`),
-> `samples/gateway_methods.json` (387 Noise RPCs), archived redacted captures, BotHub `src/main/muse-native/*` + adapter.
-> **No secrets / cookies / tokens.** Status: `done` | `partial` | `missing` relative to BotHub native path.
+> `samples/gateway_methods.json` (387 Noise RPCs), archived redacted captures, BotArk `src/main/muse-native/*` + adapter.
+> **No secrets / cookies / tokens.** Status: `done` | `partial` | `missing` relative to BotArk native path.
 
 ## 0. Stack (one glance)
 
 ```
-Browser / BotHub
+Browser / BotArk
   HTTPS  muse.ai          control plane (OIDC, wake, lease, token, notary, quota/invite actions)
   WSS    hatch.metaaivm.com/v1/noise
            Noise_XX_25519_AESGCM_SHA256
@@ -35,7 +35,7 @@ Transport details: `protocol.md` + `NATIVE_CLIENT.md`. Protos: `samples/proto/`.
 
 - Method: `chat.stream` · `POST /chat/stream` · `subscription` · service `daemon`
 - Official: ack only on this stream; **all events** arrive on long-lived `chat.subscribe`.
-- BotHub: same (`muse-native/chat.ts`). Capabilities include `delta_stream`.
+- BotArk: same (`muse-native/chat.ts`). Capabilities include `delta_stream`.
 
 | Chat item shape | Status | Notes |
 |---|---|---|
@@ -77,7 +77,7 @@ Other subscriptions in registry: `chat.stream_events`, `activity.subscribe`, `ar
 | `audio / video` | **partial** | HTML5 `<audio>`/`<video>` for http(s) or workspace `fs.raw` blob (≤8MiB preview); dedicated Muse players/streaming still N/A |
 
 
-### 2.4 Tool chips & media (BotHub)
+### 2.4 Tool chips & media (BotArk)
 
 | Surface | Status | Notes |
 |---|---|---|
@@ -128,7 +128,7 @@ Decisions: `allow_once`, `allow_session`, `allow_always`, `deny`, `deny_always`.
 | `egress.permissions.connector` `PATCH /permissions/connectors/{connector}` · sentinel | **partial** |
 | `egress.permissions.connector.reset` `DELETE /permissions/connectors/{connector}` · sentinel | **missing** |
 
-BotHub UI: in-chat `ApprovalCard` + info-panel `ApprovalsSection`. Never auto-approve.
+BotArk UI: in-chat `ApprovalCard` + info-panel `ApprovalsSection`. Never auto-approve.
 
 ## 4. Capability matrix by RPC prefix
 
@@ -623,7 +623,7 @@ From official `HatchAttachments` (JS):
 
 **Upload transport (official HatchGatewayFs, 2026):** chunked `fs.write` with `data_base64` (512 KiB),
 `overwrite`/`append`/`create_parent`; when `stageBeforePublish && chunks>1`, write to
-`.upload-<uuid>.part` then `fs.rename` to dest. BotHub: `src/main/muse-native/fs.ts`
+`.upload-<uuid>.part` then `fs.rename` to dest. BotArk: `src/main/muse-native/fs.ts`
 (`uploadWorkspaceFile` / `fetchFsRawPreview`). Preview: `fs.raw` GET binary + optional `Range`.
 
 ## 7. Notifications / settings
@@ -634,14 +634,14 @@ From official `HatchAttachments` (JS):
 | Desktop OS notifications | client-local | **done** — Electron Notification when blurred (approval / new reply) |
 | Permissions settings pane | `permissions.settings*` / `egress.permissions*` | **partial** — InfoPanel + Save → `permissions.settings.update` (network_default / connector_default = auto_allow\|always_ask); protocols[] modes still RO; honest empty |
 | Config pane | `config.get` / `config.update` | **partial** (get only) |
-| Themes | `chat.themes*` / `theme.subscribe` | **missing** UI — method registry known; **response/set body shapes not captured**; BotHub already has local light/dark prefs (not Muse themes) |
-| Memory pane | `memory.*` | **partial** — Muse MemorySection (`memory.search`/`get`/`consolidate`); local BotHub notes kept separate |
+| Themes | `chat.themes*` / `theme.subscribe` | **missing** UI — method registry known; **response/set body shapes not captured**; BotArk already has local light/dark prefs (not Muse themes) |
+| Memory pane | `memory.*` | **partial** — Muse MemorySection (`memory.search`/`get`/`consolidate`); local BotArk notes kept separate |
 | Skills pane | `skills.*` | **partial** — SkillsSection list + set_disabled; honest empty when RPC bare |
 | Trusted Network | `peers.*` | **partial** — Members tab `PeersSection`: status/list/invites/inbox/requests + create/revoke/open/accept/decline/SAS/disconnect; honest empty if RPC class missing; **never auto-accept** |
 | Shared Agents | `shared_agents.*` | **partial** — Members `SharedAgentsSection` probes capabilities/list on personal `hatch_vm`; Noise `connectionClass=shared_agent` Msg1/Msg3 shell in gateway; **remote.open/send withheld** until Msg3 ticket bootstrap captured |
-| Per-account proxy | BotHub-local | **done** — Overview `ProxySection`; `safeStorage` (`muse-account-proxy.json`); Electron `session.setProxy` on account partition + Node `ws` agent (`https-proxy-agent` / `socks-proxy-agent`); not a Muse RPC |
+| Per-account proxy | BotArk-local | **done** — Overview `ProxySection`; `safeStorage` (`muse-account-proxy.json`); Electron `session.setProxy` on account partition + Node `ws` agent (`https-proxy-agent` / `socks-proxy-agent`); not a Muse RPC |
 
-## 8. BotHub implementation map
+## 8. BotArk implementation map
 
 | Module | Role |
 |---|---|
@@ -663,7 +663,7 @@ From official `HatchAttachments` (JS):
 6. ~~Muse `memory.*` + `skills.*` panels~~ (**partial**).
 7. ~~Desktop Notification when blurred~~ **done**.
 8. ~~Trusted Network `peers.*` Members UI~~ **partial** — core invite/list/accept/SAS/disconnect; never auto-accept; Shared Agents / peerSpaces / peers.rules* still missing.
-9. ~~Per-account client proxy~~ **done** (BotHub-local partition + WSS agent; reconnect advised after save).
+9. ~~Per-account client proxy~~ **done** (BotArk-local partition + WSS agent; reconnect advised after save).
 10. Live redacted capture of `permissions.settings.update` body + shopping widget payload samples (UI parses known shapes from muse.ai JS; wire samples still thin).
 11. ~~Shared Agents shell~~ **partial** — capabilities/list UI + Noise class Msg1/Msg3 hooks; **ticket bootstrap / remote.open WSS still needs live capture**.
 12. Spaces / feed / voice / email / browser_task / Muse themes — see §12 blockers (no inventing InfoPanel UI).
@@ -698,7 +698,7 @@ Do **not** invent InfoPanel UI for these until redacted live samples exist:
 
 | Surface | Why blocked | What's known without capture |
 |---|---|---|
-| Muse `chat.themes*` / `theme.subscribe` | List/set **body shapes unknown**; BotHub local theme ≠ Muse chat theme pack | Method paths in registry |
+| Muse `chat.themes*` / `theme.subscribe` | List/set **body shapes unknown**; BotArk local theme ≠ Muse chat theme pack | Method paths in registry |
 | `spaces.*` / `peerSpaces.*` | Large canvas/doc model; share flows tied to peers; no list payload samples | 24+8 methods in registry |
 | `feed.*` | Personalized units/media/reactions — product surface, many endpoints | 16 methods |
 | `voice.*` | Calls + media endpoint + avatar video — needs realtime/media stack | 19 methods |

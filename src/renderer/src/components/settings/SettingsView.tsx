@@ -619,7 +619,7 @@ export function SettingsView() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `bothub-workspace-sanitized-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `botark-workspace-sanitized-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
     setHint('已导出不含任何 Token、Cookie 或密码的脱敏工作区结构文件')
@@ -689,7 +689,7 @@ export function SettingsView() {
             <ArrowLeft className="size-3.5" aria-hidden />
             返回对话
           </button>
-          <h1 className="text-[15px] font-semibold tracking-tight text-ink">BotHub 管理控制台</h1>
+          <h1 className="text-[15px] font-semibold tracking-tight text-ink">BotArk 管理控制台</h1>
           <span className="inline-flex items-center gap-1 rounded-full bg-status-online/10 px-2.5 py-0.5 text-[11px] font-medium text-status-online-ink">
             <ShieldCheck className="size-3" /> Keychain safeStorage 加密已启用
           </span>
@@ -2053,7 +2053,7 @@ export function SettingsView() {
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div>
                       <p className="text-[14px] font-medium text-ink">当前版本</p>
-                      <p className="font-mono text-[12px] text-ink-muted">BotHub {version || '0.2.8'}</p>
+                      <p className="font-mono text-[12px] text-ink-muted">BotArk {version || '0.6.0'}</p>
                     </div>
                     <Button
                       size="sm"
