@@ -39,23 +39,23 @@
     "electron": "45.2.1",
     "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
-    "lucide-react": "^1.66.0",
+    "lucide-react": "^1.75.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0",
-    "zustand": "^5.0.16"
+    "zustand": "^5.1.0"
   },
   "dependencies": {
     "@types/ws": "^8.18.2",
     "electron-updater": "^6.8.11",
     "https-proxy-agent": "^7.0.6",
-    "socks-proxy-agent": "^8.0.5",
+    "socks-proxy-agent": "^10.1.0",
     "undici": "^8.12.4",
-    "ws": "^8.22.1"
+    "ws": "^8.23.0"
   },
   "repository": {
     "type": "git",

@@ -203,7 +203,7 @@ export class HarkAdapter implements PlatformAdapter {
         return 'offline'
       }
       this.upsert(accountId, { displayName: status.displayName, handle: status.handle })
-      await this.refreshMainConversation(accountId)
+      await this.refreshMainConversation(accountId).catch(() => undefined)
       this.setStatus(accountId, 'online')
       return 'online'
     } catch (error) {
@@ -229,7 +229,7 @@ export class HarkAdapter implements PlatformAdapter {
       const status = await bridge.openLogin({ accountId })
       if (status.signedIn) {
         this.upsert(accountId, { displayName: status.displayName, handle: status.handle })
-        await this.refreshMainConversation(accountId)
+        await this.refreshMainConversation(accountId).catch(() => undefined)
         this.setStatus(accountId, 'online')
         return 'online'
       }
