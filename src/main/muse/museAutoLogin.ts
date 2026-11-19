@@ -13,12 +13,13 @@ import {
  * automated: the result says `needs-human` and the window can be shown.
  */
 
-const EMAIL_FIELD = 'input[autocomplete~="username"], input[type="email"]'
+const EMAIL_FIELD =
+  'input[autocomplete~="username"], input[type="email"], input[placeholder*="邮箱"], input[placeholder*="email" i]'
 const CODE_FIELD = 'input[autocomplete="one-time-code"], input[inputmode="numeric"][maxlength="6"]'
 const CHECKPOINT_RE = /checkpoint|confirm you.?re human|确认你是真人|请确认你是|captcha/i
 const CONTINUE_RE = /^(继续|Continue|下一步|Next)$/i
 const SUBMIT_RE = /^(下一步|Next|继续|Continue|确认|Confirm|提交|Submit)$/i
-const RESEND_RE = /^(重新发送(验证码)?|Resend( code)?|Send (a )?new code|发送新验证码)$/i
+const RESEND_RE = /^(重新发送(验证码)?|重发(验证码)?|Resend( code)?|Send (a )?new code|发送新验证码)$/i
 const INBOX_LOAD_TIMEOUT_MS = 20_000
 const INBOX_PARTITION = 'bothub-inbox'
 

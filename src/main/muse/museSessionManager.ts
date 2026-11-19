@@ -20,7 +20,13 @@ import {
   type MuseOptionWidget
 } from '../muse-native'
 import { fetchFsRawPreview, uploadWorkspaceFile, buildWorkspaceUploadPath } from '../muse-native/fs'
-import { createProxyAgent, releaseProxyPoolAccount } from './accountProxy'
+import { applyProxyToPartition, createProxyAgent, releaseProxyPoolAccount } from './accountProxy'
+import {
+  cleanMuseChromeUserAgent,
+  hasNonEmptyHatchSession,
+  isAllowedMuseUrl,
+  isMuseCheckpointUrl
+} from './museLoginHelpers'
 import { fetchInviteSummary, fetchSubscription } from '../muse-native/quota'
 import {
   fetchInvite,
@@ -53,7 +59,6 @@ import { applyMuseKeepAlive, MUSE_HEALTH_SCRIPT, museWakeScript } from './museKe
 
 const MUSE_ORIGIN = 'https://muse.ai'
 const QUOTA_POLL_MS = 60_000
-const AUTH_HOSTS = new Set(['muse.ai', 'www.muse.ai', 'auth.muse.ai', 'auth.meta.com', 'www.meta.com', 'facebook.com', 'www.facebook.com'])
 
 interface AccountSession {
   accountId: string
@@ -81,29 +86,6 @@ interface AccountSession {
   files?: MuseFileEntryView[]
   connectors?: MuseConnectorView[]
 }
-
-function isAllowedMuseUrl(url: string): boolean {
-  try {
-    const u = new URL(url)
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false
-    const host = u.hostname.replace(/^www\./, '')
-    if (AUTH_HOSTS.has(u.hostname) || AUTH_HOSTS.has(host)) return true
-    return (
-      host.endsWith('muse.ai') ||
-      host.endsWith('metaaivm.com') ||
-      host.endsWith('meta.com') ||
-      host.endsWith('facebook.com') ||
-      host.endsWith('instagram.com') ||
-      host.endsWith('google.com') ||
-      host.endsWith('googleusercontent.com') ||
-      host.endsWith('apple.com') ||
-      host.endsWith('icloud.com')
-    )
-  } catch {
-    return false
-  }
-}
-
 
 /**
  * Owns muse.ai WebContentsViews and page-side RPC (sendRequest or DOM fallback).
@@ -153,6 +135,21 @@ export class MuseSessionManager {
   }
 
   async ensure(botId: string, accountId: string, opts?: { show?: boolean; bounds?: WebViewBounds }): Promise<MuseSessionStatus> {
+    const activeLogin = this.loginWindows.get(accountId)
+    if (!opts?.show && activeLogin && !activeLogin.isDestroyed() && !(await this.hasSessionCookie(accountId))) {
+      return (
+        this.sessions.get(accountId)?.status ?? {
+          accountId,
+          signedIn: false,
+          ready: false,
+          hook: 'none',
+          url: activeLogin.webContents.getURL() || MUSE_ORIGIN,
+          pendingApprovals: 0,
+          phase: 'signed-out'
+        }
+      )
+    }
+
     let session = this.sessions.get(accountId)
     // Recreate if the underlying WebContentsView was destroyed externally.
     if (session && !this.views.getView(session.viewId)) {
@@ -161,6 +158,9 @@ export class MuseSessionManager {
       session = undefined
     }
     if (!session) {
+      await applyProxyToPartition(accountId)
+      const ses = electronSession.fromPartition(partitionForAccount(accountId))
+      ses.setUserAgent(cleanMuseChromeUserAgent(ses.getUserAgent()))
       const info = this.views.create({
         botId,
         accountId,
@@ -198,8 +198,10 @@ export class MuseSessionManager {
     const view = this.views.getView(viewId)
     if (!view) return
 
+    view.webContents.setUserAgent(cleanMuseChromeUserAgent(view.webContents.getUserAgent()))
+
     view.webContents.setWindowOpenHandler(({ url }) => {
-      if (isAllowedMuseUrl(url)) {
+      if (isAllowedMuseUrl(url) && url !== 'about:blank') {
         void view.webContents.loadURL(url)
       }
       return { action: 'deny' }
@@ -263,7 +265,7 @@ export class MuseSessionManager {
     // hatch_sess is the source of truth. The embedded WebContentsView often still
     // sits on Meta/Facebook auth from the pre-login redirect; that URL must not
     // veto a cookie that the login window just wrote into the shared partition.
-    const signedIn = cookies.length > 0
+    const signedIn = hasNonEmptyHatchSession(cookies)
 
     if (signedIn !== session.status.signedIn) {
       session.status.signedIn = signedIn
@@ -579,7 +581,42 @@ export class MuseSessionManager {
 
   private async hasSessionCookie(accountId: string): Promise<boolean> {
     const ses = electronSession.fromPartition(partitionForAccount(accountId))
-    return (await ses.cookies.get({ name: 'hatch_sess' })).length > 0
+    return hasNonEmptyHatchSession(await ses.cookies.get({ name: 'hatch_sess' }))
+  }
+
+  /**
+   * Verify whether the partition's `hatch_sess` cookie is accepted by muse.ai.
+   * Returns `'rejected'` ONLY on an explicit 401/403; transient network/5xx errors
+   * return `'inconclusive'` so login isn't blocked by a momentary upstream hiccup.
+   */
+  private async verifyAuthCheck(accountId: string, cleanUa: string): Promise<'ok' | 'rejected' | 'inconclusive'> {
+    try {
+      const ses = electronSession.fromPartition(partitionForAccount(accountId))
+      const res = await ses.fetch(`${MUSE_ORIGIN}/api/auth/check`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Origin: MUSE_ORIGIN,
+          Referer: `${MUSE_ORIGIN}/`,
+          'User-Agent': cleanUa
+        },
+        body: '{}'
+      })
+      if (res.status === 401 || res.status === 403) return 'rejected'
+      if (res.ok) {
+        try {
+          const json = (await res.json()) as { ok?: boolean }
+          if (json && json.ok === false) return 'rejected'
+        } catch {
+          /* ignore */
+        }
+        return 'ok'
+      }
+      return 'inconclusive'
+    } catch {
+      return 'inconclusive'
+    }
   }
 
   /** Native path; returns undefined when the caller should fall back to the hook. */
@@ -1412,13 +1449,42 @@ export class MuseSessionManager {
 
   /**
    * Open a dedicated BrowserWindow that shares the account's persist partition
-   * and loads muse.ai. Meta/Facebook auth redirects stay in-window. When the
-   * `hatch_sess` cookie appears, emit login, reload the embedded view, and close.
+   * and loads muse.ai. Meta/Facebook/Google/Apple OAuth & agent.meta.ai SSO
+   * flows stay in-window or in same-partition child popups.
+   *
+   * IMPORTANT: Never create a background WebContentsView for this partition
+   * until login finishes — otherwise both views run `/aymh` and
+   * `POST /api/auth/native/restart` concurrently on the same cookie jar and
+   * reset the user's active OTP/SSO flow.
    */
   async openLogin(botId: string, accountId: string, opts?: { hidden?: boolean }): Promise<MuseSessionStatus> {
-    await this.ensure(botId, accountId)
-    const refreshed = await this.refreshSession(accountId)
-    if (refreshed?.signedIn) return refreshed
+    await applyProxyToPartition(accountId)
+
+    const partition = partitionForAccount(accountId)
+    const ses = electronSession.fromPartition(partition)
+    const cleanUa = cleanMuseChromeUserAgent(ses.getUserAgent())
+    ses.setUserAgent(cleanUa)
+
+    const pendingStatus: MuseSessionStatus = {
+      accountId,
+      signedIn: false,
+      ready: false,
+      hook: 'none',
+      url: MUSE_ORIGIN,
+      pendingApprovals: 0,
+      phase: 'signed-out'
+    }
+
+    // If a non-empty hatch_sess cookie already exists, verify it isn't revoked
+    // before skipping the login window. Clear explicitly rejected (401/403)
+    // cookies so re-login always starts cleanly.
+    if (await this.hasSessionCookie(accountId)) {
+      const verdict = await this.verifyAuthCheck(accountId, cleanUa)
+      if (verdict !== 'rejected') {
+        return await this.ensure(botId, accountId)
+      }
+      await this.clearHatchCookies(ses)
+    }
 
     const existing = this.loginWindows.get(accountId)
     if (existing && !existing.isDestroyed()) {
@@ -1426,10 +1492,15 @@ export class MuseSessionManager {
         existing.show()
         existing.focus()
       }
-      return this.sessions.get(accountId)!.status
+      return this.sessions.get(accountId)?.status ?? pendingStatus
     }
 
-    const partition = partitionForAccount(accountId)
+    // Tear down any logged-out background WebContentsView + watchdog on this
+    // partition so nothing competes with the visible login flow.
+    if (this.sessions.has(accountId)) {
+      this.destroyAccount(accountId)
+    }
+
     const win = new BrowserWindow({
       width: 1040,
       height: 780,
@@ -1448,59 +1519,92 @@ export class MuseSessionManager {
         backgroundThrottling: false
       }
     })
+    win.webContents.setUserAgent(cleanUa)
     this.loginWindows.set(accountId, win)
 
-    win.webContents.setWindowOpenHandler(({ url }) => {
-      if (isAllowedMuseUrl(url)) {
-        void win.webContents.loadURL(url)
+    const childPopups = new Set<BrowserWindow>()
+    const closeChildPopups = () => {
+      for (const child of childPopups) {
+        try {
+          if (!child.isDestroyed()) child.close()
+        } catch {
+          /* ignore */
+        }
       }
-      return { action: 'deny' }
+      childPopups.clear()
+    }
+    const anyOnCheckpoint = (): boolean => {
+      if (!win.isDestroyed() && isMuseCheckpointUrl(win.webContents.getURL())) return true
+      for (const child of childPopups) {
+        if (!child.isDestroyed() && isMuseCheckpointUrl(child.webContents.getURL())) return true
+      }
+      return false
+    }
+
+    win.webContents.setWindowOpenHandler(({ url }) => {
+      if (!isAllowedMuseUrl(url)) return { action: 'deny' }
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 540,
+          height: 700,
+          title: 'Muse 安全登录',
+          autoHideMenuBar: true,
+          parent: win.isDestroyed() ? undefined : win,
+          webPreferences: {
+            partition,
+            sandbox: true,
+            contextIsolation: true,
+            nodeIntegration: false
+          }
+        }
+      }
     })
 
-    const ses = electronSession.fromPartition(partition)
     let settling = false
+    let checking = false
 
-    const finishIfSignedIn = async (): Promise<void> => {
-      if (settling || win.isDestroyed()) return
-      const cookies = await ses.cookies.get({ name: 'hatch_sess' })
-      if (cookies.length === 0) return
-
-      // hatch_sess is the source of truth — do not wait for the IdP URL to change.
-      // Emit signed-in BEFORE reloading the embedded view or closing the window:
-      // loading muse.ai (or Meta clearing an intermediate cookie) must not race
-      // ahead of the add-bot UI advancing to the Name step.
-      settling = true
-      const sess = this.sessions.get(accountId)
-      if (sess) {
-        sess.status.signedIn = true
-        sess.status.phase = 'connecting'
-      }
+    const finalizeSignedIn = async (): Promise<void> => {
       this.emit({ type: 'login', accountId, signedIn: true })
-
+      if (this.loginWindows.get(accountId) === win) {
+        this.loginWindows.delete(accountId)
+      }
+      closeChildPopups()
       try {
         if (!win.isDestroyed()) win.close()
       } catch {
         /* ignore */
       }
-
-      const session = this.sessions.get(accountId)
-      const view = session && this.views.getView(session.viewId)
-      if (view && !view.webContents.isDestroyed()) {
-        try {
-          await view.webContents.loadURL(MUSE_ORIGIN)
-        } catch (error) {
-          console.error('[muse] reload embedded view after login failed', error)
-        }
-      }
       try {
-        await this.refreshSession(accountId)
+        await this.ensure(botId, accountId)
       } catch (error) {
-        console.error('[muse] refreshSession after login failed', error)
+        console.error('[muse] ensure session after login failed', error)
       }
-      // Keep the optimistic signed-in flag if muse briefly drops the cookie mid-reload.
+      // Keep the optimistic signed-in flag if muse briefly churns cookies mid-load.
       const still = this.sessions.get(accountId)
-      if (still && !(await this.hasSessionCookie(accountId))) {
+      if (still) {
         still.status.signedIn = true
+        this.emitStatus(accountId)
+      }
+    }
+
+    const finishIfSignedIn = async (): Promise<void> => {
+      if (settling || checking || win.isDestroyed()) return
+      checking = true
+      try {
+        const cookies = await ses.cookies.get({ name: 'hatch_sess' })
+        if (!hasNonEmptyHatchSession(cookies)) return
+        if (anyOnCheckpoint()) return
+        const verdict = await this.verifyAuthCheck(accountId, cleanUa)
+        if (verdict === 'rejected') return
+        if (settling || win.isDestroyed()) return
+
+        // hatch_sess is present and accepted — emit signed-in and close the login
+        // window BEFORE starting the embedded WebContentsView.
+        settling = true
+        await finalizeSignedIn()
+      } finally {
+        checking = false
       }
     }
 
@@ -1512,6 +1616,24 @@ export class MuseSessionManager {
     win.webContents.on('did-navigate-in-page', onNav)
     win.webContents.on('did-redirect-navigation', onNav)
 
+    win.webContents.on('did-create-window', (childWin) => {
+      childPopups.add(childWin)
+      childWin.webContents.setUserAgent(cleanUa)
+      childWin.webContents.setWindowOpenHandler(({ url }) => {
+        if (isAllowedMuseUrl(url) && url !== 'about:blank') {
+          void childWin.webContents.loadURL(url)
+        }
+        return { action: 'deny' }
+      })
+      childWin.webContents.on('did-finish-load', onNav)
+      childWin.webContents.on('did-navigate', onNav)
+      childWin.webContents.on('did-redirect-navigation', onNav)
+      childWin.on('closed', () => {
+        childPopups.delete(childWin)
+        void finishIfSignedIn()
+      })
+    })
+
     const onCookie = (
       _event: unknown,
       cookie: { name: string },
@@ -1522,35 +1644,6 @@ export class MuseSessionManager {
     }
     ses.cookies.on('changed', onCookie)
 
-    win.on('closed', () => {
-      ses.cookies.off('changed', onCookie)
-      this.loginWindows.delete(accountId)
-      void (async () => {
-        // finishIfSignedIn already advanced the add-bot flow.
-        if (settling || this.sessions.get(accountId)?.status.signedIn) {
-          this.emit({ type: 'login', accountId, signedIn: true })
-          return
-        }
-        const status = await this.refreshSession(accountId)
-        if (status?.signedIn) {
-          this.emit({ type: 'login', accountId, signedIn: true })
-          return
-        }
-        if (await this.hasSessionCookie(accountId)) {
-          const session = this.sessions.get(accountId)
-          if (session) {
-            session.status.signedIn = true
-            session.status.phase = 'connecting'
-            this.emit({ type: 'login', accountId, signedIn: true })
-            this.emitStatus(accountId)
-          }
-          return
-        }
-        // Window went away without a session — offer reopen in add-bot UI.
-        this.emit({ type: 'login', accountId, signedIn: false, windowClosed: true })
-      })()
-    })
-
     const poll = setInterval(() => {
       if (win.isDestroyed() || settling) {
         clearInterval(poll)
@@ -1558,14 +1651,58 @@ export class MuseSessionManager {
       }
       void finishIfSignedIn()
     }, 1000)
-    win.on('closed', () => clearInterval(poll))
+
+    win.on('closed', () => {
+      clearInterval(poll)
+      ses.cookies.off('changed', onCookie)
+      closeChildPopups()
+      const wasTracked = this.loginWindows.get(accountId) === win
+      if (wasTracked) this.loginWindows.delete(accountId)
+      if (!wasTracked) return
+
+      void (async () => {
+        // finishIfSignedIn already advanced the add-bot flow and started ensure().
+        if (settling || this.sessions.get(accountId)?.status.signedIn) {
+          this.emit({ type: 'login', accountId, signedIn: true })
+          return
+        }
+        if (await this.hasSessionCookie(accountId)) {
+          const verdict = await this.verifyAuthCheck(accountId, cleanUa)
+          if (verdict !== 'rejected') {
+            settling = true
+            await finalizeSignedIn()
+            return
+          }
+        }
+        // Window went away without a valid session — offer reopen in add-bot UI.
+        this.emit({ type: 'login', accountId, signedIn: false, windowClosed: true })
+      })()
+    })
 
     try {
       await win.loadURL(MUSE_ORIGIN)
     } catch (error) {
-      console.error('[muse] openLogin load failed', error)
+      // Normal `/aymh` login redirects abort the initial navigation (ERR_ABORTED, -3).
+      const code = (error as { errno?: number })?.errno
+      if (code !== -3) {
+        console.error('[muse] openLogin load failed', error)
+      }
     }
-    return this.sessions.get(accountId)!.status
+    return this.sessions.get(accountId)?.status ?? pendingStatus
+  }
+
+  private async clearHatchCookies(ses: Electron.Session): Promise<void> {
+    try {
+      const cookies = await ses.cookies.get({ name: 'hatch_sess' })
+      for (const c of cookies) {
+        const host = (c.domain || 'muse.ai').replace(/^\./, '')
+        const protocol = c.secure ? 'https' : 'http'
+        const path = c.path || '/'
+        await ses.cookies.remove(`${protocol}://${host}${path}`, c.name)
+      }
+    } catch {
+      /* ignore */
+    }
   }
 
   /**
