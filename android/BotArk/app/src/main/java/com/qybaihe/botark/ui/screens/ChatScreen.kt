@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,7 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
@@ -34,7 +33,6 @@ import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
@@ -53,12 +52,12 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.qybaihe.botark.model.ConnectionStatus
 import com.qybaihe.botark.model.PendingApprovalItem
 import com.qybaihe.botark.model.SyncedBot
 import com.qybaihe.botark.model.SyncedMessage
@@ -68,6 +67,9 @@ import com.qybaihe.botark.ui.components.PlatformBadgePill
 import com.qybaihe.botark.ui.components.PlatformIcon
 import com.qybaihe.botark.ui.components.decodeBase64Image
 import com.qybaihe.botark.ui.theme.ArkColors
+import com.qybaihe.botark.ui.theme.ArkMonoFamily
+import com.qybaihe.botark.ui.theme.ArkSansFamily
+import com.qybaihe.botark.ui.theme.LivingPulseDot
 import com.qybaihe.botark.ui.theme.dotColor
 import com.qybaihe.botark.viewmodel.BotArkUiState
 
@@ -94,6 +96,7 @@ fun ChatScreen(
     val botApprovals = state.pendingApprovals.filter { it.accountId == bot.activeAccountId }
     val isTyping = state.typingByBotId[bot.id] == true
     val canSend = state.canSend(bot)
+    val botStatus = state.status(bot)
     var draft by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
@@ -109,35 +112,37 @@ fun ChatScreen(
             .background(palette.canvas)
             .imePadding()
     ) {
-        // Minimal top navigation bar
+        // Minimal Studio Header
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(palette.surface)
-                .padding(horizontal = 10.dp, vertical = 9.dp)
+                .padding(horizontal = 14.dp, vertical = 9.dp)
         ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(34.dp)
                     .clip(CircleShape)
+                    .background(palette.surface)
+                    .border(0.8.dp, palette.hairline, CircleShape)
                     .clickable(onClick = onBack)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                     contentDescription = "返回",
-                    tint = palette.accent,
+                    tint = palette.textPrimary,
                     modifier = Modifier.size(20.dp)
                 )
             }
-            Spacer(Modifier.width(4.dp))
-            PlatformIcon(platform = bot.platformId, size = 18.dp)
+            Spacer(Modifier.width(10.dp))
+            PlatformIcon(platform = bot.platformId, size = 22.dp)
             Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = bot.name,
                     fontSize = 14.5.sp,
+                    fontFamily = ArkSansFamily,
                     fontWeight = FontWeight.SemiBold,
                     color = palette.textPrimary,
                     maxLines = 1,
@@ -145,13 +150,12 @@ fun ChatScreen(
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(5.5.dp)
-                            .clip(CircleShape)
-                            .background(state.status(bot).dotColor())
+                    LivingPulseDot(
+                        color = botStatus.dotColor(),
+                        size = 5.5.dp,
+                        animated = botStatus == ConnectionStatus.ONLINE || botStatus == ConnectionStatus.BUSY || botStatus == ConnectionStatus.ATTENTION
                     )
                     Text(
                         text = state.shortTransportLabel(bot),
@@ -166,24 +170,25 @@ fun ChatScreen(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(CircleShape)
+                        .background(palette.surface)
+                        .border(0.8.dp, palette.hairline, CircleShape)
                         .clickable(enabled = canSend) { onNewSession(bot) }
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.EditNote,
                         contentDescription = "新对话",
-                        tint = if (canSend) palette.accent else palette.textTertiary,
-                        modifier = Modifier.size(20.dp)
+                        tint = if (canSend) palette.textPrimary else palette.textTertiary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
         }
-        HorizontalDivider(thickness = 0.6.dp, color = palette.hairline)
 
-        // Inline pending approval card(s)
+        // Floating editorial approval card(s)
         if (botApprovals.isNotEmpty()) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
             ) {
                 botApprovals.forEach { item ->
                     InlineApprovalCard(item = item, onDecide = { onDecideApproval(item, it) })
@@ -191,11 +196,11 @@ fun ChatScreen(
             }
         }
 
-        // Messages list
+        // Messages canvas
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f)
         ) {
             if (messages.isEmpty()) {
@@ -205,9 +210,9 @@ fun ChatScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 64.dp)
+                            .padding(top = 72.dp)
                     ) {
-                        BotAvatar(bot = bot, status = state.status(bot), size = 50.dp)
+                        BotAvatar(bot = bot, status = botStatus, size = 52.dp)
                         Text(bot.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = palette.textPrimary)
                         PlatformBadgePill(bot.platformId)
                     }
@@ -225,38 +230,38 @@ fun ChatScreen(
                         fontSize = 12.sp,
                         color = palette.textSecondary,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(CircleShape)
                             .background(palette.surface)
-                            .border(0.8.dp, palette.hairline, RoundedCornerShape(14.dp))
+                            .border(0.8.dp, palette.hairline, CircleShape)
                             .padding(horizontal = 12.dp, vertical = 8.dp)
                     )
                 }
             }
         }
 
-        // Floating capsule composer bar
-        HorizontalDivider(thickness = 0.6.dp, color = palette.hairline)
+        // Floating Tactile Capsule Composer (no clunky bottom bar!)
+        val composerShape = RoundedCornerShape(24.dp)
         Row(
             verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .background(palette.canvas)
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
+                .shadow(8.dp, composerShape, ambientColor = Color.Black.copy(alpha = 0.06f))
+                .clip(composerShape)
+                .background(palette.surface)
+                .border(0.9.dp, palette.hairline, composerShape)
+                .padding(start = 15.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
         ) {
-            val inputShape = RoundedCornerShape(20.dp)
             Box(
                 contentAlignment = Alignment.CenterStart,
                 modifier = Modifier
                     .weight(1f)
-                    .clip(inputShape)
-                    .background(palette.surface)
-                    .border(0.9.dp, palette.hairline, inputShape)
-                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                    .padding(vertical = 7.dp)
             ) {
                 if (draft.isEmpty()) {
                     Text(
-                        text = if (canSend) "发消息给 ${bot.name}" else "离线只读",
+                        text = if (canSend) "给 ${bot.name} 发消息..." else "离线只读",
                         fontSize = 14.sp,
                         color = palette.textTertiary
                     )
@@ -268,10 +273,11 @@ fun ChatScreen(
                     maxLines = 5,
                     textStyle = TextStyle(
                         fontSize = 14.sp,
+                        fontFamily = ArkSansFamily,
                         color = palette.textPrimary,
                         lineHeight = 19.sp
                     ),
-                    cursorBrush = SolidColor(palette.accent),
+                    cursorBrush = SolidColor(palette.ink),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -282,10 +288,10 @@ fun ChatScreen(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(CircleShape)
-                        .background(palette.red)
+                        .background(palette.rose)
                         .clickable { onStop(bot) }
                 ) {
-                    Icon(Icons.Rounded.Stop, contentDescription = "停止", tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Rounded.Stop, contentDescription = "停止", tint = Color.White, modifier = Modifier.size(15.dp))
                 }
             } else {
                 val ready = canSend && draft.trim().isNotEmpty()
@@ -294,14 +300,19 @@ fun ChatScreen(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(CircleShape)
-                        .background(if (ready) palette.accent else palette.textTertiary.copy(alpha = 0.35f))
+                        .background(if (ready) palette.ink else palette.subtleFill)
                         .clickable(enabled = ready) {
                             val t = draft.trim()
                             draft = ""
                             onSend(bot, t)
                         }
                 ) {
-                    Icon(Icons.Rounded.ArrowUpward, contentDescription = "发送", tint = Color.White, modifier = Modifier.size(17.dp))
+                    Icon(
+                        imageVector = Icons.Rounded.ArrowUpward,
+                        contentDescription = "发送",
+                        tint = if (ready) palette.onInk else palette.textTertiary,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }
@@ -317,8 +328,8 @@ private fun MessageBubbleRow(message: SyncedMessage) {
     ) {
         Column(
             horizontalAlignment = if (message.isUser) Alignment.End else Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(5.dp),
-            modifier = Modifier.widthIn(max = 310.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.widthIn(max = 314.dp)
         ) {
             if (!message.tools.isNullOrEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -336,8 +347,8 @@ private fun MessageBubbleRow(message: SyncedMessage) {
                                 contentDescription = part.name,
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier
-                                    .widthIn(max = 220.dp)
-                                    .clip(RoundedCornerShape(13.dp))
+                                    .widthIn(max = 225.dp)
+                                    .clip(RoundedCornerShape(14.dp))
                             )
                         }
                     }
@@ -345,31 +356,34 @@ private fun MessageBubbleRow(message: SyncedMessage) {
             }
 
             if (message.text.isNotEmpty()) {
-                val bubbleShape = RoundedCornerShape(16.dp)
+                val bubbleShape = RoundedCornerShape(
+                    topStart = 18.dp,
+                    topEnd = 18.dp,
+                    bottomStart = if (message.isUser) 18.dp else 6.dp,
+                    bottomEnd = if (message.isUser) 6.dp else 18.dp
+                )
                 val formatted = remember(message.text) { renderInlineBold(message.text) }
                 Text(
                     text = formatted,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    color = if (message.isUser) Color.White else palette.textPrimary,
+                    fontSize = 13.8.sp,
+                    fontFamily = ArkSansFamily,
+                    lineHeight = 20.5.sp,
+                    color = if (message.isUser) palette.onInk else palette.textPrimary,
                     modifier = Modifier
+                        .shadow(4.dp, bubbleShape, ambientColor = Color.Black.copy(alpha = 0.06f))
                         .clip(bubbleShape)
-                        .background(if (message.isUser) palette.accent else palette.surface)
+                        .background(if (message.isUser) palette.ink else palette.surface)
                         .then(
                             if (message.isUser) Modifier else Modifier.border(0.8.dp, palette.hairline, bubbleShape)
                         )
-                        .padding(horizontal = 12.dp, vertical = 9.dp)
+                        .padding(horizontal = 13.dp, vertical = 10.dp)
                 )
             }
 
             if (!message.error.isNullOrEmpty()) {
-                Text(
-                    text = message.error,
-                    fontSize = 11.sp,
-                    color = palette.red
-                )
+                Text(text = message.error, fontSize = 11.sp, color = palette.rose)
             } else if (message.isUser && message.delivery == "sending") {
-                Text("发送中", fontSize = 10.5.sp, color = palette.textTertiary)
+                Text("发送中", fontSize = 10.sp, fontFamily = ArkMonoFamily, color = palette.textTertiary)
             }
         }
     }
@@ -396,7 +410,7 @@ private fun ToolCallPill(tool: SyncedToolCall) {
             .clip(CircleShape)
             .background(palette.surface)
             .border(0.8.dp, palette.hairline, CircleShape)
-            .padding(horizontal = 9.dp, vertical = 4.dp)
+            .padding(horizontal = 9.dp, vertical = 4.5.dp)
     ) {
         when (tool.status) {
             "running" -> CircularProgressIndicator(
@@ -407,13 +421,13 @@ private fun ToolCallPill(tool: SyncedToolCall) {
             "completed" -> Icon(
                 Icons.Rounded.CheckCircle,
                 contentDescription = null,
-                tint = palette.green,
+                tint = palette.emerald,
                 modifier = Modifier.size(12.dp)
             )
             "errored", "failed" -> Icon(
                 Icons.Rounded.Close,
                 contentDescription = null,
-                tint = palette.red,
+                tint = palette.rose,
                 modifier = Modifier.size(12.dp)
             )
             else -> Icon(
@@ -425,9 +439,8 @@ private fun ToolCallPill(tool: SyncedToolCall) {
         }
         Text(
             text = tool.name,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = FontFamily.Monospace,
+            fontSize = 10.5.sp,
+            fontFamily = ArkMonoFamily,
             color = palette.textPrimary
         )
         if (!tool.summary.isNullOrBlank()) {
@@ -448,22 +461,24 @@ private fun InlineApprovalCard(
     onDecide: (String) -> Unit
 ) {
     val palette = ArkColors.current
-    val shape = RoundedCornerShape(13.dp)
+    val shape = RoundedCornerShape(16.dp)
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(6.dp, shape, ambientColor = palette.amber.copy(alpha = 0.14f))
             .clip(shape)
             .background(palette.surface)
-            .border(1.dp, palette.orange.copy(alpha = 0.42f), shape)
-            .padding(11.dp)
+            .border(1.dp, palette.amber.copy(alpha = 0.45f), shape)
+            .padding(12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(Icons.Rounded.Shield, contentDescription = null, tint = palette.orange, modifier = Modifier.size(14.dp))
+            Icon(Icons.Rounded.Shield, contentDescription = null, tint = palette.amber, modifier = Modifier.size(14.dp))
             Text(
                 text = item.approval.title,
-                fontSize = 13.sp,
+                fontSize = 12.5.sp,
+                fontFamily = ArkSansFamily,
                 fontWeight = FontWeight.SemiBold,
                 color = palette.textPrimary,
                 maxLines = 1,
@@ -473,19 +488,19 @@ private fun InlineApprovalCard(
         if (!item.approval.detail.isNullOrBlank()) {
             Text(
                 text = item.approval.detail,
-                fontSize = 11.sp,
+                fontSize = 10.5.sp,
                 lineHeight = 15.sp,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = ArkMonoFamily,
                 color = palette.textSecondary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
-            ApprovalActionPill("允许", palette.accent, Color.White) { onDecide("allow_once") }
+            ApprovalActionPill("允许", palette.ink, palette.onInk) { onDecide("allow_once") }
             ApprovalActionPill("本次会话", palette.subtleFill, palette.textPrimary) { onDecide("allow_session") }
             Spacer(Modifier.weight(1f))
-            ApprovalActionPill("拒绝", palette.red.copy(alpha = 0.10f), palette.red) { onDecide("deny") }
+            ApprovalActionPill("拒绝", palette.rose.copy(alpha = 0.10f), palette.rose) { onDecide("deny") }
         }
     }
 }
@@ -494,13 +509,14 @@ private fun InlineApprovalCard(
 fun ApprovalActionPill(label: String, fill: Color, fg: Color, onClick: () -> Unit) {
     Text(
         text = label,
-        fontSize = 12.sp,
+        fontSize = 11.5.sp,
+        fontFamily = ArkSansFamily,
         fontWeight = FontWeight.SemiBold,
         color = fg,
         modifier = Modifier
             .clip(CircleShape)
             .background(fill)
             .clickable(onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 5.dp)
+            .padding(horizontal = 12.dp, vertical = 5.5.dp)
     )
 }

@@ -4,6 +4,7 @@ import UIKit
 struct ChatView: View {
     @Bindable var store: BotArkStore
     let botId: String
+    let onBack: () -> Void
 
     @State private var draft = ""
     @FocusState private var composerFocused: Bool
@@ -24,19 +25,81 @@ struct ChatView: View {
     var body: some View {
         Group {
             if let bot {
-                chatContent(for: bot)
+                studioCanvas(for: bot)
             } else {
-                ContentUnavailableView("智能体已移除", systemImage: "bubble.left.and.exclamationmark.bubble.right")
+                VStack(spacing: 12) {
+                    Text("智能体已移除")
+                        .font(ArkFont.medium(14))
+                        .foregroundStyle(.secondary)
+                    Button("返回", action: onBack)
+                        .font(ArkFont.semibold(13))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(ArkTheme.canvas.ignoresSafeArea())
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func chatContent(for bot: SyncedBot) -> some View {
+    private func studioCanvas(for bot: SyncedBot) -> some View {
         let isTyping = store.typingByBotId[bot.id] == true
         let canSend = store.canSend(to: bot)
 
         return VStack(spacing: 0) {
+            // Custom minimal studio header
+            HStack(spacing: 10) {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 34, height: 34)
+                        .background(ArkTheme.surface, in: Circle())
+                        .overlay(Circle().strokeBorder(ArkTheme.hairline, lineWidth: 0.8))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("返回")
+
+                PlatformIconView(platform: bot.platformId, size: 22)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(bot.name)
+                        .font(ArkFont.semibold(14.5))
+                        .lineLimit(1)
+                    HStack(spacing: 4) {
+                        LivingPulseDot(
+                            color: store.status(for: bot).dotColor,
+                            size: 5.5,
+                            animated: store.status(for: bot).isLive
+                        )
+                        Text(shortTransportLabel(for: bot))
+                            .font(ArkFont.medium(10.5))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if bot.platformId.supportsQuickNewSession {
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        store.startNewSession(for: bot)
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 13.5, weight: .medium))
+                            .foregroundStyle(canSend ? .primary : .tertiary)
+                            .frame(width: 34, height: 34)
+                            .background(ArkTheme.surface, in: Circle())
+                            .overlay(Circle().strokeBorder(ArkTheme.hairline, lineWidth: 0.8))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canSend)
+                    .accessibilityLabel("新对话")
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(ArkTheme.canvas)
+
+            // Floating editorial approval card(s)
             if !botApprovals.isEmpty {
                 VStack(spacing: 6) {
                     ForEach(botApprovals) { item in
@@ -46,23 +109,25 @@ struct ChatView: View {
                     }
                 }
                 .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.top, 2)
+                .padding(.bottom, 6)
             }
 
+            // Messages canvas
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 10) {
+                    LazyVStack(spacing: 12) {
                         if messages.isEmpty {
                             VStack(spacing: 8) {
-                                BotAvatarView(bot: bot, status: store.status(for: bot), size: 50)
+                                BotAvatarView(bot: bot, status: store.status(for: bot), size: 52)
                                 Text(bot.name)
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(ArkFont.semibold(15))
                                 PlatformBadgePill(platform: bot.platformId)
                             }
-                            .padding(.top, 64)
+                            .padding(.top, 72)
                         } else {
                             ForEach(messages) { message in
-                                MessageBubbleRow(message: message)
+                                MessageBubbleRow(message: message, platform: bot.platformId)
                                     .id(message.id)
                             }
                         }
@@ -76,7 +141,7 @@ struct ChatView: View {
                         }
                     }
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 10)
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: messages.count) { _, _ in
@@ -93,24 +158,19 @@ struct ChatView: View {
                 }
             }
 
-            // Sleek floating composer bar
+            // Floating tactile pill composer
             HStack(alignment: .bottom, spacing: 8) {
                 TextField(
-                    canSend ? "发消息给 \(bot.name)" : "离线只读",
+                    canSend ? "给 \(bot.name) 发消息..." : "离线只读",
                     text: $draft,
                     axis: .vertical
                 )
-                .font(.system(size: 14))
+                .font(ArkFont.regular(14))
                 .lineLimit(1...5)
                 .focused($composerFocused)
                 .disabled(!canSend)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 8)
-                .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(ArkTheme.hairline, lineWidth: 0.9)
-                )
+                .padding(.leading, 14)
+                .padding(.vertical, 9)
 
                 if isTyping {
                     Button {
@@ -118,12 +178,13 @@ struct ChatView: View {
                         store.stopGeneration(for: bot)
                     } label: {
                         Image(systemName: "stop.fill")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.white)
                             .frame(width: 32, height: 32)
-                            .background(Color.red, in: Circle())
+                            .background(ArkTheme.rose, in: Circle())
                     }
-                    .accessibilityLabel("停止")
+                    .buttonStyle(.plain)
+                    .padding(4)
                 } else {
                     let ready = canSend && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     Button {
@@ -134,61 +195,32 @@ struct ChatView: View {
                         Task { await store.sendMessage(to: bot, text: textToSend) }
                     } label: {
                         Image(systemName: "arrow.up")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 13.5, weight: .bold))
+                            .foregroundStyle(ready ? ArkTheme.onInk : .secondary)
                             .frame(width: 32, height: 32)
-                            .background(ready ? ArkTheme.accent : Color.secondary.opacity(0.28), in: Circle())
+                            .background(ready ? ArkTheme.ink : ArkTheme.subtleFill, in: Circle())
                     }
+                    .buttonStyle(.plain)
                     .disabled(!ready)
-                    .accessibilityLabel("发送")
+                    .padding(4)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(ArkTheme.canvas)
-            .overlay(alignment: .top) {
-                Divider()
-            }
+            .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(ArkTheme.hairline, lineWidth: 0.9)
+            )
+            .shadow(color: ArkTheme.cardShadow, radius: 12, y: 4)
+            .padding(.horizontal, 14)
+            .padding(.top, 6)
+            .padding(.bottom, 10)
         }
         .background(ArkTheme.canvas.ignoresSafeArea())
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 7) {
-                    PlatformIconView(platform: bot.platformId, size: 17)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(bot.name)
-                            .font(.system(size: 14, weight: .semibold))
-                            .lineLimit(1)
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(store.status(for: bot).dotColor)
-                                .frame(width: 5.5, height: 5.5)
-                            Text(shortTransportLabel(for: bot))
-                                .font(.system(size: 10))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                if bot.platformId.supportsQuickNewSession {
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        store.startNewSession(for: bot)
-                    } label: {
-                        Image(systemName: "square.and.pencil")
-                            .font(.system(size: 14))
-                    }
-                    .disabled(!canSend)
-                    .accessibilityLabel("新对话")
-                }
-            }
-        }
     }
 
     private func shortTransportLabel(for bot: SyncedBot) -> String {
         if case .connected(let host, _) = store.connectionState {
-            return "\(host) 桥接"
+            return "\(host) · 桥接"
         }
         if store.directCredential(for: bot) != nil {
             return "Hermes 直连"
@@ -209,12 +241,13 @@ struct ChatView: View {
 
 private struct MessageBubbleRow: View {
     let message: SyncedMessage
+    let platform: PlatformId
 
     var body: some View {
         HStack(alignment: .bottom) {
-            if message.isUser { Spacer(minLength: 52) }
+            if message.isUser { Spacer(minLength: 48) }
 
-            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 5) {
+            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 6) {
                 if let tools = message.tools, !tools.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(tools) { tool in
@@ -230,41 +263,45 @@ private struct MessageBubbleRow: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(maxWidth: 230, maxHeight: 230)
-                                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                     }
                 }
 
                 if !message.text.isEmpty {
+                    let bubbleShape = UnevenRoundedRectangle(
+                        topLeadingRadius: 18,
+                        bottomLeadingRadius: message.isUser ? 18 : 6,
+                        bottomTrailingRadius: message.isUser ? 6 : 18,
+                        topTrailingRadius: 18,
+                        style: .continuous
+                    )
                     markdownText(message.text)
-                        .font(.system(size: 14))
-                        .lineSpacing(3)
-                        .foregroundStyle(message.isUser ? .white : .primary)
+                        .font(ArkFont.regular(13.8))
+                        .lineSpacing(3.5)
+                        .foregroundStyle(message.isUser ? ArkTheme.onInk : .primary)
                         .textSelection(.enabled)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
-                        .background(
-                            message.isUser ? ArkTheme.accent : ArkTheme.surface,
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        )
+                        .padding(.horizontal, 13)
+                        .padding(.vertical, 10)
+                        .background(message.isUser ? ArkTheme.ink : ArkTheme.surface, in: bubbleShape)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(message.isUser ? .clear : ArkTheme.hairline, lineWidth: 0.8)
+                            bubbleShape.strokeBorder(message.isUser ? .clear : ArkTheme.hairline, lineWidth: 0.8)
                         )
+                        .shadow(color: ArkTheme.cardShadow, radius: message.isUser ? 10 : 8, y: 3)
                 }
 
                 if let error = message.error, !error.isEmpty {
                     Label(error, systemImage: "exclamationmark.circle.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.red)
+                        .font(ArkFont.medium(11))
+                        .foregroundStyle(ArkTheme.rose)
                 } else if message.isUser && message.delivery == "sending" {
                     Text("发送中")
-                        .font(.system(size: 10.5))
+                        .font(ArkFont.mono(10))
                         .foregroundStyle(.tertiary)
                 }
             }
 
-            if !message.isUser { Spacer(minLength: 42) }
+            if !message.isUser { Spacer(minLength: 36) }
         }
     }
 
@@ -286,20 +323,19 @@ private struct ToolCallPill: View {
         HStack(spacing: 5) {
             statusIcon
             Text(tool.name)
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .font(ArkFont.mono(10.5))
+                .foregroundStyle(.primary)
             if let summary = tool.summary, !summary.isEmpty {
                 Text(summary)
-                    .font(.system(size: 11))
+                    .font(ArkFont.regular(11))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }
         .padding(.horizontal, 9)
-        .padding(.vertical, 4)
+        .padding(.vertical, 4.5)
         .background(ArkTheme.surface, in: Capsule())
-        .overlay(
-            Capsule().strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
-        )
+        .overlay(Capsule().strokeBorder(ArkTheme.hairline, lineWidth: 0.8))
     }
 
     @ViewBuilder
@@ -310,11 +346,11 @@ private struct ToolCallPill: View {
         case "completed":
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 11))
-                .foregroundStyle(Color(red: 0.13, green: 0.77, blue: 0.37))
+                .foregroundStyle(ArkTheme.emerald)
         case "errored", "failed":
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 11))
-                .foregroundStyle(.red)
+                .foregroundStyle(ArkTheme.rose)
         default:
             Image(systemName: "terminal.fill")
                 .font(.system(size: 10))
@@ -327,20 +363,17 @@ private struct TypingIndicatorBubble: View {
     @State private var phase = 0
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 4.5) {
             ForEach(0..<3, id: \.self) { idx in
                 Circle()
                     .fill(Color.secondary.opacity(phase == idx ? 0.85 : 0.25))
                     .frame(width: 6, height: 6)
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 13)
         .padding(.vertical, 10)
-        .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
-        )
+        .background(ArkTheme.surface, in: Capsule())
+        .overlay(Capsule().strokeBorder(ArkTheme.hairline, lineWidth: 0.8))
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 340_000_000)
@@ -361,16 +394,16 @@ struct InlineApprovalCard: View {
             HStack(spacing: 6) {
                 Image(systemName: "shield.lefthalf.filled")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ArkTheme.amber)
                 Text(item.approval.title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(ArkFont.semibold(12.5))
                     .lineLimit(1)
                 Spacer()
             }
 
             if let detail = item.approval.detail, !detail.isEmpty {
                 Text(detail)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(ArkFont.mono(10.5))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -382,12 +415,13 @@ struct InlineApprovalCard: View {
                 actionPill(title: "拒绝", style: .destructive) { onDecide("deny") }
             }
         }
-        .padding(11)
-        .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .padding(12)
+        .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .strokeBorder(Color.orange.opacity(0.35), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(ArkTheme.amber.opacity(0.45), lineWidth: 1)
         )
+        .shadow(color: ArkTheme.amber.opacity(0.08), radius: 10, y: 4)
     }
 
     private enum PillStyle { case primary, secondary, destructive }
@@ -398,14 +432,16 @@ struct InlineApprovalCard: View {
             action()
         } label: {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
-                .padding(.horizontal, 11)
-                .padding(.vertical, 5)
-                .foregroundStyle(style == .primary ? .white : (style == .destructive ? .red : .primary))
+                .font(ArkFont.semibold(11.5))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5.5)
+                .foregroundStyle(
+                    style == .primary ? ArkTheme.onInk : (style == .destructive ? ArkTheme.rose : .primary)
+                )
                 .background(
                     style == .primary
-                        ? ArkTheme.accent
-                        : (style == .destructive ? Color.red.opacity(0.10) : ArkTheme.subtleFill),
+                        ? ArkTheme.ink
+                        : (style == .destructive ? ArkTheme.rose.opacity(0.10) : ArkTheme.subtleFill),
                     in: Capsule()
                 )
         }

@@ -31,6 +31,7 @@ import com.qybaihe.botark.model.ConnectionStatus
 import com.qybaihe.botark.model.PlatformId
 import com.qybaihe.botark.model.SyncedBot
 import com.qybaihe.botark.ui.theme.ArkColors
+import com.qybaihe.botark.ui.theme.ArkSansFamily
 import com.qybaihe.botark.ui.theme.brandColor
 import com.qybaihe.botark.ui.theme.dotColor
 
@@ -50,7 +51,7 @@ fun PlatformIcon(platform: PlatformId, size: Dp = 18.dp, modifier: Modifier = Mo
         contentScale = ContentScale.Fit,
         modifier = modifier
             .size(size)
-            .clip(RoundedCornerShape(size * 0.24f))
+            .clip(RoundedCornerShape(size * 0.26f))
     )
 }
 
@@ -61,7 +62,7 @@ fun BotAvatar(
     size: Dp = 40.dp
 ) {
     val palette = ArkColors.current
-    val shape = RoundedCornerShape(size * 0.30f)
+    val shape = RoundedCornerShape(size * 0.32f)
     val decoded = remember(bot.avatar) { decodeBase64Image(bot.avatar) }
 
     Box(modifier = Modifier.size(size)) {
@@ -73,7 +74,7 @@ fun BotAvatar(
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            bot.platformId.brandColor().copy(alpha = 0.13f),
+                            bot.platformId.brandColor().copy(alpha = 0.14f),
                             bot.platformId.brandColor().copy(alpha = 0.04f)
                         )
                     )
@@ -97,12 +98,12 @@ fun BotAvatar(
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .size(size)
-                        .padding(size * 0.17f)
+                        .padding(size * 0.18f)
                 )
             }
         }
 
-        val dotSize = (size * 0.24f).coerceAtLeast(9.dp)
+        val dotSize = (size * 0.22f).coerceAtLeast(8.5.dp)
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -120,15 +121,16 @@ fun PlatformBadgePill(platform: PlatformId) {
     val brand = platform.brandColor()
     Text(
         text = platform.shortLabel,
-        fontSize = 10.5.sp,
+        fontSize = 10.sp,
         lineHeight = 13.sp,
+        fontFamily = ArkSansFamily,
         fontWeight = FontWeight.SemiBold,
         color = brand,
         maxLines = 1,
         modifier = Modifier
             .clip(CircleShape)
             .background(brand.copy(alpha = 0.10f))
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .padding(horizontal = 6.5.dp, vertical = 2.5.dp)
     )
 }
 

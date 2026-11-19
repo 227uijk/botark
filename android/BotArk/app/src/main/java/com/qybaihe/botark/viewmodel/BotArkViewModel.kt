@@ -82,7 +82,7 @@ data class BotArkUiState(
 
     fun shortTransportLabel(forBot: SyncedBot): String {
         val cs = connectionState
-        if (cs is BridgeConnectionState.Connected) return "${cs.hostName} 桥接"
+        if (cs is BridgeConnectionState.Connected) return "${cs.hostName} · 桥接"
         if (directCredential(forBot) != null) return "Hermes 直连"
         return "离线"
     }

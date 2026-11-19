@@ -4,24 +4,17 @@ struct BotListView: View {
     @Bindable var store: BotArkStore
     @Binding var showQRScanner: Bool
     @Binding var showAddHermes: Bool
+    let onSelectBot: (String) -> Void
 
-    @State private var searchText = ""
     @State private var selectedPlatform: PlatformId? = nil
-    @State private var navPath = NavigationPath()
+    @State private var glowBreath = false
 
     private var filteredBots: [SyncedBot] {
         store.snapshot.bots.filter { bot in
             if let filter = selectedPlatform, bot.platformId != filter {
                 return false
             }
-            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            if query.isEmpty { return true }
-            if bot.name.lowercased().contains(query) { return true }
-            if bot.platformId.displayName.lowercased().contains(query) { return true }
-            if let lastMsg = store.snapshot.messages[bot.id]?.last?.text.lowercased(), lastMsg.contains(query) {
-                return true
-            }
-            return false
+            return true
         }
     }
 
@@ -34,139 +27,221 @@ struct BotListView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $navPath) {
-            Group {
-                if store.snapshot.bots.isEmpty {
-                    emptyOnboardingView
-                } else {
-                    botListContent
-                }
-            }
-            .background(ArkTheme.canvas.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    HStack(spacing: 7) {
-                        Image("BotArkLogo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 22, height: 22)
-                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                        Text("BotArk")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                    }
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
-                        showAddHermes = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 14, weight: .semibold))
-                            .frame(width: 30, height: 30)
-                            .background(ArkTheme.subtleFill, in: Circle())
-                    }
-                    .accessibilityLabel("添加 Hermes")
+        ZStack(alignment: .top) {
+            ArkTheme.canvas.ignoresSafeArea()
 
-                    Button {
-                        showQRScanner = true
-                    } label: {
-                        Image(systemName: "qrcode.viewfinder")
-                            .font(.system(size: 14, weight: .semibold))
-                            .frame(width: 30, height: 30)
-                            .background(ArkTheme.accent.opacity(0.12), in: Circle())
-                    }
-                    .accessibilityLabel("扫码配对")
+            // Subtle ambient prismatic top glow (BotArk signature atmosphere)
+            LinearGradient(
+                colors: [
+                    ArkTheme.prismBlue.opacity(0.06),
+                    ArkTheme.prismViolet.opacity(0.03),
+                    .clear
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .frame(height: 220)
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                topBar
+
+                if store.snapshot.bots.isEmpty {
+                    signatureOnboarding
+                } else {
+                    workspaceFeed
                 }
             }
-            .navigationDestination(for: String.self) { botId in
-                ChatView(store: store, botId: botId)
-            }
-            #if DEBUG
-            .task {
-                if let openBot = ProcessInfo.processInfo.environment["BOTARK_TEST_OPEN_BOT"],
-                   !openBot.isEmpty,
-                   navPath.isEmpty {
-                    try? await Task.sleep(nanoseconds: 400_000_000)
-                    if store.snapshot.bots.contains(where: { $0.id == openBot }) {
-                        navPath.append(openBot)
-                    }
-                }
-            }
-            #endif
         }
     }
 
-    // MARK: - Minimal, Refined Onboarding
+    // MARK: - Editorial Header Bar
 
-    private var emptyOnboardingView: some View {
+    private var topBar: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image("BotArkLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
+
+                Text("BotArk")
+                    .font(ArkFont.bold(19))
+                    .tracking(-0.4)
+                    .foregroundStyle(.primary)
+            }
+
+            if !store.snapshot.bots.isEmpty {
+                inlineConnectionChip
+            }
+
+            Spacer(minLength: 4)
+
+            Button {
+                showAddHermes = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 34, height: 34)
+                    .background(ArkTheme.surface, in: Circle())
+                    .overlay(Circle().strokeBorder(ArkTheme.hairline, lineWidth: 0.8))
+                    .shadow(color: ArkTheme.cardShadow, radius: 6, y: 2)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("添加 Hermes")
+
+            Button {
+                showQRScanner = true
+            } label: {
+                Image(systemName: "qrcode.viewfinder")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(ArkTheme.onInk)
+                    .frame(width: 34, height: 34)
+                    .background(ArkTheme.ink, in: Circle())
+                    .shadow(color: .black.opacity(0.14), radius: 8, y: 3)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("扫码配对")
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
+    }
+
+    private var inlineConnectionChip: some View {
+        let dotColor: Color = {
+            switch store.connectionState {
+            case .connected: return ArkTheme.emerald
+            case .connecting: return ArkTheme.amber
+            case .offline, .unpaired: return store.directHermesCredentials.isEmpty ? .gray : ArkTheme.accent
+            }
+        }()
+
+        let label: String = {
+            switch store.connectionState {
+            case .connected(let host, _): return host
+            case .connecting: return "连接中"
+            case .offline(let host): return "\(host) 离线"
+            case .unpaired: return store.directHermesCredentials.isEmpty ? "未配对" : "直连"
+            }
+        }()
+
+        return Button {
+            if store.pairedDesktop != nil, !store.connectionState.isBridgeConnected {
+                Task { await store.reconnectDesktop() }
+            } else if store.pairedDesktop == nil {
+                showQRScanner = true
+            }
+        } label: {
+            HStack(spacing: 4) {
+                LivingPulseDot(
+                    color: dotColor,
+                    size: 6,
+                    animated: store.connectionState.isBridgeConnected
+                )
+                Text(label)
+                    .font(ArkFont.medium(11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(.leading, 6)
+            .padding(.trailing, 9)
+            .padding(.vertical, 4)
+            .background(ArkTheme.surface, in: Capsule())
+            .overlay(Capsule().strokeBorder(ArkTheme.hairline, lineWidth: 0.8))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Signature Living Onboarding
+
+    private var signatureOnboarding: some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 28)
+            Spacer(minLength: 18)
 
+            // Living 4-color prismatic orbital emblem
             ZStack {
                 Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [ArkTheme.accent.opacity(0.18), .clear],
-                            center: .center,
-                            startRadius: 8,
-                            endRadius: 82
-                        )
-                    )
-                    .frame(width: 164, height: 164)
+                    .fill(ArkTheme.prismBlue.opacity(0.20))
+                    .frame(width: 112, height: 112)
+                    .blur(radius: 26)
+                    .offset(x: -24, y: -18)
+                Circle()
+                    .fill(ArkTheme.prismViolet.opacity(0.18))
+                    .frame(width: 108, height: 108)
+                    .blur(radius: 26)
+                    .offset(x: 24, y: -12)
+                Circle()
+                    .fill(ArkTheme.prismAmber.opacity(0.18))
+                    .frame(width: 96, height: 96)
+                    .blur(radius: 24)
+                    .offset(x: -18, y: 22)
+                Circle()
+                    .fill(ArkTheme.prismTeal.opacity(0.18))
+                    .frame(width: 96, height: 96)
+                    .blur(radius: 24)
+                    .offset(x: 20, y: 20)
+
+                Circle()
+                    .strokeBorder(ArkTheme.hairline, style: StrokeStyle(lineWidth: 1, dash: [3, 5]))
+                    .frame(width: 132, height: 132)
+                    .scaleEffect(glowBreath ? 1.03 : 0.98)
+                    .animation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true), value: glowBreath)
 
                 Image("BotArkLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 78, height: 78)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .shadow(color: .black.opacity(0.16), radius: 16, y: 8)
+                    .frame(width: 76, height: 76)
+                    .clipShape(RoundedRectangle(cornerRadius: 21, style: .continuous))
+                    .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
             }
+            .frame(height: 158)
+            .onAppear { glowBreath = true }
 
             VStack(spacing: 6) {
-                Text("把所有 AI 助手装进口袋")
-                    .font(.system(size: 20, weight: .bold))
-                    .tracking(-0.3)
+                Text("你的随身 AI 方舟")
+                    .font(ArkFont.bold(22))
+                    .tracking(-0.5)
 
-                Text("零服务器 · 扫码直连电脑端")
-                    .font(.system(size: 13))
+                Text("零服务器 · 扫一扫直连电脑端")
+                    .font(ArkFont.regular(13))
                     .foregroundStyle(.secondary)
             }
             .padding(.top, 4)
 
-            // Compact 5-platform strip
-            HStack(spacing: 8) {
-                ForEach(PlatformId.allCases) { platform in
-                    VStack(spacing: 5) {
-                        PlatformIconView(platform: platform, size: 22)
-                        Text(platform.shortLabel)
-                            .font(.system(size: 10.5, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
-                    )
+            // Graceful 2-row staggered floating platform pill constellation (NOT 5 rigid squares!)
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    constellationPill(.grok)
+                    constellationPill(.metaMuse)
+                    constellationPill(.dot)
+                }
+                HStack(spacing: 8) {
+                    constellationPill(.hark)
+                    constellationPill(.hermes)
                 }
             }
-            .padding(.top, 26)
+            .padding(.top, 24)
 
+            // Tactile Obsidian primary pill + delicate secondary pill
             VStack(spacing: 10) {
                 Button {
                     showQRScanner = true
                 } label: {
-                    HStack(spacing: 7) {
+                    HStack(spacing: 8) {
                         Image(systemName: "qrcode.viewfinder")
                             .font(.system(size: 15, weight: .semibold))
                         Text("扫码配对电脑端")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(ArkFont.semibold(14.5))
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(ArkTheme.onInk)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 46)
-                    .background(ArkTheme.accent, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .frame(height: 48)
+                    .background(ArkTheme.ink, in: Capsule())
+                    .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
                 }
                 .buttonStyle(.plain)
 
@@ -177,227 +252,248 @@ struct BotListView: View {
                         Image(systemName: "server.rack")
                             .font(.system(size: 13, weight: .medium))
                         Text("直连 Hermes 服务器")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(ArkFont.medium(13.5))
                     }
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 44)
-                    .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .strokeBorder(ArkTheme.hairline, lineWidth: 0.9)
-                    )
+                    .background(ArkTheme.surface, in: Capsule())
+                    .overlay(Capsule().strokeBorder(ArkTheme.hairline, lineWidth: 0.9))
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.top, 24)
+            .padding(.top, 26)
+            .padding(.horizontal, 24)
 
             Spacer()
 
-            HStack(spacing: 14) {
-                badgeTag(icon: "wifi", label: "局域网 / Tailscale")
-                badgeTag(icon: "lock.fill", label: "AES-256-GCM")
-                badgeTag(icon: "key.fill", label: "Keychain")
-            }
-            .padding(.bottom, 22)
+            Text("LAN · Tailscale · AES-256-GCM")
+                .font(ArkFont.mono(10.5))
+                .foregroundStyle(.tertiary)
+                .padding(.bottom, 76)
         }
-        .padding(.horizontal, 20)
     }
 
-    private func badgeTag(icon: String, label: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
-            Text(label)
-                .font(.system(size: 10.5, weight: .medium))
+    private func constellationPill(_ platform: PlatformId) -> some View {
+        HStack(spacing: 6) {
+            PlatformIconView(platform: platform, size: 17)
+            Text(platform.displayName)
+                .font(ArkFont.medium(12))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
         }
-        .foregroundStyle(.secondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(ArkTheme.surface, in: Capsule())
+        .overlay(Capsule().strokeBorder(ArkTheme.hairline, lineWidth: 0.8))
+        .shadow(color: ArkTheme.cardShadow, radius: 8, y: 3)
     }
 
-    // MARK: - Sleek Bot Workspace List
+    // MARK: - Editorial Workspace Feed (Pinned Bento Deck + Clean Cards)
 
-    private var botListContent: some View {
+    private var workspaceFeed: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 14) {
-                connectionStatusBar
-
+            LazyVStack(alignment: .leading, spacing: 16) {
                 platformFilterStrip
+                    .padding(.top, 2)
 
+                // Pinned bots -> Tactile Horizontal Bento Deck!
                 if !pinnedBots.isEmpty {
-                    botSectionCard(title: "置顶", bots: pinnedBots)
+                    VStack(alignment: .leading, spacing: 8) {
+                        sectionHeader("置顶", trailing: "\(pinnedBots.count)")
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(pinnedBots) { bot in
+                                    Button {
+                                        onSelectBot(bot.id)
+                                    } label: {
+                                        pinnedBentoCard(bot)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 2)
+                        }
+                        .padding(.horizontal, -18)
+                    }
                 }
 
+                // Remaining groups -> Crisp editorial conversation cards
                 if store.snapshot.groups.isEmpty {
-                    botSectionCard(title: "全部", bots: unpinnedBots)
+                    if !unpinnedBots.isEmpty {
+                        botGroupCard(title: "全部", bots: unpinnedBots)
+                    }
                 } else {
                     ForEach(store.snapshot.groups) { group in
                         let members = unpinnedBots.filter { $0.groupId == group.id }
                         if !members.isEmpty {
-                            botSectionCard(title: group.name, bots: members)
+                            botGroupCard(title: group.name, bots: members)
                         }
                     }
-                    let knownGroupIds = Set(store.snapshot.groups.map(\.id))
-                    let ungrouped = unpinnedBots.filter { !knownGroupIds.contains($0.groupId) }
+                    let knownIds = Set(store.snapshot.groups.map(\.id))
+                    let ungrouped = unpinnedBots.filter { !knownIds.contains($0.groupId) }
                     if !ungrouped.isEmpty {
-                        botSectionCard(title: "其他", bots: ungrouped)
+                        botGroupCard(title: "其他", bots: ungrouped)
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.horizontal, 18)
+            .padding(.bottom, 86) // clear floating dock cleanly
         }
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "搜索")
         .refreshable {
             await store.reconnectDesktop()
         }
     }
 
-    private var connectionStatusBar: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(connectionDotColor)
-                .frame(width: 7, height: 7)
-
-            Text(connectionTitle)
-                .font(.system(size: 12.5, weight: .semibold))
-                .lineLimit(1)
-
-            if let meta = connectionMeta {
-                Text("·")
-                    .font(.system(size: 12))
+    private func sectionHeader(_ title: String, trailing: String? = nil) -> some View {
+        HStack {
+            Text(title)
+                .font(ArkFont.semibold(11.5))
+                .foregroundStyle(.secondary)
+            if let trailing {
+                Text(trailing)
+                    .font(ArkFont.mono(10.5))
                     .foregroundStyle(.tertiary)
-                Text(meta)
-                    .font(.system(size: 11.5, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
             }
-
-            Spacer(minLength: 4)
-
-            if case .connecting = store.connectionState {
-                ProgressView()
-                    .controlSize(.mini)
-            } else if store.pairedDesktop != nil, !store.connectionState.isBridgeConnected {
-                Button("重连") {
-                    Task { await store.reconnectDesktop() }
-                }
-                .font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(ArkTheme.accent)
-            } else if store.pairedDesktop == nil {
-                Button("配对") {
-                    showQRScanner = true
-                }
-                .font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(ArkTheme.accent)
-            }
+            Spacer()
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
-        .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
-        )
-    }
-
-    private var connectionDotColor: Color {
-        switch store.connectionState {
-        case .connected: return Color(red: 0.13, green: 0.77, blue: 0.37)
-        case .connecting: return .orange
-        case .offline, .unpaired: return store.directHermesCredentials.isEmpty ? .gray : ArkTheme.accent
-        }
-    }
-
-    private var connectionTitle: String {
-        switch store.connectionState {
-        case .connected(let hostName, _): return hostName
-        case .connecting: return "连接中..."
-        case .offline(let hostName): return "\(hostName) 离线"
-        case .unpaired: return store.directHermesCredentials.isEmpty ? "未配对" : "Hermes 直连"
-        }
-    }
-
-    private var connectionMeta: String? {
-        switch store.connectionState {
-        case .connected(_, let activeHost): return activeHost
-        case .offline: return store.directHermesCredentials.isEmpty ? "离线缓存" : "Hermes 可直连"
-        default: return nil
-        }
+        .padding(.horizontal, 2)
     }
 
     private var platformFilterStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                filterChip(title: "全部", platform: nil, count: store.snapshot.bots.count)
+            HStack(spacing: 7) {
+                filterPill(title: "全部", platform: nil, count: store.snapshot.bots.count)
                 ForEach(PlatformId.allCases) { platform in
                     let count = store.snapshot.bots.filter { $0.platformId == platform }.count
                     if count > 0 {
-                        filterChip(title: platform.shortLabel, platform: platform, count: count)
+                        filterPill(title: platform.shortLabel, platform: platform, count: count)
                     }
                 }
             }
+            .padding(.horizontal, 18)
         }
+        .padding(.horizontal, -18)
     }
 
-    private func filterChip(title: String, platform: PlatformId?, count: Int) -> some View {
+    private func filterPill(title: String, platform: PlatformId?, count: Int) -> some View {
         let active = selectedPlatform == platform
         return Button {
-            withAnimation(.snappy(duration: 0.18)) {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
                 selectedPlatform = platform
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 if let platform {
                     PlatformIconView(platform: platform, size: 13)
                 }
                 Text(title)
-                    .font(.system(size: 12, weight: active ? .semibold : .medium))
+                    .font(active ? ArkFont.semibold(12) : ArkFont.medium(12))
                 Text("\(count)")
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(active ? .white.opacity(0.8) : .secondary)
+                    .font(ArkFont.mono(10))
+                    .opacity(active ? 0.75 : 0.55)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(active ? ArkTheme.accent : ArkTheme.surface, in: Capsule())
-            .overlay(
-                Capsule()
-                    .strokeBorder(active ? .clear : ArkTheme.hairline, lineWidth: 0.8)
-            )
-            .foregroundStyle(active ? .white : .primary)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 6.5)
+            .background(active ? ArkTheme.ink : ArkTheme.surface, in: Capsule())
+            .overlay(Capsule().strokeBorder(active ? .clear : ArkTheme.hairline, lineWidth: 0.8))
+            .foregroundStyle(active ? ArkTheme.onInk : .primary)
         }
         .buttonStyle(.plain)
     }
 
-    private func botSectionCard(title: String, bots: [SyncedBot]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
+    private func pinnedBentoCard(_ bot: SyncedBot) -> some View {
+        let status = store.status(for: bot)
+        let lastMsg = store.snapshot.messages[bot.id]?.last
+        let pendingCount = (store.snapshot.approvals[bot.activeAccountId] ?? []).filter { $0.status == "pending" }.count
+
+        return ZStack(alignment: .topTrailing) {
+            // Subtle platform-tinted corner glow
+            RadialGradient(
+                colors: [bot.platformId.brandColor.opacity(0.11), .clear],
+                center: .topTrailing,
+                startRadius: 2,
+                endRadius: 96
+            )
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top) {
+                    BotAvatarView(bot: bot, status: status, size: 36)
+                    Spacer()
+                    if pendingCount > 0 {
+                        Text("\(pendingCount) 审批")
+                            .font(ArkFont.semibold(10))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(ArkTheme.amber, in: Capsule())
+                    } else {
+                        PlatformBadgePill(platform: bot.platformId)
+                    }
+                }
+
+                Spacer(minLength: 2)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(bot.name)
+                        .font(ArkFont.semibold(13.5))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    Text(cleanPreview(lastMsg?.text) ?? bot.platformId.displayName)
+                        .font(ArkFont.regular(11.5))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+            }
+            .padding(13)
+        }
+        .frame(width: 164, height: 122)
+        .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(
+                    pendingCount > 0 ? ArkTheme.amber.opacity(0.45) : ArkTheme.hairline,
+                    lineWidth: pendingCount > 0 ? 1.1 : 0.8
+                )
+        )
+        .shadow(color: ArkTheme.cardShadow, radius: 12, y: 4)
+    }
+
+    private func botGroupCard(title: String, bots: [SyncedBot]) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            sectionHeader(title)
 
             VStack(spacing: 0) {
                 ForEach(Array(bots.enumerated()), id: \.element.id) { idx, bot in
-                    NavigationLink(value: bot.id) {
-                        botRow(bot)
+                    Button {
+                        onSelectBot(bot.id)
+                    } label: {
+                        editorialBotRow(bot)
                     }
                     .buttonStyle(.plain)
 
                     if idx < bots.count - 1 {
                         Divider()
+                            .overlay(ArkTheme.hairline)
                             .padding(.leading, 62)
                     }
                 }
             }
-            .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
             )
+            .shadow(color: ArkTheme.cardShadow, radius: 10, y: 4)
         }
     }
 
-    private func botRow(_ bot: SyncedBot) -> some View {
+    private func editorialBotRow(_ bot: SyncedBot) -> some View {
         let status = store.status(for: bot)
         let lastMsg = store.snapshot.messages[bot.id]?.last
         let isTyping = store.typingByBotId[bot.id] == true
@@ -409,14 +505,14 @@ struct BotListView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(bot.name)
-                        .font(.system(size: 14.5, weight: .semibold))
+                        .font(ArkFont.semibold(14))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     PlatformBadgePill(platform: bot.platformId)
                     Spacer(minLength: 4)
                     if let ts = lastMsg?.createdAt, ts > 0 {
                         Text(Self.formatShortTime(ts))
-                            .font(.system(size: 11))
+                            .font(ArkFont.mono(10.5))
                             .foregroundStyle(.tertiary)
                             .fixedSize()
                     }
@@ -424,18 +520,13 @@ struct BotListView: View {
 
                 HStack(spacing: 6) {
                     if isTyping {
-                        Text("正在回复...")
-                            .font(.system(size: 12.5))
+                        Text("正在生成...")
+                            .font(ArkFont.medium(12.5))
                             .foregroundStyle(ArkTheme.accent)
-                    } else if let text = lastMsg?.text, !text.isEmpty {
-                        Text(text.replacingOccurrences(of: "\n", with: " "))
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
                     } else {
-                        Text(bot.platformId.displayName)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.tertiary)
+                        Text(cleanPreview(lastMsg?.text) ?? bot.platformId.displayName)
+                            .font(ArkFont.regular(12.5))
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
 
@@ -443,25 +534,32 @@ struct BotListView: View {
 
                     if pendingCount > 0 {
                         Text("\(pendingCount) 审批")
-                            .font(.system(size: 10.5, weight: .bold))
+                            .font(ArkFont.semibold(10))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
+                            .padding(.horizontal, 6.5)
                             .padding(.vertical, 2)
-                            .background(Color(red: 0.95, green: 0.56, blue: 0.05), in: Capsule())
+                            .background(ArkTheme.amber, in: Capsule())
                     }
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 13)
+        .padding(.vertical, 11)
         .contentShape(Rectangle())
+    }
+
+    private func cleanPreview(_ raw: String?) -> String? {
+        guard let raw, !raw.isEmpty else { return nil }
+        return raw
+            .replacingOccurrences(of: "**", with: "")
+            .replacingOccurrences(of: "`", with: "")
+            .replacingOccurrences(of: "\n", with: " ")
     }
 
     private static func formatShortTime(_ ms: Double) -> String {
         let date = Date(timeIntervalSince1970: ms / 1000)
-        let cal = Calendar.current
         let fmt = DateFormatter()
-        fmt.dateFormat = cal.isDateInToday(date) ? "HH:mm" : "MM/dd"
+        fmt.dateFormat = Calendar.current.isDateInToday(date) ? "HH:mm" : "MM/dd"
         return fmt.string(from: date)
     }
 }

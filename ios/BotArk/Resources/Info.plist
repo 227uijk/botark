@@ -44,6 +44,14 @@
 	<string>扫描 BotArk 电脑端配对二维码，在局域网或 Tailscale 下零服务器直接同步全部 AI 助手。</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>BotArk 需要访问本地网络以直连同一局域网或 Tailscale 中的电脑端 BotArk，无需任何云端服务器。</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>PlusJakartaSans-Regular.ttf</string>
+		<string>PlusJakartaSans-Medium.ttf</string>
+		<string>PlusJakartaSans-SemiBold.ttf</string>
+		<string>PlusJakartaSans-Bold.ttf</string>
+		<string>JetBrainsMono-Medium.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

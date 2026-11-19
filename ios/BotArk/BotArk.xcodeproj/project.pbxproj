@@ -11,15 +11,20 @@
 		19A641BF12E3005FD8CC3291 /* SyncCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3FA2D59707EA72BF86B1743 /* SyncCrypto.swift */; };
 		31836BB72159C6351E402046 /* SyncProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BED8010708C71AD4DDBD184 /* SyncProtocol.swift */; };
 		4C7ACF35171F48BB1F1DF925 /* DirectHermesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5789E36DE6128E8D47A28888 /* DirectHermesClient.swift */; };
+		5F1CBEDCF035F059B10926E9 /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D844DC4D0F78A973224A8410 /* JetBrainsMono-Medium.ttf */; };
 		66503001C65F11F6E60CA420 /* SyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53CE6D2458F68E63E53D7FB4 /* SyncSettingsView.swift */; };
+		73BC6352995A317FB2376AB8 /* PlusJakartaSans-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DAB5B52AC0D3EC596FEDB941 /* PlusJakartaSans-Medium.ttf */; };
 		75572630A7938AE162D6C923 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2C91A7CE05653D5CFEF103 /* RootTabView.swift */; };
 		7DEFDEAA5AECC8E3BD6651E3 /* BotArkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C4071142A7324A7DE5D74F1 /* BotArkStore.swift */; };
 		84082B8424F641D2DB2EDAF2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7FAC39B77E6E821846094A99 /* Assets.xcassets */; };
 		AC99A0A9940C8F36BC566BF0 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D421E4D33505238D2C84C35 /* ChatView.swift */; };
+		B7BC15E33A735EB76595849E /* PlusJakartaSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 402DAC420EF39516D2B0DFEB /* PlusJakartaSans-Bold.ttf */; };
 		C6E9D1C77DCF59509D0BF5DC /* BotListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C926A7C489C17FB34A432FA /* BotListView.swift */; };
 		CFA622F17392323B37B617B9 /* BotArkApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F6463B8194B75E651BD4DE /* BotArkApp.swift */; };
 		D04F5894C92A08315C0D6FD7 /* PlatformBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C9998F25E8CAF5F0B3DE9C /* PlatformBadgeView.swift */; };
+		D580144BE2170423305A6792 /* PlusJakartaSans-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CAA085B835C0F97F70897B15 /* PlusJakartaSans-SemiBold.ttf */; };
 		EEACECD7D25DF2FEDFD26B71 /* DesktopBridgeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FCC5FEFFD1300EDAA07E /* DesktopBridgeClient.swift */; };
+		F1D490E1C00490A4738BE63B /* PlusJakartaSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 386CD26FC435D937A6AF569C /* PlusJakartaSans-Regular.ttf */; };
 		F1EB6DA6B413A0414D6E7B39 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DAD3586F316948194631689 /* KeychainStore.swift */; };
 		F899D10530639F1FA1B3DD73 /* ApprovalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D58FAF1BF12C3BADE6AF0C5 /* ApprovalsView.swift */; };
 		F8C40DA2C27CE2B9F0E55FE5 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B91B7B4B2C0786F1752C45 /* QRScannerView.swift */; };
@@ -43,6 +48,8 @@
 		1D58FAF1BF12C3BADE6AF0C5 /* ApprovalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalsView.swift; sourceTree = "<group>"; };
 		31DD84DD44207E40AB73D880 /* BotArk.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BotArk.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3500FCC5FEFFD1300EDAA07E /* DesktopBridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopBridgeClient.swift; sourceTree = "<group>"; };
+		386CD26FC435D937A6AF569C /* PlusJakartaSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Regular.ttf"; sourceTree = "<group>"; };
+		402DAC420EF39516D2B0DFEB /* PlusJakartaSans-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Bold.ttf"; sourceTree = "<group>"; };
 		46B91B7B4B2C0786F1752C45 /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		53CE6D2458F68E63E53D7FB4 /* SyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
 		5789E36DE6128E8D47A28888 /* DirectHermesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectHermesClient.swift; sourceTree = "<group>"; };
@@ -52,6 +59,9 @@
 		7FAC39B77E6E821846094A99 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9BED8010708C71AD4DDBD184 /* SyncProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProtocol.swift; sourceTree = "<group>"; };
 		A1C9998F25E8CAF5F0B3DE9C /* PlatformBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformBadgeView.swift; sourceTree = "<group>"; };
+		CAA085B835C0F97F70897B15 /* PlusJakartaSans-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-SemiBold.ttf"; sourceTree = "<group>"; };
+		D844DC4D0F78A973224A8410 /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
+		DAB5B52AC0D3EC596FEDB941 /* PlusJakartaSans-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Medium.ttf"; sourceTree = "<group>"; };
 		DD2C91A7CE05653D5CFEF103 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		F3FA2D59707EA72BF86B1743 /* SyncCrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCrypto.swift; sourceTree = "<group>"; };
 		F6F6463B8194B75E651BD4DE /* BotArkApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotArkApp.swift; sourceTree = "<group>"; };
@@ -105,11 +115,24 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		D5A80BDC0C341CF853AB25BF /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				D844DC4D0F78A973224A8410 /* JetBrainsMono-Medium.ttf */,
+				402DAC420EF39516D2B0DFEB /* PlusJakartaSans-Bold.ttf */,
+				DAB5B52AC0D3EC596FEDB941 /* PlusJakartaSans-Medium.ttf */,
+				386CD26FC435D937A6AF569C /* PlusJakartaSans-Regular.ttf */,
+				CAA085B835C0F97F70897B15 /* PlusJakartaSans-SemiBold.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 		D7AC6C4CFD33D67F9B8E7A5E /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				7FAC39B77E6E821846094A99 /* Assets.xcassets */,
 				11B3C531B4746FC539D17EC1 /* Info.plist */,
+				D5A80BDC0C341CF853AB25BF /* Fonts */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -215,6 +238,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				84082B8424F641D2DB2EDAF2 /* Assets.xcassets in Resources */,
+				5F1CBEDCF035F059B10926E9 /* JetBrainsMono-Medium.ttf in Resources */,
+				B7BC15E33A735EB76595849E /* PlusJakartaSans-Bold.ttf in Resources */,
+				73BC6352995A317FB2376AB8 /* PlusJakartaSans-Medium.ttf in Resources */,
+				F1D490E1C00490A4738BE63B /* PlusJakartaSans-Regular.ttf in Resources */,
+				D580144BE2170423305A6792 /* PlusJakartaSans-SemiBold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

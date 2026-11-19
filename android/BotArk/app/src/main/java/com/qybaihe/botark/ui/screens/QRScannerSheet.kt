@@ -205,22 +205,22 @@ fun QRScannerSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(42.dp)
-                        .clip(RoundedCornerShape(11.dp))
-                        .background(if (ready) palette.accent else palette.textTertiary.copy(alpha = 0.35f))
+                        .height(44.dp)
+                        .clip(CircleShape)
+                        .background(if (ready) palette.ink else palette.subtleFill)
                         .clickable(enabled = ready) { onPair(manualUri) }
                 ) {
                     if (pairingBusy) {
-                        CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White, modifier = Modifier.size(16.dp))
+                        CircularProgressIndicator(strokeWidth = 2.dp, color = palette.onInk, modifier = Modifier.size(16.dp))
                     } else {
-                        Icon(Icons.Rounded.Bolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Rounded.Bolt, contentDescription = null, tint = if (ready) palette.onInk else palette.textTertiary, modifier = Modifier.size(16.dp))
                     }
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = if (pairingBusy) "配对中..." else "立即配对",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = if (ready) palette.onInk else palette.textTertiary
                     )
                 }
             }
@@ -229,11 +229,11 @@ fun QRScannerSheet(
                 Text(
                     text = lastError,
                     fontSize = 12.5.sp,
-                    color = palette.orange,
+                    color = palette.amber,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(11.dp))
-                        .background(palette.orange.copy(alpha = 0.12f))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(palette.amber.copy(alpha = 0.12f))
                         .padding(11.dp)
                 )
             }
@@ -331,7 +331,7 @@ fun AddHermesDialog(
                 OutlinedTextField(value = apiKey, onValueChange = { apiKey = it }, label = { Text("API Key（可选）", fontSize = 12.sp) }, singleLine = true)
                 OutlinedTextField(value = model, onValueChange = { model = it }, label = { Text("模型（留空自动探测）", fontSize = 12.sp) }, singleLine = true)
                 if (error != null) {
-                    Text(error!!, fontSize = 12.sp, color = palette.red)
+                    Text(error!!, fontSize = 12.sp, color = palette.rose)
                 }
             }
         },

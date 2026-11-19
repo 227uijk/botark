@@ -8,14 +8,19 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -24,9 +29,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChatBubble
-import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.material.icons.rounded.VerifiedUser
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -51,10 +56,16 @@ import com.qybaihe.botark.ui.screens.ChatScreen
 import com.qybaihe.botark.ui.screens.QRScannerSheet
 import com.qybaihe.botark.ui.screens.SyncSettingsScreen
 import com.qybaihe.botark.ui.theme.ArkColors
+import com.qybaihe.botark.ui.theme.ArkMonoFamily
+import com.qybaihe.botark.ui.theme.ArkSansFamily
 import com.qybaihe.botark.ui.theme.BotArkTheme
 import com.qybaihe.botark.viewmodel.BotArkViewModel
 
-enum class MainTab { CHATS, APPROVALS, SYNC }
+enum class MainTab(val label: String, val icon: ImageVector) {
+    CHATS("对话", Icons.Rounded.ChatBubble),
+    APPROVALS("审批", Icons.Rounded.VerifiedUser),
+    SYNC("同步", Icons.Rounded.Sensors)
+}
 
 class MainActivity : ComponentActivity() {
     private val viewModel: BotArkViewModel by viewModels()
@@ -97,9 +108,18 @@ class MainActivity : ComponentActivity() {
                 viewModel.pair(uri)
             }
             when (intent.getStringExtra("open_tab")) {
-                "approvals" -> initialTabState.value = MainTab.APPROVALS
-                "sync" -> initialTabState.value = MainTab.SYNC
-                "chats" -> initialTabState.value = MainTab.CHATS
+                "approvals" -> {
+                    initialOpenBotState.value = null
+                    initialTabState.value = MainTab.APPROVALS
+                }
+                "sync" -> {
+                    initialOpenBotState.value = null
+                    initialTabState.value = MainTab.SYNC
+                }
+                "chats" -> {
+                    initialOpenBotState.value = null
+                    initialTabState.value = MainTab.CHATS
+                }
             }
             intent.getStringExtra("open_bot")?.takeIf { it.isNotBlank() }?.let { botId ->
                 initialTabState.value = MainTab.CHATS
@@ -124,90 +144,67 @@ private fun BotArkRoot(
     var showAddHermes by remember { mutableStateOf(false) }
 
     LaunchedEffect(initialTab) { currentTab = initialTab }
-    LaunchedEffect(initialOpenBotId) { if (initialOpenBotId != null) activeBotId = initialOpenBotId }
+    LaunchedEffect(initialOpenBotId) { activeBotId = initialOpenBotId }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(palette.canvas)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        Box(modifier = Modifier.weight(1f)) {
-            if (activeBotId != null && currentTab == MainTab.CHATS) {
-                ChatScreen(
+        if (activeBotId != null && currentTab == MainTab.CHATS) {
+            ChatScreen(
+                state = state,
+                botId = activeBotId!!,
+                onBack = { activeBotId = null },
+                onSend = { bot, text -> viewModel.sendMessage(bot, text) },
+                onStop = { bot -> viewModel.stopGeneration(bot) },
+                onNewSession = { bot -> viewModel.startNewSession(bot) },
+                onDecideApproval = { item, dec -> viewModel.decideApproval(item, dec) }
+            )
+        } else {
+            when (currentTab) {
+                MainTab.CHATS -> BotListScreen(
                     state = state,
-                    botId = activeBotId!!,
-                    onBack = { activeBotId = null },
-                    onSend = { bot, text -> viewModel.sendMessage(bot, text) },
-                    onStop = { bot -> viewModel.stopGeneration(bot) },
-                    onNewSession = { bot -> viewModel.startNewSession(bot) },
-                    onDecideApproval = { item, dec -> viewModel.decideApproval(item, dec) }
+                    onOpenBot = { activeBotId = it },
+                    onOpenScanner = { showScanner = true },
+                    onOpenAddHermes = { showAddHermes = true },
+                    onReconnect = { viewModel.reconnectDesktop() }
                 )
-            } else {
-                when (currentTab) {
-                    MainTab.CHATS -> BotListScreen(
-                        state = state,
-                        onOpenBot = { activeBotId = it },
-                        onOpenScanner = { showScanner = true },
-                        onOpenAddHermes = { showAddHermes = true },
-                        onReconnect = { viewModel.reconnectDesktop() }
-                    )
-                    MainTab.APPROVALS -> ApprovalsScreen(
-                        state = state,
-                        onDecide = { item, dec -> viewModel.decideApproval(item, dec) }
-                    )
-                    MainTab.SYNC -> SyncSettingsScreen(
-                        state = state,
-                        onOpenScanner = { showScanner = true },
-                        onReconnect = { viewModel.reconnectDesktop() },
-                        onUnpair = { viewModel.unpairDesktop() },
-                        onOpenAddHermes = { showAddHermes = true },
-                        onImportBundle = { bytes, key -> viewModel.importOfflineBundle(bytes, key) },
-                        onWipeAll = { viewModel.wipeAllLocalData() }
-                    )
-                }
+                MainTab.APPROVALS -> ApprovalsScreen(
+                    state = state,
+                    onDecide = { item, dec -> viewModel.decideApproval(item, dec) }
+                )
+                MainTab.SYNC -> SyncSettingsScreen(
+                    state = state,
+                    onOpenScanner = { showScanner = true },
+                    onReconnect = { viewModel.reconnectDesktop() },
+                    onUnpair = { viewModel.unpairDesktop() },
+                    onOpenAddHermes = { showAddHermes = true },
+                    onImportBundle = { bytes, key -> viewModel.importOfflineBundle(bytes, key) },
+                    onWipeAll = { viewModel.wipeAllLocalData() }
+                )
             }
         }
 
-        // Sleek minimal bottom tab bar
-        HorizontalDivider(thickness = 0.6.dp, color = palette.hairline)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        // Signature Floating Obsidian Capsule Dock (smoothly hides inside Chat for edge-to-edge immersion!)
+        AnimatedVisibility(
+            visible = activeBotId == null,
+            enter = fadeIn() + slideInVertically { it / 2 },
+            exit = fadeOut() + slideOutVertically { it / 2 },
             modifier = Modifier
-                .fillMaxWidth()
-                .background(palette.surface)
-                .padding(vertical = 6.dp)
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 12.dp)
         ) {
-            BottomTabItem(
-                icon = Icons.Rounded.ChatBubble,
-                label = "对话",
-                selected = currentTab == MainTab.CHATS,
-                badgeCount = 0,
-                modifier = Modifier.weight(1f)
-            ) {
-                currentTab = MainTab.CHATS
-            }
-            BottomTabItem(
-                icon = Icons.Rounded.VerifiedUser,
-                label = "审批",
-                selected = currentTab == MainTab.APPROVALS,
-                badgeCount = state.pendingApprovals.size,
-                modifier = Modifier.weight(1f)
-            ) {
-                activeBotId = null
-                currentTab = MainTab.APPROVALS
-            }
-            BottomTabItem(
-                icon = Icons.Rounded.QrCodeScanner,
-                label = "同步",
-                selected = currentTab == MainTab.SYNC,
-                badgeCount = 0,
-                modifier = Modifier.weight(1f)
-            ) {
-                activeBotId = null
-                currentTab = MainTab.SYNC
-            }
+            FloatingObsidianDock(
+                currentTab = currentTab,
+                pendingApprovals = state.pendingApprovals.size,
+                onSelect = { tab ->
+                    activeBotId = null
+                    currentTab = tab
+                }
+            )
         }
     }
 
@@ -216,9 +213,7 @@ private fun BotArkRoot(
             pairingBusy = state.pairingBusy,
             lastError = state.lastError,
             onPair = { uri ->
-                viewModel.pair(uri) {
-                    showScanner = false
-                }
+                viewModel.pair(uri) { showScanner = false }
             },
             onDismiss = { showScanner = false }
         )
@@ -235,49 +230,74 @@ private fun BotArkRoot(
 }
 
 @Composable
-private fun BottomTabItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    badgeCount: Int,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
+private fun FloatingObsidianDock(
+    currentTab: MainTab,
+    pendingApprovals: Int,
+    onSelect: (MainTab) -> Unit
 ) {
     val palette = ArkColors.current
-    val tint = if (selected) palette.accent else palette.textTertiary
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .padding(vertical = 2.dp)
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .shadow(18.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.28f))
+            .clip(CircleShape)
+            .background(palette.obsidian.copy(alpha = 0.96f))
+            .border(0.8.dp, Color.White.copy(alpha = 0.11f), CircleShape)
+            .padding(5.dp)
     ) {
-        Box(contentAlignment = Alignment.TopEnd) {
-            Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(21.dp))
-            if (badgeCount > 0) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .offset(x = 7.dp, y = (-3).dp)
-                        .size(16.dp)
-                        .clip(CircleShape)
-                        .background(palette.red)
-                ) {
+        MainTab.entries.forEach { tab ->
+            val active = currentTab == tab
+            val badge = if (tab == MainTab.APPROVALS) pendingApprovals else 0
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .height(40.dp)
+                    .clip(CircleShape)
+                    .background(if (active) palette.porcelain else Color.Transparent)
+                    .clickable { onSelect(tab) }
+                    .padding(horizontal = if (active) 16.dp else 14.dp)
+            ) {
+                Box(contentAlignment = Alignment.TopEnd) {
+                    Icon(
+                        imageVector = tab.icon,
+                        contentDescription = tab.label,
+                        tint = if (active) palette.obsidian else Color.White.copy(alpha = 0.68f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    if (badge > 0) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .offset(x = 7.dp, y = (-5).dp)
+                                .size(14.dp)
+                                .clip(CircleShape)
+                                .background(palette.amber)
+                        ) {
+                            Text(
+                                text = if (badge > 9) "9+" else badge.toString(),
+                                fontSize = 8.5.sp,
+                                fontFamily = ArkMonoFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+                if (active) {
                     Text(
-                        text = if (badgeCount > 9) "9+" else badgeCount.toString(),
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        text = tab.label,
+                        fontSize = 12.5.sp,
+                        fontFamily = ArkSansFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.obsidian,
+                        maxLines = 1
                     )
                 }
             }
         }
-        Text(
-            text = label,
-            fontSize = 10.5.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            color = tint
-        )
     }
 }
