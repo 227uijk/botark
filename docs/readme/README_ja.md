@@ -89,6 +89,7 @@ Muse・Grok Bot・Hark・Dot の Bot をサイドバーにグループごとに�
 | **Grok Bot**（`grok.com`） | Sand ゲートウェイ（`*.sand.x.ai`）経由の Connect-RPC / Protobuf | 複数アカウント、Sand クラウドワークスペース、リアルタイムストリーミング、ツール呼び出しの履歴、セッション、定期タスク、メモリー、スキル |
 | **Hark**（`hark.com`） | WebSocket RPC + マルチモーダル REST | ブラウザーでのサインイン（Google またはメール）、リアルタイムストリーミングとバックグラウンドでの返信同期、ファイル・画像の添付、ドキュメントカード、定期タスク、メモリー、コネクタ |
 | **Dot**（`chatgpt.com/dots`） | OpenAI Orbit/TBO REST + サーバー送信イベント（SSE） | ブラウザーでの OAuth サインインまたは Access/Refresh Token のインポート、トークンの暗号化保存、リアルタイムストリーミング、ファイルアップロード、スキル、オートメーション、コネクタ、アカウントごとのプロキシ |
+| **Hermes**（`NousResearch/hermes-agent`） | Open-Source Gateway REST + Native Session SSE | ローカル `~/.hermes` 自動検出、リモートサーバー接続（Keychain 暗号化）、ストリーミングとツール呼び出し、危険コマンド承認、セッション切替、Cron・Skills・Toolsets |
 
 ## ✨ 主な機能
 

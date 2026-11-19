@@ -58,7 +58,7 @@ const STEPS: Array<{ id: StepId; indexLabel: string; title: string }> = [
 interface PlatformGuideItem {
   id: PlatformId
   title: string
-  settingsTab: 'grok-accounts' | 'muse-accounts' | 'hark-accounts' | 'dot-accounts'
+  settingsTab: 'grok-accounts' | 'muse-accounts' | 'hark-accounts' | 'dot-accounts' | 'hermes-accounts'
   accountRule: string
   importMethods: string
   workbenchCards: Array<{ title: string; summary: string }>
@@ -130,6 +130,21 @@ const PLATFORM_GUIDE_ITEMS: PlatformGuideItem[] = [
     shape: 'star',
     color: 'orange',
     grokState: 'streaming'
+  },
+  {
+    id: 'hermes',
+    title: 'Hermes',
+    settingsTab: 'hermes-accounts',
+    accountRule: '支持同时接入多个本机或远程服务器上的开源 Hermes Agent 实例',
+    importMethods: '自动检测本机 ~/.hermes 服务，或填写服务器地址与 API_SERVER_KEY 加密接入',
+    workbenchCards: [
+      { title: '实时流式对话与工具追踪', summary: '原生 Session SSE 实时展示流式回复、工具调用状态与多模态图片' },
+      { title: '危险命令安全审批', summary: '触发高风险命令时在右侧直接一键放行（单次/本次会话/永久）或拒绝' },
+      { title: '会话、定时任务与技能库', summary: '管理持久化历史会话、Cron 定时任务、已安装 Skills 与 Toolsets' }
+    ],
+    shape: 'clover',
+    color: 'green',
+    grokState: 'working'
   }
 ]
 
@@ -184,7 +199,13 @@ function FullScreenGuideBody({
   }
 
   const dismissAndOpenSettings = (
-    tab: 'overview' | 'grok-accounts' | 'muse-accounts' | 'hark-accounts' | 'dot-accounts'
+    tab:
+      | 'overview'
+      | 'grok-accounts'
+      | 'muse-accounts'
+      | 'hark-accounts'
+      | 'dot-accounts'
+      | 'hermes-accounts'
   ) => {
     markOnboardingSeen()
     setOnboardingOpen(false)

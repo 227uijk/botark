@@ -87,6 +87,7 @@ Cliquez ensuite sur **+** dans la barre latérale, choisissez une plateforme et 
 | **Grok Bot** (`grok.com`) | Connect-RPC / Protobuf via la passerelle Sand (`*.sand.x.ai`) | Plusieurs comptes, espace de travail cloud Sand, streaming en direct, traces des appels d'outils, sessions, tâches planifiées, mémoires et compétences |
 | **Hark** (`hark.com`) | WebSocket RPC + REST multimodal | Connexion dans le navigateur (Google ou e-mail), streaming en direct avec synchronisation des réponses en arrière-plan, pièces jointes (fichiers et images), cartes de documents, tâches planifiées, mémoires et connecteurs |
 | **Dot** (`chatgpt.com/dots`) | REST OpenAI Orbit/TBO + événements envoyés par le serveur (SSE) | Connexion OAuth dans le navigateur ou import d'Access/Refresh Token, stockage chiffré des jetons, streaming en direct, envoi de fichiers, compétences, automatisations, connecteurs et proxy par compte |
+| **Hermes** (`NousResearch/hermes-agent`) | Open-Source Gateway REST + Native Session SSE | Détection locale de `~/.hermes`, connexion distante chiffrée (Keychain), streaming SSE et outils, approbations de commandes, sessions, Cron, Skills et Toolsets |
 
 ## ✨ Fonctionnalités
 

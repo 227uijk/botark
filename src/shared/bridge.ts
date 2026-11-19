@@ -40,6 +40,12 @@ import type {
   DotImportCredentialsRequest,
   DotRpcRequest,
   DotRpcResponse,
+  HermesAuthStatus,
+  HermesConfigureRequest,
+  HermesLocalDetection,
+  HermesMainEvent,
+  HermesRpcRequest,
+  HermesRpcResponse,
   SecurityVaultStatus,
   VaultStatusRequest
 } from './ipc'
@@ -177,6 +183,16 @@ export interface DotBridge {
   onEvent(listener: (event: DotMainEvent) => void): () => void
 }
 
+export interface HermesBridge {
+  configure(request: HermesConfigureRequest): Promise<HermesAuthStatus>
+  detectLocal(baseUrl?: string): Promise<HermesLocalDetection>
+  authStatus(accountId: string): Promise<HermesAuthStatus>
+  listAccounts(): Promise<HermesAuthStatus[]>
+  clearAuth(accountId: string): Promise<HermesAuthStatus>
+  rpc(request: HermesRpcRequest): Promise<HermesRpcResponse>
+  onEvent(listener: (event: HermesMainEvent) => void): () => void
+}
+
 export interface VaultBridge {
   status(request?: VaultStatusRequest): Promise<SecurityVaultStatus>
   getSecret(key: string): Promise<string | null>
@@ -200,5 +216,6 @@ export interface BotHubBridge {
   readonly grok: GrokBridge
   readonly hark: HarkBridge
   readonly dot: DotBridge
+  readonly hermes: HermesBridge
   readonly vault?: VaultBridge
 }

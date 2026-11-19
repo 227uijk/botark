@@ -6,8 +6,8 @@
 
 **All your personal AI agents, in one native desktop workspace.**
 
-Stop juggling four separate apps and a dozen incognito browser profiles.<br />
-Run **Grok Bot**, **ChatGPT Dot**, **Meta Muse**, and **Hark** side by side on macOS & Windows.
+Stop juggling five separate apps and a dozen incognito browser profiles.<br />
+Run **Grok Bot**, **ChatGPT Dot**, **Meta Muse**, **Hark**, and open-source **Hermes** side by side on macOS & Windows.
 
 <p>
   <a href="https://github.com/qybaihe/botark/releases/latest"><img src="https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=Release&color=2563eb" alt="Latest Release" /></a>
@@ -129,6 +129,7 @@ Rather than wrapping web pages in generic tabs, BotArk adapts the right-side wor
 | <img src="src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | Partition login window or **batch email OTP auto-import** | 1 isolated account → 1 Muse bot (supports 10+ parallel accounts) | Quota monitor, Sentinel approvals, session history, cron schedules, goals, memories, skills, file preview & cloud VM |
 | <img src="src/renderer/src/assets/platforms/dot.svg" width="18" height="18" align="absmiddle" /> **ChatGPT Dot** | Web login window or **single / multi-line AT, RT & JSON import** | 1 account → 1 Dot bot with automatic Refresh Token renewal | Orbit persona switcher, Dot / Native modes, core goal editor, **1-click cross-account memory migration**, Pages & Library |
 | <img src="src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / email login window or **Session Cookie paste** | 1 account → 1 Hark bot | Workflow cards, conversation switcher, scheduled tasks, generated file library, live cloud browser view & connectors |
+| <img src="src/renderer/src/assets/platforms/hermes.png" width="18" height="18" align="absmiddle" /> **Hermes** | **Auto-detect local `~/.hermes`** or enter remote API Server URL & `API_SERVER_KEY` (Keychain-encrypted) | 1 server / profile (`/p/<name>`) → 1 Hermes bot (multi-instance) | Native Session SSE streaming & live tool calls, dangerous-command approvals, persistent session switcher, Cron jobs, Skills & Toolsets |
 
 ---
 

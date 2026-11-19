@@ -4,6 +4,7 @@ import {
   DOT_CHANNELS,
   GROK_CHANNELS,
   HARK_CHANNELS,
+  HERMES_CHANNELS,
   MUSE_CHANNELS,
   UPDATE_CHANNELS,
   VAULT_CHANNELS,
@@ -11,6 +12,7 @@ import {
   type DotMainEvent,
   type GrokMainEvent,
   type HarkMainEvent,
+  type HermesMainEvent,
   type MuseMainEvent,
   type UpdateStatusEvent
 } from '@shared/ipc'
@@ -133,6 +135,19 @@ const bridge: BotHubBridge = {
       const handler = (_event: unknown, payload: DotMainEvent) => listener(payload)
       ipcRenderer.on(DOT_CHANNELS.event, handler)
       return () => ipcRenderer.removeListener(DOT_CHANNELS.event, handler)
+    }
+  },
+  hermes: {
+    configure: (request) => ipcRenderer.invoke(HERMES_CHANNELS.configure, request),
+    detectLocal: (baseUrl) => ipcRenderer.invoke(HERMES_CHANNELS.detectLocal, baseUrl),
+    authStatus: (accountId) => ipcRenderer.invoke(HERMES_CHANNELS.authStatus, accountId),
+    listAccounts: () => ipcRenderer.invoke(HERMES_CHANNELS.listAccounts),
+    clearAuth: (accountId) => ipcRenderer.invoke(HERMES_CHANNELS.clearAuth, accountId),
+    rpc: (request) => ipcRenderer.invoke(HERMES_CHANNELS.rpc, request),
+    onEvent: (listener) => {
+      const handler = (_event: unknown, payload: HermesMainEvent) => listener(payload)
+      ipcRenderer.on(HERMES_CHANNELS.event, handler)
+      return () => ipcRenderer.removeListener(HERMES_CHANNELS.event, handler)
     }
   },
   vault: {

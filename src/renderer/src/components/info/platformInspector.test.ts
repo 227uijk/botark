@@ -31,10 +31,14 @@ describe('platformInspector', () => {
       'memory',
       'library'
     ])
+    // Hermes exposes Gateway Overview + Tools & Skills.
+    expect(PLATFORM_INSPECTORS.hermes.tabs.map((t) => t.id)).toEqual(['overview', 'computer'])
+    expect(PLATFORM_INSPECTORS.hermes.supportsQuickNewConversation).toBe(true)
   })
 
-  it('disables web session pane for Grok Bot desktop Connect-RPC while keeping it on web-backed platforms', () => {
+  it('disables web session pane for Grok Bot & Hermes API server while keeping it on web-backed platforms', () => {
     expect(getPlatformInspector('grok').supportsWebSession).toBe(false)
+    expect(getPlatformInspector('hermes').supportsWebSession).toBe(false)
     expect(getPlatformInspector('meta-muse').supportsWebSession).toBe(true)
     expect(getPlatformInspector('hark').supportsWebSession).toBe(true)
     expect(getPlatformInspector('dot').supportsWebSession).toBe(true)
@@ -46,5 +50,7 @@ describe('platformInspector', () => {
     expect(resolveInspectorTab('dot', 'memory')).toBe('memory')
     expect(resolveInspectorTab('meta-muse', 'memory')).toBe('overview')
     expect(resolveInspectorTab('grok', 'computer')).toBe('computer')
+    expect(resolveInspectorTab('hermes', 'computer')).toBe('computer')
+    expect(resolveInspectorTab('hermes', 'library')).toBe('overview')
   })
 })

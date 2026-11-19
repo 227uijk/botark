@@ -267,7 +267,7 @@ export function LandingApp() {
             <img src="./logo.png" alt="BotArk" className="size-8 rounded-lg object-contain" />
             <span className="text-[16px] font-bold tracking-tight">BotArk</span>
             <span className="hidden rounded-full border border-blue-400/30 bg-blue-500/15 px-2 py-0.5 font-mono text-[11px] font-medium text-blue-300 sm:inline-block">
-              v0.6.0
+              v0.7.0
             </span>
           </a>
 
@@ -343,8 +343,8 @@ export function LandingApp() {
             </button>
             <span className="text-[13px] font-medium text-slate-200">
               {L(
-                '把 Muse、ChatGPT Dot、Hark 像 Grok Bot 一样收进同一个原生桌面端',
-                'Use Meta Muse, ChatGPT Dot & Hark just like Grok Bot — in one native app'
+                '把 Muse、ChatGPT Dot、Hark、Hermes 像 Grok Bot 一样收进同一个原生桌面端',
+                'Use Meta Muse, ChatGPT Dot, Hark & Hermes just like Grok Bot — in one native app'
               )}
             </span>
             <span className="hidden rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300 sm:inline">
@@ -364,8 +364,8 @@ export function LandingApp() {
 
           <p className="mx-auto mt-5 max-w-2xl text-[16px] leading-relaxed text-slate-300/90 sm:text-[18px]">
             {L(
-              '告别十几个串号的无痕浏览器窗口。在一个轻快克制的 macOS / Windows 原生工作台里，同时驾驭 Grok Bot、Meta Muse、ChatGPT Dot 与 Hark —— 多号隔离、单号多 Bot 自动展开、右侧操作台随叫随到。',
-              'Ditch the dozen incognito browser profiles. Run Grok Bot, Meta Muse, ChatGPT Dot, and Hark side by side on macOS & Windows with sandboxed multi-account isolation and a tailored right-side workbench.'
+              '告别十几个串号的无痕浏览器窗口。在一个轻快克制的 macOS / Windows 原生工作台里，同时驾驭 Grok Bot、Meta Muse、ChatGPT Dot、Hark 与开源 Hermes —— 多号隔离、单号多 Bot 自动展开、右侧操作台随叫随到。',
+              'Ditch the dozen incognito browser profiles. Run Grok Bot, Meta Muse, ChatGPT Dot, Hark, and open-source Hermes side by side on macOS & Windows with sandboxed multi-account isolation and a tailored right-side workbench.'
             )}
           </p>
 
@@ -1318,14 +1318,14 @@ export function LandingApp() {
         <section id="platforms" className="reveal-section mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <div className="mb-10 text-center">
             <span className="font-mono text-[12px] font-semibold tracking-wider text-cyan-400 uppercase">
-              4 Native Protocol Adapters
+              5 Native Protocol Adapters
             </span>
             <h2 className="mt-2 text-[30px] font-extrabold tracking-tight text-white sm:text-[40px]">
-              {L('四大平台，原汁原味的深度操控', 'Deep protocol integration for every platform')}
+              {L('五大平台，原汁原味的深度操控', 'Deep protocol integration for every platform')}
             </h2>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {[
               {
                 key: 'grok' as const,
@@ -1365,6 +1365,16 @@ export function LandingApp() {
                   L('真实 get-session 会话校验，杜绝过期 Cookie 假在线', 'Verified session probing — zero stale-cookie ghosts'),
                   L('支持窗口登录或直接粘贴 Session Cookie 导入', 'Window login or instant Session Cookie import'),
                   L('原生预览图片与文档附件、查看云端浏览器画面', 'Native split-pane document preview & cloud browser')
+                ]
+              },
+              {
+                key: 'hermes' as const,
+                title: 'Hermes',
+                proto: 'Open-Source Gateway SSE',
+                points: [
+                  L('一键自动检测本机 ~/.hermes 或接入远程 VPS 实例', 'Auto-detect local ~/.hermes or connect remote servers'),
+                  L('原生 Session SSE 流式工具调用与危险命令安全审批', 'Native Session SSE streaming, tools & command approvals'),
+                  L('管理持久化历史会话、Cron 定时任务、Skills 与工具集', 'Persistent sessions, cron jobs, skills & toolsets')
                 ]
               }
             ].map((p) => (
@@ -1413,8 +1423,8 @@ export function LandingApp() {
               </h2>
               <p className="mt-2 max-w-xl text-[15px] text-slate-300">
                 {L(
-                  '立即下载 BotArk v0.6.0 正式版，开启干净、隔离、顺手的多智能体桌面工作流。',
-                  'Download BotArk v0.6.0 for macOS or Windows — free, MIT-licensed, and 100% local.'
+                  '立即下载 BotArk v0.7.0 正式版，开启干净、隔离、顺手的多智能体桌面工作流。',
+                  'Download BotArk v0.7.0 for macOS or Windows — free, MIT-licensed, and 100% local.'
                 )}
               </p>
 
@@ -1428,7 +1438,7 @@ export function LandingApp() {
                     <span>macOS (Apple Silicon)</span>
                   </div>
                   <span className="font-mono text-[11px] text-blue-200">
-                    BotArk-0.6.0-arm64.dmg
+                    BotArk-0.7.0-arm64.dmg
                   </span>
                 </a>
 
@@ -1441,7 +1451,7 @@ export function LandingApp() {
                     <span>macOS (Intel x64)</span>
                   </div>
                   <span className="font-mono text-[11px] text-slate-400">
-                    BotArk-0.6.0-x64.dmg
+                    BotArk-0.7.0-x64.dmg
                   </span>
                 </a>
 
@@ -1454,7 +1464,7 @@ export function LandingApp() {
                     <span>Windows 10 / 11</span>
                   </div>
                   <span className="font-mono text-[11px] text-slate-400">
-                    BotArk-Setup-0.6.0-x64.exe
+                    BotArk-Setup-0.7.0-x64.exe
                   </span>
                 </a>
               </div>

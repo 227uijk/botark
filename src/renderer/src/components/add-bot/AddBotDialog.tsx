@@ -58,6 +58,8 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [batch, setBatch] = useState(false)
   const [batchBusy, setBatchBusy] = useState(false)
   const [grokAccountChoiceOpen, setGrokAccountChoiceOpen] = useState(false)
+  const [hermesConnectOpen, setHermesConnectOpen] = useState(false)
+  const [hermesReady, setHermesReady] = useState<{ handle: string; displayName: string } | null>(null)
   const { phase } = login
   const t = useT()
   const locale = usePrefsStore((s) => s.locale)
@@ -78,6 +80,9 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
       } else {
         login.start('grok')
       }
+    } else if (initialPlatform === 'hermes') {
+      autoStartedRef.current = true
+      setHermesConnectOpen(true)
     }
   }, [open, initialPlatform, liveGrokAccounts.length])
 
@@ -105,6 +110,9 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   const close = () => {
     if (!confirmLeaveBatch()) return
+    if (hermesReady && !created.current) {
+      void window.electron?.hermes?.clearAuth?.(login.accountId).catch(() => undefined)
+    }
     login.discard()
     onClose()
   }
@@ -112,6 +120,10 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
   const handlePickPlatform = (platformId: PlatformId) => {
     if (platformId === 'grok' && liveGrokAccounts.length > 0) {
       setGrokAccountChoiceOpen(true)
+      return
+    }
+    if (platformId === 'hermes') {
+      setHermesConnectOpen(true)
       return
     }
     login.start(platformId)
@@ -129,22 +141,33 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
       emoji: picked.emoji,
       description: picked.id === 'blank' ? undefined : picked.description,
       notes: picked.starter ? `${t('Starter brief')}（${picked.name}）:\n${picked.starter}` : undefined,
-      accounts: [{ key: login.accountId, accountId: login.accountId, displayName: name, handle: '' }]
+      accounts: [
+        {
+          key: login.accountId,
+          accountId: login.accountId,
+          displayName: hermesReady?.displayName || name,
+          handle: hermesReady?.handle || ''
+        }
+      ]
     })
   }
 
   const platform = phase.kind === 'idle' ? undefined : getPlatform(phase.platformId)
   const title = batch
     ? t('Batch import Muse accounts')
-    : grokAccountChoiceOpen && phase.kind === 'idle'
-      ? '添加 Grok Bot'
-      : phase.kind === 'idle'
-        ? t('New bot')
-        : phase.kind === 'waiting'
-          ? t('Sign in to {name}', { name: platform!.name })
-          : phase.platformId === 'grok'
-            ? '正在同步 Grok Bot 名单…'
-            : t('Set up your bot')
+    : hermesReady
+      ? t('Set up your bot')
+      : hermesConnectOpen && phase.kind === 'idle'
+        ? t('Connect Hermes')
+        : grokAccountChoiceOpen && phase.kind === 'idle'
+          ? '添加 Grok Bot'
+          : phase.kind === 'idle'
+            ? t('New bot')
+            : phase.kind === 'waiting'
+              ? t('Sign in to {name}', { name: platform!.name })
+              : phase.platformId === 'grok'
+                ? '正在同步 Grok Bot 名单…'
+                : t('Set up your bot')
 
   return (
     <Dialog
@@ -158,6 +181,15 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
             label={t('Back')}
             size="sm"
             onClick={() => confirmLeaveBatch() && setBatch(false)}
+            className="-ml-1"
+          >
+            <ChevronLeft />
+          </IconButton>
+        ) : hermesConnectOpen && !hermesReady && phase.kind === 'idle' ? (
+          <IconButton
+            label={t('Back')}
+            size="sm"
+            onClick={() => setHermesConnectOpen(false)}
             className="-ml-1"
           >
             <ChevronLeft />
@@ -219,7 +251,29 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
               }}
             />
           )}
-          {!batch && phase.kind === 'idle' && !grokAccountChoiceOpen && (
+          {!batch && phase.kind === 'idle' && hermesConnectOpen && !hermesReady && (
+            <HermesConnectStep
+              key="hermes-connect"
+              accountId={login.accountId}
+              onConnected={(info) => {
+                setHermesReady(info)
+              }}
+            />
+          )}
+          {!batch && phase.kind === 'idle' && hermesReady && (
+            <NameStep
+              key="hermes-name"
+              platformId="hermes"
+              template={template}
+              onTemplate={setTemplate}
+              defaultName={freshName(
+                localizeTemplate(template, locale).name || 'Hermes',
+                bots.map((b) => b.name)
+              )}
+              onDone={(name, avatar) => finish('hermes', name, avatar)}
+            />
+          )}
+          {!batch && phase.kind === 'idle' && !grokAccountChoiceOpen && !hermesConnectOpen && !hermesReady && (
             <PlatformStep
               key="platform"
               listRef={listRef}
@@ -851,5 +905,195 @@ function TemplateStep({ selected, onPick }: { selected: string; onPick: (templat
         })}
       </ul>
     </div>
+  )
+}
+
+function HermesConnectStep({
+  accountId,
+  onConnected
+}: {
+  accountId: string
+  onConnected: (info: { handle: string; displayName: string }) => void
+}) {
+  const platform = getPlatform('hermes')
+  const t = useT()
+  const [baseUrl, setBaseUrl] = useState('http://127.0.0.1:8642')
+  const [apiKey, setApiKey] = useState('')
+  const [model, setModel] = useState('')
+  const [useLocalKey, setUseLocalKey] = useState(false)
+  const [detecting, setDetecting] = useState(false)
+  const [detected, setDetected] = useState<{
+    reachable: boolean
+    version?: string
+    hasLocalEnvKey: boolean
+    requiresAuth?: boolean
+  } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const runDetect = async (overrideUrl?: string) => {
+    const hermes = getBridge()?.hermes
+    if (!hermes?.detectLocal) return
+    setDetecting(true)
+    setError('')
+    try {
+      const info = await hermes.detectLocal(overrideUrl)
+      setDetected({
+        reachable: info.reachable,
+        version: info.version,
+        hasLocalEnvKey: info.hasLocalEnvKey,
+        requiresAuth: info.requiresAuth
+      })
+      if (!overrideUrl && info.baseUrl) setBaseUrl(info.baseUrl)
+      if (info.hasLocalEnvKey) setUseLocalKey(true)
+    } catch {
+      /* ignore */
+    } finally {
+      setDetecting(false)
+    }
+  }
+
+  useEffect(() => {
+    void runDetect()
+  }, [])
+
+  const handleConnect = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const hermes = getBridge()?.hermes
+    if (!hermes?.configure) {
+      setError('需要在 Electron 桌面端中连接 Hermes')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const st = await hermes.configure({
+        accountId,
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim() || undefined,
+        useLocalKey: !apiKey.trim() && useLocalKey,
+        model: model.trim() || undefined,
+        displayName: 'Hermes'
+      })
+      if (!st.signedIn) {
+        setError(st.error || '无法连接 Hermes API Server，请检查地址与 API_SERVER_KEY')
+        return
+      }
+      onConnected({
+        handle: st.handle || st.baseUrl || 'hermes',
+        displayName: st.displayName || 'Hermes'
+      })
+    } catch (e) {
+      setError(errorMessage(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={(e) => void handleConnect(e)} className="flex animate-step-in flex-col gap-3 pt-1">
+      <div className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3">
+        <PlatformGlyph platform={platform} size="md" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13.5px] font-medium text-ink">Hermes Agent · Nous Research</p>
+          <p className="text-[11.5px] text-ink-secondary">
+            {detected?.reachable
+              ? `已检测到本机服务在线${detected.version ? ` (v${detected.version})` : ''}`
+              : t('Connect local or remote Hermes API Server')}
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          disabled={detecting || busy}
+          onClick={() => void runDetect(baseUrl.trim() || undefined)}
+        >
+          <RefreshCw className={cn('size-3.5', detecting && 'animate-spin')} />
+          {t('Detect')}
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="flex flex-col gap-1">
+          <span className="text-[12px] font-medium text-ink-secondary">{t('Server URL')}</span>
+          <input
+            value={baseUrl}
+            onChange={(e) => setBaseUrl(e.target.value)}
+            placeholder="http://127.0.0.1:8642"
+            spellCheck={false}
+            required
+            className="h-9 w-full rounded-lg border border-line-strong bg-surface px-3 font-mono text-[12.5px] text-ink outline-none focus:border-accent-600 focus:ring-3 focus:ring-accent-100"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[12px] font-medium text-ink-secondary">
+            API Key <span className="font-normal text-ink-muted">(API_SERVER_KEY)</span>
+          </span>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => {
+              setApiKey(e.target.value)
+              if (e.target.value.trim()) setUseLocalKey(false)
+            }}
+            placeholder={
+              useLocalKey
+                ? '将自动从本机 ~/.hermes/.env 读取（可留空）'
+                : '粘贴 API_SERVER_KEY（无鉴权本地服务可留空）'
+            }
+            spellCheck={false}
+            className="h-9 w-full rounded-lg border border-line bg-surface px-3 font-mono text-[12.5px] text-ink outline-none focus:border-accent-600 focus:ring-3 focus:ring-accent-100"
+          />
+        </label>
+
+        {detected?.hasLocalEnvKey && !apiKey.trim() && (
+          <label className="flex items-center gap-2 text-[12px] text-ink-secondary">
+            <input
+              type="checkbox"
+              checked={useLocalKey}
+              onChange={(e) => setUseLocalKey(e.target.checked)}
+              className="rounded border-line"
+            />
+            <span>自动使用本机 ~/.hermes/.env 中的 API_SERVER_KEY（仅主进程加密读取）</span>
+          </label>
+        )}
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[12px] font-medium text-ink-secondary">
+            {t('Model')} <span className="font-normal text-ink-muted">({t('optional')})</span>
+          </span>
+          <input
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder="hermes-agent"
+            spellCheck={false}
+            className="h-9 w-full rounded-lg border border-line bg-surface px-3 font-mono text-[12.5px] text-ink outline-none focus:border-accent-600 focus:ring-3 focus:ring-accent-100"
+          />
+        </label>
+      </div>
+
+      {!detected?.reachable && (
+        <div className="rounded-lg border border-line bg-hover/50 px-3 py-2 text-[11.5px] leading-[17px] text-ink-secondary">
+          <p className="font-medium text-ink">如何启动 Hermes API Server：</p>
+          <pre className="mt-1 overflow-x-auto font-mono text-[11px] text-ink-secondary">
+            {`hermes config set API_SERVER_ENABLED true\nhermes gateway`}
+          </pre>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-[12px] text-status-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      <div className="flex items-center justify-end gap-2 pt-1">
+        <Button type="submit" variant="primary" disabled={busy || !baseUrl.trim()}>
+          {busy ? t('Connecting…') : t('Connect & Continue')}
+        </Button>
+      </div>
+    </form>
   )
 }

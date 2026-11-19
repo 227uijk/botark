@@ -87,6 +87,7 @@ Klicken Sie anschließend in der Seitenleiste auf **+**, wählen Sie eine Plattf
 | **Grok Bot** (`grok.com`) | Connect-RPC / Protobuf über das Sand-Gateway (`*.sand.x.ai`) | Mehrere Konten, Sand-Cloud-Arbeitsbereich, Live-Streaming, Verlauf der Tool-Aufrufe, Sitzungen, geplante Aufgaben, Erinnerungen und Skills |
 | **Hark** (`hark.com`) | WebSocket-RPC + multimodales REST | Anmeldung im Browser (Google oder E-Mail), Live-Streaming mit Antwortabgleich im Hintergrund, Datei- und Bildanhänge, Dokumentkarten, geplante Aufgaben, Erinnerungen und Konnektoren |
 | **Dot** (`chatgpt.com/dots`) | OpenAI Orbit/TBO REST + Server-Sent Events (SSE) | OAuth-Anmeldung im Browser oder Import von Access/Refresh Token, verschlüsselte Token-Speicherung, Live-Streaming, Datei-Uploads, Skills, Automatisierungen, Konnektoren und Proxy pro Konto |
+| **Hermes** (`NousResearch/hermes-agent`) | Open-Source Gateway REST + Native Session SSE | Lokale `~/.hermes`-Erkennung, Remote-Verbindung (Keychain-verschlüsselt), SSE-Streaming & Tool-Aufrufe, Befehlsfreigaben, Sitzungen, Cron, Skills & Toolsets |
 
 ## ✨ Funktionen
 

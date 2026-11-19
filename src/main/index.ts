@@ -10,6 +10,8 @@ import { registerHarkIpc } from './hark/harkIpc'
 import { cancelHarkWatch } from './hark/harkClient'
 import { registerDotIpc } from './dot/dotIpc'
 import { closeCelsiusWatcher } from './dot/dotClient'
+import { registerHermesIpc } from './hermes/hermesIpc'
+import { cancelAllHermesRuns } from './hermes/hermesClient'
 import { applyAllStoredProxies } from './muse/accountProxy'
 import { hardenVaultFilePermissions, registerVaultIpc } from './securityVault'
 
@@ -133,6 +135,7 @@ app.on('before-quit', () => {
   stopGrokAccountWatch('*')
   closeCelsiusWatcher('*')
   cancelHarkWatch('*')
+  cancelAllHermesRuns('*')
   disposeAllMuseManagers()
 })
 
@@ -147,6 +150,7 @@ app.whenReady().then(async () => {
   registerGrokIpc()
   registerHarkIpc()
   registerDotIpc()
+  registerHermesIpc()
   registerVaultIpc()
   mainWindow = createMainWindow()
   startAutoUpdater()

@@ -68,7 +68,7 @@ export function ApprovalsSection({
   platformId = 'meta-muse'
 }: {
   accountId: string
-  platformId?: 'meta-muse' | 'grok'
+  platformId?: 'meta-muse' | 'grok' | 'hermes'
 }) {
   const [pending, setPending] = useState<MuseApproval[]>([])
   const [history, setHistory] = useState<HistoryItem[]>([])

@@ -87,6 +87,7 @@ Depois clique em **+** na barra lateral, escolha uma plataforma e entre. Cada bo
 | **Grok Bot** (`grok.com`) | Connect-RPC / Protobuf pelo gateway Sand (`*.sand.x.ai`) | Várias contas, espaço de trabalho na nuvem Sand, streaming em tempo real, rastros de chamadas de ferramentas, sessões, tarefas agendadas, memórias e habilidades |
 | **Hark** (`hark.com`) | WebSocket RPC + REST multimodal | Login pelo navegador (Google ou e-mail), streaming em tempo real com sincronização de respostas em segundo plano, anexos de arquivos e imagens, cartões de documentos, tarefas agendadas, memórias e conectores |
 | **Dot** (`chatgpt.com/dots`) | REST do OpenAI Orbit/TBO + eventos enviados pelo servidor (SSE) | Login OAuth pelo navegador ou importação de Access/Refresh Token, tokens guardados com criptografia, streaming em tempo real, envio de arquivos, habilidades, automações, conectores e proxy por conta |
+| **Hermes** (`NousResearch/hermes-agent`) | Open-Source Gateway REST + Native Session SSE | Detecção local de `~/.hermes`, conexão remota criptografada no Keychain, streaming SSE e ferramentas, aprovações de comandos, sessões, Cron, Skills e Toolsets |
 
 ## ✨ Recursos
 

@@ -28,7 +28,8 @@ const PLATFORM_LOGIN_LABELS: Record<PlatformId, string> = {
   'meta-muse': '使用 Muse 登录',
   grok: '使用 Grok Bot 登录',
   hark: '使用 Hark 登录',
-  dot: '使用 ChatGPT Dot 登录'
+  dot: '使用 ChatGPT Dot 登录',
+  hermes: '配置 Hermes 连接'
 }
 
 function ConversationIntro({
@@ -160,6 +161,9 @@ export function ChatArea() {
         return onHarkLogin(activeAccount.id)
       case 'dot':
         return onDotLogin(activeAccount.id)
+      case 'hermes':
+        useBotStore.getState().setSettingsOpen(true, 'hermes-accounts')
+        return
     }
   }
 

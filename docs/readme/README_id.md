@@ -87,6 +87,7 @@ Setelah itu klik **+** di bilah samping, pilih platform, lalu masuk. Setiap bot 
 | **Grok Bot** (`grok.com`) | Connect-RPC / Protobuf melalui gateway Sand (`*.sand.x.ai`) | Banyak akun, ruang kerja awan Sand, streaming langsung, riwayat pemanggilan alat, sesi, tugas terjadwal, memori, dan keterampilan |
 | **Hark** (`hark.com`) | WebSocket RPC + REST multimodal | Masuk lewat browser (Google atau email), streaming langsung dengan sinkronisasi balasan di latar belakang, lampiran berkas dan gambar, kartu dokumen, tugas terjadwal, memori, dan konektor |
 | **Dot** (`chatgpt.com/dots`) | REST OpenAI Orbit/TBO + server-sent events (SSE) | Masuk OAuth lewat browser atau impor Access/Refresh Token, penyimpanan token terenkripsi, streaming langsung, unggah berkas, keterampilan, otomatisasi, konektor, dan proxy per akun |
+| **Hermes** (`NousResearch/hermes-agent`) | Open-Source Gateway REST + Native Session SSE | Deteksi lokal `~/.hermes`, koneksi server jarak jauh terenkripsi Keychain, streaming SSE & alat, persetujuan perintah, sesi, Cron, Skills & Toolsets |
 
 ## ✨ Fitur
 

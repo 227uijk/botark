@@ -72,6 +72,17 @@ export const PLATFORM_INSPECTORS: Record<PlatformId, PlatformInspectorSpec> = {
       { id: 'memory', label: 'Memory' },
       { id: 'library', label: 'Pages' }
     ]
+  },
+  hermes: {
+    platformId: 'hermes',
+    displayName: 'Hermes',
+    protocolLabel: 'HTTP/SSE · API Server',
+    supportsWebSession: false,
+    supportsQuickNewConversation: true,
+    tabs: [
+      { id: 'overview', label: 'Overview' },
+      { id: 'computer', label: 'Tools' }
+    ]
   }
 }
 

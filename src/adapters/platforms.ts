@@ -40,6 +40,15 @@ export const PLATFORMS: readonly PlatformDescriptor[] = [
     monogram: 'Do',
     homeUrl: 'https://chatgpt.com/dots',
     loginUrl: 'https://chatgpt.com/dots'
+  },
+  {
+    id: 'hermes',
+    name: 'Hermes',
+    description:
+      'Open-source autonomous agent by Nous Research — connect local or remote API server (SSE streaming, sessions, skills & approvals).',
+    availability: 'available',
+    monogram: 'He',
+    homeUrl: 'http://127.0.0.1:8642'
   }
 ]
 

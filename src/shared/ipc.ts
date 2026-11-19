@@ -1138,6 +1138,183 @@ export type DotRpcResponse =
   | { ok: true; data: unknown }
   | { ok: false; status: number; code?: string; message: string; body?: string }
 
+export const HERMES_CHANNELS = {
+  configure: 'bothub:hermes:configure',
+  detectLocal: 'bothub:hermes:detect-local',
+  authStatus: 'bothub:hermes:auth-status',
+  listAccounts: 'bothub:hermes:list-accounts',
+  clearAuth: 'bothub:hermes:clear-auth',
+  rpc: 'bothub:hermes:rpc',
+  event: 'bothub:hermes:event'
+} as const
+
+export interface HermesConfigureRequest {
+  accountId: string
+  baseUrl: string
+  /** Optional API_SERVER_KEY; leave empty for unauthenticated local listener or set `useLocalKey` to read ~/.hermes/.env in main process. */
+  apiKey?: string
+  /** When true, keep the currently stored encrypted API key if `apiKey` is omitted. */
+  keepExistingKey?: boolean
+  /** When true, import API_SERVER_KEY directly from local ~/.hermes/.env inside main process (never sent to renderer). */
+  useLocalKey?: boolean
+  /** Optional model / route alias override (defaults to server default, e.g. hermes-agent). */
+  model?: string
+  displayName?: string
+}
+
+export interface HermesLocalDetection {
+  reachable: boolean
+  baseUrl: string
+  version?: string
+  platform?: string
+  hasLocalEnvKey: boolean
+  localEnvHost?: string
+  localEnvPort?: number
+  requiresAuth?: boolean
+}
+
+export interface HermesAuthStatus {
+  accountId: string
+  signedIn: boolean
+  baseUrl?: string
+  handle?: string
+  displayName?: string
+  model?: string
+  version?: string
+  hasApiKey?: boolean
+  hasProxy?: boolean
+  supportsSessions?: boolean
+  error?: string
+}
+
+export interface HermesSessionSummary {
+  id: string
+  title?: string | null
+  model?: string | null
+  source?: string | null
+  startedAt?: string | number | null
+  lastActive?: string | number | null
+  preview?: string | null
+  messageCount?: number
+  toolCallCount?: number
+  pinned?: boolean
+  archived?: boolean
+}
+
+export interface HermesSkillItem {
+  name: string
+  description?: string
+  category?: string
+  enabled?: boolean
+}
+
+export interface HermesToolsetItem {
+  name: string
+  label?: string
+  description?: string
+  enabled: boolean
+  configured: boolean
+  tools: string[]
+}
+
+export interface HermesCronJob {
+  id: string
+  name: string
+  schedule: string
+  prompt?: string
+  enabled: boolean
+  paused?: boolean
+  lastRunAt?: string | number | null
+  nextRunAt?: string | number | null
+}
+
+export interface HermesApprovalView {
+  id: string
+  status: string
+  title: string
+  detail?: string
+  approvalType?: string
+  host?: string
+  decisionOptions?: Array<'allow_once' | 'allow_session' | 'allow_always' | 'deny' | 'deny_always'>
+  reason?: string
+  raw?: unknown
+}
+
+export type HermesMainEvent =
+  | {
+      type: 'login'
+      accountId: string
+      signedIn: true
+      handle?: string
+      displayName?: string
+    }
+  | {
+      type: 'login'
+      accountId: string
+      signedIn: false
+    }
+  | {
+      type: 'stream'
+      accountId: string
+      conversationId?: string
+      sessionId?: string
+      messageId: string
+      text: string
+      done: boolean
+      tools?: MuseToolCallView[]
+      media?: MuseMediaPartView[]
+    }
+  | {
+      type: 'activity'
+      accountId: string
+      activityCode: string
+      activityText?: string
+      activityEmoji?: string
+      busy: boolean
+    }
+  | {
+      type: 'approvals'
+      accountId: string
+      pending: HermesApprovalView[]
+    }
+
+export type HermesRpcRequest =
+  | { accountId: string; op: 'health' }
+  | { accountId: string; op: 'models' }
+  | { accountId: string; op: 'capabilities' }
+  | { accountId: string; op: 'skills' }
+  | { accountId: string; op: 'toolsets' }
+  | { accountId: string; op: 'listJobs' }
+  | { accountId: string; op: 'toggleJob'; jobId: string; pause: boolean }
+  | { accountId: string; op: 'runJob'; jobId: string }
+  | { accountId: string; op: 'deleteJob'; jobId: string }
+  | { accountId: string; op: 'listSessions'; limit?: number }
+  | { accountId: string; op: 'createSession'; title?: string; model?: string }
+  | { accountId: string; op: 'deleteSession'; sessionId: string }
+  | { accountId: string; op: 'getSessionMessages'; sessionId: string }
+  | { accountId: string; op: 'setModel'; model: string }
+  | { accountId: string; op: 'listApprovals' }
+  | {
+      accountId: string
+      op: 'decideApproval'
+      approvalId: string
+      decision: 'allow_once' | 'allow_session' | 'allow_always' | 'deny' | 'deny_always'
+    }
+  | { accountId: string; op: 'stopRun' }
+  | {
+      accountId: string
+      op: 'sendMessage'
+      botId?: string
+      sessionId?: string
+      text: string
+      model?: string
+      attachments?: Array<{ name: string; mimeType: string; dataBase64: string }>
+    }
+
+export type HermesRpcResponse =
+  | { ok: true; data: unknown }
+  | { ok: false; status: number; code?: string; message: string; body?: string }
+
 export const VAULT_CHANNELS = {
   status: 'bothub:vault:status',
   getSecret: 'bothub:vault:get-secret',
@@ -1159,7 +1336,7 @@ export interface SecurityStoreAudit {
 
 export interface SecurityAccountAudit {
   accountId: string
-  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot'
+  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes'
   partition: string
   transportProtocol: string
   credentialIsolation: string
@@ -1186,7 +1363,7 @@ export interface SecurityVaultStatus {
 
 export interface VaultStatusRequest {
   accountId?: string
-  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot'
+  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes'
 }
 
 

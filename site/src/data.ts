@@ -3,15 +3,16 @@ import grokIcon from '@/assets/platforms/grok.png'
 import museIcon from '@/assets/platforms/muse.svg'
 import dotIcon from '@/assets/platforms/dot.svg'
 import harkIcon from '@/assets/platforms/hark.svg'
+import hermesIcon from '@/assets/platforms/hermes.png'
 
 export type Lang = 'zh' | 'en'
-export type PlatformKey = 'grok' | 'muse' | 'dot' | 'hark'
+export type PlatformKey = 'grok' | 'muse' | 'dot' | 'hark' | 'hermes'
 
 export const RELEASE_URLS = {
   latest: 'https://github.com/qybaihe/botark/releases/latest',
-  macArm: 'https://github.com/qybaihe/botark/releases/download/v0.6.0/BotArk-0.6.0-arm64.dmg',
-  macIntel: 'https://github.com/qybaihe/botark/releases/download/v0.6.0/BotArk-0.6.0-x64.dmg',
-  winX64: 'https://github.com/qybaihe/botark/releases/download/v0.6.0/BotArk-Setup-0.6.0-x64.exe',
+  macArm: 'https://github.com/qybaihe/botark/releases/download/v0.7.0/BotArk-0.7.0-arm64.dmg',
+  macIntel: 'https://github.com/qybaihe/botark/releases/download/v0.7.0/BotArk-0.7.0-x64.dmg',
+  winX64: 'https://github.com/qybaihe/botark/releases/download/v0.7.0/BotArk-Setup-0.7.0-x64.exe',
   repo: 'https://github.com/qybaihe/botark',
   discussions: 'https://github.com/qybaihe/botark/discussions'
 } as const
@@ -20,7 +21,8 @@ export const PLATFORM_ICONS: Record<PlatformKey, string> = {
   grok: grokIcon,
   muse: museIcon,
   dot: dotIcon,
-  hark: harkIcon
+  hark: harkIcon,
+  hermes: hermesIcon
 }
 
 export interface DemoBot {
@@ -341,6 +343,65 @@ export const DEMO_BOTS: DemoBot[] = [
           items: [
             { zh: '🌐 竞品定价页变更监控 · 每日巡检', en: '🌐 Pricing Page Monitor · Daily' },
             { zh: '📎 附件直连预览：changelog-diff.md', en: '📎 Native Preview: changelog-diff.md' }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: 'hermes-local',
+    platform: 'hermes',
+    platformLabel: 'Hermes',
+    group: { zh: '工程与研发', en: 'Engineering' },
+    name: { zh: 'Hermes · 本机开源 Agent', en: 'Hermes · Open-Source Agent' },
+    accountHandle: '127.0.0.1:8642',
+    shape: 'clover',
+    color: 'green',
+    badge: { zh: '开源自托管', en: 'Open-Source' },
+    messages: [
+      {
+        role: 'user',
+        text: {
+          zh: '检查一下我本地仓库里有没有未推送的提交，并把 cron 任务状态列给我。',
+          en: 'Check unpushed commits in my local repo and list active Hermes cron jobs.'
+        }
+      },
+      {
+        role: 'bot',
+        tool: { zh: 'Hermes terminal · 已执行 git status & /api/jobs', en: 'Hermes terminal · Ran git status & /api/jobs' },
+        text: {
+          zh: '当前 `main` 分支干净无未推送提交；本机 Hermes 网关运行正常，共 2 个定时巡检任务待命。若触发高危命令，右侧操作台会自动弹出审批卡片。',
+          en: '`main` is clean and up to date. Your local Hermes gateway is healthy with 2 scheduled jobs ready — dangerous commands automatically surface approval cards in the right workbench.'
+        }
+      }
+    ],
+    quickPrompts: [
+      {
+        label: { zh: '🛠️ 查看已安装的 Hermes Skills', en: '🛠️ Inspect installed Hermes Skills' },
+        replyTool: { zh: 'Hermes Gateway · GET /v1/skills & /v1/toolsets', en: 'Hermes Gateway · GET /v1/skills & /v1/toolsets' },
+        reply: {
+          zh: '已加载 14 个本地技能与 6 组工具集（terminal / web / files / memory / cron），支持切换多会话历史与自定义模型别名。',
+          en: 'Loaded 14 local skills and 6 toolsets (terminal, web, files, memory, cron) with persistent session switching and model aliases.'
+        }
+      }
+    ],
+    workbench: {
+      protocolBadge: 'HTTP/SSE · API Server',
+      cards: [
+        {
+          title: { zh: 'Hermes 网关与危险命令审批', en: 'Hermes Gateway & Approvals' },
+          tag: { zh: 'v0.9 · 在线', en: 'v0.9 · Online' },
+          items: [
+            { zh: '🔒 API_SERVER_KEY 已存入 Keychain safeStorage', en: '🔒 API_SERVER_KEY encrypted in OS Keychain' },
+            { zh: '✅ 原生 Session SSE 流式工具调用 + 命令审批', en: '✅ Native Session SSE streaming + command approvals' }
+          ]
+        },
+        {
+          title: { zh: '定时任务与技能工具集', en: 'Cron Jobs, Skills & Toolsets' },
+          tag: { zh: '14 Skills', en: '14 Skills' },
+          items: [
+            { zh: '⏱️ 每日构建监控 · 已启用（一键立即运行）', en: '⏱️ Daily Build Watch · Enabled (Run Now)' },
+            { zh: '🧩 Toolsets: terminal, files, web, memory', en: '🧩 Toolsets: terminal, files, web, memory' }
           ]
         }
       ]

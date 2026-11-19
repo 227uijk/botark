@@ -10,8 +10,8 @@
  * run in the renderer now and move to the main process later.
  */
 
-/** Platforms BotHub knows about. Add an id here and to `platforms.ts`. */
-export type PlatformId = 'meta-muse' | 'grok' | 'hark' | 'dot'
+/** Platforms BotArk knows about. Add an id here and to `platforms.ts`. */
+export type PlatformId = 'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes'
 
 /** Connection state of a single platform account. */
 export type ConnectionStatus = 'online' | 'busy' | 'attention' | 'offline' | 'error'

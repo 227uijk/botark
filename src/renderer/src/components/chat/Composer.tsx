@@ -78,6 +78,7 @@ function ConnectionNotice({
   const isGrok = account.platformId === 'grok'
   const isHark = account.platformId === 'hark'
   const isDot = account.platformId === 'dot'
+  const isHermes = account.platformId === 'hermes'
   return (
     <div
       className={cn(
@@ -102,7 +103,9 @@ function ConnectionNotice({
                 ? '登录 Hark 后即可发消息'
                 : isDot
                   ? '登录 ChatGPT Dot 或在右侧导入 AT / RT 后即可发消息'
-                  : '账号未连接'}
+                  : isHermes
+                    ? '连接 Hermes API Server（hermes gateway）后即可发消息'
+                    : '账号未连接'}
       </span>
       {isMuse && onMuseLogin && !isError ? (
         <>

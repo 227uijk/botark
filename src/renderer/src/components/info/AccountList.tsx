@@ -30,7 +30,8 @@ const LOGIN_CTA_LABEL: Record<PlatformId, string> = {
   'meta-muse': '使用 Muse 登录',
   grok: '使用 Grok Bot 登录',
   hark: '使用 Hark 登录',
-  dot: '使用 ChatGPT Dot 登录'
+  dot: '使用 ChatGPT Dot 登录',
+  hermes: '配置 Hermes 连接'
 }
 
 /**
@@ -62,6 +63,9 @@ export function AccountList({ bot, accounts }: AccountListProps) {
         return void openHarkLogin(account.id)
       case 'dot':
         return void openDotLogin(account.id)
+      case 'hermes':
+        useBotStore.getState().setSettingsOpen(true, 'hermes-accounts')
+        return
     }
   }
 

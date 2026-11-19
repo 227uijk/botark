@@ -3,6 +3,7 @@ import { createMuseAdapter } from "./meta-muse/adapter"
 import { createGrokBotAdapter } from "./grokbot/GrokBotAdapter"
 import { createHarkAdapter } from "./hark/HarkAdapter"
 import { createDotAdapter } from "./dot/DotAdapter"
+import { createHermesAdapter } from "./hermes/HermesAdapter"
 import { adapterRegistry, type AdapterRegistry } from "./registry"
 
 export { adapterRegistry, AdapterRegistry } from "./registry"
@@ -34,4 +35,5 @@ export function registerBuiltInAdapters(registry: AdapterRegistry = adapterRegis
   if (!registry.has("grok")) registry.register(createGrokBotAdapter())
   if (!registry.has("hark")) registry.register(createHarkAdapter())
   if (!registry.has("dot")) registry.register(createDotAdapter())
+  if (!registry.has("hermes")) registry.register(createHermesAdapter())
 }

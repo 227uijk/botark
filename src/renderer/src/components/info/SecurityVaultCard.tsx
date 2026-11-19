@@ -31,6 +31,7 @@ export function InspectorProtocolCard({
   const webSessionOpen = useBotStore((s) => s.webSessionOpen)
   const toggleWebSession = useBotStore((s) => s.toggleWebSession)
   const startNewMuseSession = useBotStore((s) => s.startNewMuseSession)
+  const startNewHermesSession = useBotStore((s) => s.startNewHermesSession)
   const setSelectedAgent = useBotStore((s) => s.setSelectedAgent)
   const connectAccount = useBotStore((s) => s.connectAccount)
   const pending = useBotStore((s) =>
@@ -165,6 +166,36 @@ export function InspectorProtocolCard({
           >
             <Globe className="size-3.5 text-ink-secondary" aria-hidden />
             {webSessionOpen ? t('Chat view') : t('Web view')}
+          </button>
+        </>
+      )}
+
+      {bot.platformId === 'hermes' && (
+        <>
+          <button
+            type="button"
+            disabled={busyAction}
+            onClick={() => {
+              setBusyAction(true)
+              void startNewHermesSession(bot.id).finally(() => setBusyAction(false))
+            }}
+            className="press inline-flex h-7 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-[12px] font-medium text-ink hover:bg-hover disabled:opacity-50"
+          >
+            <MessageSquarePlus className="size-3.5 text-ink-secondary" aria-hidden />
+            {t('New session')}
+          </button>
+          <button
+            type="button"
+            onClick={() => onSelectTab(activeTab === 'computer' ? 'overview' : 'computer')}
+            className={cn(
+              'press inline-flex h-7 flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-[12px] font-medium',
+              activeTab === 'computer'
+                ? 'border-accent bg-accent-50 text-accent-600'
+                : 'border-line bg-surface text-ink hover:bg-hover'
+            )}
+          >
+            <Sparkles className="size-3.5 text-ink-secondary" aria-hidden />
+            {t('Tools & Skills')}
           </button>
         </>
       )}

@@ -65,6 +65,7 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
   const toggleWebSession = useBotStore((s) => s.toggleWebSession)
   const togglePinBot = useBotStore((s) => s.togglePinBot)
   const startNewMuseSession = useBotStore((s) => s.startNewMuseSession)
+  const startNewHermesSession = useBotStore((s) => s.startNewHermesSession)
   const setSelectedAgent = useBotStore((s) => s.setSelectedAgent)
   const connectAccount = useBotStore((s) => s.connectAccount)
   const typing = useBotStore((s) => s.typing[bot.id] === true)
@@ -75,6 +76,15 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
   const handleNewConversation = async () => {
     if (bot.platformId === 'meta-muse') {
       await startNewMuseSession(bot.id)
+      return
+    }
+    if (bot.platformId === 'hermes') {
+      setStartingFresh(true)
+      try {
+        await startNewHermesSession(bot.id)
+      } finally {
+        setStartingFresh(false)
+      }
       return
     }
     if (bot.platformId === 'grok' && bot.activeAccountId && bot.selectedAgentId) {

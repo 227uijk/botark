@@ -169,7 +169,9 @@ function WorkspaceImage({
   part: ChatMediaPart
   accountId?: string
 }) {
-  const [src, setSrc] = useState<string | null>(isHttp(part.path) ? part.path : null)
+  const [src, setSrc] = useState<string | null>(
+    isHttp(part.path) || /^data:image\//i.test(part.path) ? part.path : null
+  )
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
@@ -261,7 +263,9 @@ function WorkspaceAV({
   accountId?: string
   kind: 'audio' | 'video'
 }) {
-  const [src, setSrc] = useState<string | null>(isHttp(part.path) ? part.path : null)
+  const [src, setSrc] = useState<string | null>(
+    isHttp(part.path) || /^data:image\//i.test(part.path) ? part.path : null
+  )
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {

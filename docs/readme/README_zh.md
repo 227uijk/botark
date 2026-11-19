@@ -7,7 +7,7 @@
 **把你常用的所有 Personal Agent，收进同一个原生桌面客户端。**
 
 告别满桌面的独立应用与十几个无痕浏览器窗口，<br />
-在一个干净顺手的 macOS / Windows 窗口里并排使用 **Grok Bot**、**ChatGPT Dot**、**Meta Muse** 与 **Hark**。
+在一个干净顺手的 macOS / Windows 窗口里并排使用 **Grok Bot**、**ChatGPT Dot**、**Meta Muse**、**Hark** 与开源 **Hermes**。
 
 <p>
   <a href="https://github.com/qybaihe/botark/releases/latest"><img src="https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=2563eb" alt="最新版本" /></a>
@@ -119,7 +119,7 @@
 
 ---
 
-## 🤖 四大平台原生能力一览
+## 🤖 五大平台原生能力一览
 
 BotArk 不是简单的网页套壳，右侧操作台（`⌘I`）会根据每个平台的真实底层协议呈现对应的原生操控面板：
 
@@ -129,6 +129,7 @@ BotArk 不是简单的网页套壳，右侧操作台（`⌘I`）会根据每个�
 | <img src="../../src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | 独立分区窗口登录，或**邮箱列表自动收码批量导入** | 1 个独立账号 → 1 个 Muse 助手（支持多号并行） | 额度实时监控、Sentinel 操作审批、多会话切换、定时任务、长期目标、记忆与技能、文件预览与云电脑视图 |
 | <img src="../../src/renderer/src/assets/platforms/dot.svg" width="18" height="18" align="absmiddle" /> **ChatGPT Dot** | 网页弹窗登录，或**单条 / 多行批量粘贴 AT、RT、JSON 导入** | 1 个账号 → 1 个 Dot 助手（自带 Refresh Token 自动续期） | Orbit 角色切换、Dot / Native 双模式、核心目标编辑、**换号一键迁移目标与记忆**、Pages 页面与文件库 |
 | <img src="../../src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / 邮箱窗口登录，或**粘贴 Session Cookie 导入** | 1 个账号 → 1 个 Hark 助手 | 快捷工作流卡片、历史会话切换、定时巡检任务、生成文件下载、云端浏览器实时画面与工作区连接器 |
+| <img src="../../src/renderer/src/assets/platforms/hermes.png" width="18" height="18" align="absmiddle" /> **Hermes** | **自动检测本机 `~/.hermes`**，或填写远程 API Server 地址与 `API_SERVER_KEY`（钥匙串加密保存） | 1 个实例 / Profile（`/p/<name>`）→ 1 个 Hermes 助手（支持多实例并行） | 原生 Session SSE 流式对话与工具调用、危险命令实时审批、历史会话切换、Cron 定时任务、已安装 Skills 与工具集 |
 
 ---
 

@@ -87,6 +87,7 @@ Ardından kenar çubuğundaki **+** düğmesine tıklayın, bir platform seçin 
 | **Grok Bot** (`grok.com`) | Sand ağ geçidi (`*.sand.x.ai`) üzerinden Connect-RPC / Protobuf | Birden fazla hesap, Sand bulut çalışma alanı, canlı akış, araç çağrısı geçmişi, oturumlar, zamanlanmış görevler, anılar ve beceriler |
 | **Hark** (`hark.com`) | WebSocket RPC + çok kipli REST | Tarayıcıda oturum açma (Google veya e-posta), arka planda yanıt eşitlemeli canlı akış, dosya ve görsel ekleri, belge kartları, zamanlanmış görevler, anılar ve bağlayıcılar |
 | **Dot** (`chatgpt.com/dots`) | OpenAI Orbit/TBO REST + sunucu gönderimli olaylar (SSE) | Tarayıcıda OAuth ile oturum açma veya Access/Refresh Token içe aktarma, şifreli token saklama, canlı akış, dosya yükleme, beceriler, otomasyonlar, bağlayıcılar ve hesap başına proxy |
+| **Hermes** (`NousResearch/hermes-agent`) | Open-Source Gateway REST + Native Session SSE | Yerel `~/.hermes` algılama, uzak sunucu bağlantısı (Keychain şifreli), SSE akışı ve araç çağrıları, komut onayları, oturumlar, Cron, Skills ve Toolsets |
 
 ## ✨ Özellikler
 

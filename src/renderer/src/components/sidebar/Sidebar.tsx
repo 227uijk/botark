@@ -42,7 +42,9 @@ export function Sidebar({ onAddBot }: SidebarProps) {
         ? 'grok-accounts'
         : selectedPlatformId === 'hark'
           ? 'hark-accounts'
-          : 'muse-accounts'
+          : selectedPlatformId === 'hermes'
+            ? 'hermes-accounts'
+            : 'muse-accounts'
 
   // Typing while the sidebar has focus starts a search.
   const typeToSearch = (event: KeyboardEvent<HTMLDivElement>) => {

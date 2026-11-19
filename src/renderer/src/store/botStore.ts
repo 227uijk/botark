@@ -59,7 +59,15 @@ export interface BotHubState {
   webSessionOpen: boolean
   /** Open the dedicated Grok Bot-style Settings view in the main pane. */
   settingsOpen: boolean
-  settingsTab: 'overview' | 'general' | 'muse-accounts' | 'dot-accounts' | 'grok-accounts' | 'hark-accounts' | 'proxy-pool'
+  settingsTab:
+    | 'overview'
+    | 'general'
+    | 'muse-accounts'
+    | 'dot-accounts'
+    | 'grok-accounts'
+    | 'hark-accounts'
+    | 'hermes-accounts'
+    | 'proxy-pool'
   /** Active document/article opened in the right-side Split-Pane Document Canvas. */
   activeDocument: import('@/components/chat/NativeDocumentDialog').NativeDocumentTarget | null
   /** Per-bot pending quote-reply target shown in Composer. */
@@ -90,7 +98,15 @@ export interface BotHubState {
   toggleWebSession: () => void
   setSettingsOpen: (
     open: boolean,
-    tab?: 'overview' | 'general' | 'muse-accounts' | 'dot-accounts' | 'grok-accounts' | 'hark-accounts' | 'proxy-pool'
+    tab?:
+      | 'overview'
+      | 'general'
+      | 'muse-accounts'
+      | 'dot-accounts'
+      | 'grok-accounts'
+      | 'hark-accounts'
+      | 'hermes-accounts'
+      | 'proxy-pool'
   ) => void
   openPalette: (query?: string) => void
   closePalette: () => void
@@ -120,6 +136,8 @@ export interface BotHubState {
   cancelGeneration: (botId: string) => Promise<void>
   switchMuseSession: (botId: string, sessionId: string) => Promise<void>
   startNewMuseSession: (botId: string) => Promise<void>
+  switchHermesSession: (botId: string, sessionId: string) => Promise<void>
+  startNewHermesSession: (botId: string) => Promise<void>
 
   // Bot details
   updateNotes: (botId: string, notes: string) => void
@@ -1091,6 +1109,13 @@ export const useBotStore = create<BotHubState>()(
             op: 'cancelTurn'
           })
           .catch(() => undefined)
+      } else if (bot.platformId === 'hermes' && bridge?.hermes?.rpc) {
+        await bridge.hermes
+          .rpc({
+            accountId: bot.activeAccountId,
+            op: 'stopRun'
+          })
+          .catch(() => undefined)
       }
     },
 
@@ -1130,6 +1155,68 @@ export const useBotStore = create<BotHubState>()(
           if (res.sessionId) newSessionId = res.sessionId
         } catch {
           /* ignore */
+        }
+      }
+      patchBot(botId, () => ({ activeSessionId: newSessionId }))
+      set((s) => ({
+        messages: { ...s.messages, [botId]: [] }
+      }))
+    },
+
+    switchHermesSession: async (botId, sessionId) => {
+      const bot = get().bots.find((b) => b.id === botId)
+      if (!bot || bot.platformId !== 'hermes') return
+      patchBot(botId, () => ({ activeSessionId: sessionId }))
+      const bridge = electronBridge()
+      if (!bridge?.hermes?.rpc) return
+      const res = await bridge.hermes.rpc({
+        accountId: bot.activeAccountId,
+        op: 'getSessionMessages',
+        sessionId
+      })
+      if (!res.ok || !Array.isArray(res.data)) return
+      const rows = res.data as Array<{
+        id: string
+        role: 'user' | 'assistant'
+        text: string
+        createdAt: number
+        tools?: import('@/types').ChatToolCall[]
+        media?: import('@/types').ChatMediaPart[]
+      }>
+      const hydrated: ChatMessage[] = rows.map((r) => ({
+        id: r.id,
+        botId,
+        accountId: bot.activeAccountId,
+        role: r.role === 'user' ? 'user' : 'bot',
+        text: r.text,
+        createdAt: r.createdAt,
+        delivery: r.role === 'user' ? 'sent' : undefined,
+        ...(r.tools?.length ? { tools: r.tools } : {}),
+        ...(r.media?.length ? { media: r.media } : {})
+      }))
+      set((s) => ({
+        messages: { ...s.messages, [botId]: hydrated }
+      }))
+    },
+
+    startNewHermesSession: async (botId) => {
+      const bot = get().bots.find((b) => b.id === botId)
+      if (!bot || bot.platformId !== 'hermes') return
+      const bridge = electronBridge()
+      let newSessionId: string | undefined
+      if (bridge?.hermes?.rpc) {
+        try {
+          const res = await bridge.hermes.rpc({
+            accountId: bot.activeAccountId,
+            op: 'createSession',
+            title: bot.name
+          })
+          if (res.ok && res.data && typeof res.data === 'object') {
+            const id = (res.data as { id?: string }).id
+            if (typeof id === 'string' && id) newSessionId = id
+          }
+        } catch {
+          /* ignore — adapter creates session lazily on first message if unsupported */
         }
       }
       patchBot(botId, () => ({ activeSessionId: newSessionId }))
@@ -1309,6 +1396,8 @@ export const useBotStore = create<BotHubState>()(
         } else if (account.platformId === 'hark' && bridge?.hark?.clearAuth) {
           await bridge.hark.clearAuth(accountId)
           await bridge.webViews?.clearPartition?.(accountId)
+        } else if (account.platformId === 'hermes' && bridge?.hermes?.clearAuth) {
+          await bridge.hermes.clearAuth(accountId)
         } else if (bridge?.webViews?.clearPartition) {
           await bridge.webViews.clearPartition(accountId)
         }
@@ -1947,6 +2036,7 @@ export const useBotStore = create<BotHubState>()(
       }
       await bridge?.dot?.clearAuth?.('*').catch(() => undefined)
       await bridge?.grok?.clearAuth?.('*').catch(() => undefined)
+      await bridge?.hermes?.clearAuth?.('*').catch(() => undefined)
       await bridge?.muse?.clearProxyPool?.().catch(() => undefined)
       await bridge?.vault?.clearAll?.().catch(() => undefined)
       try {

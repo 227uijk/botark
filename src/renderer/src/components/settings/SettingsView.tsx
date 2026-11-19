@@ -38,6 +38,7 @@ import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
 import { useT, t } from '@/lib/i18n'
 import { platformIcon } from '@/lib/platformIcons'
+import { HermesAccountsSettingsPanel } from '@/components/hermes/HermesAccountsSettingsPanel'
 import { useBotStore } from '@/store/botStore'
 import { usePrefsStore, type Locale, type ThemePref } from '@/store/prefsStore'
 
@@ -47,6 +48,7 @@ type SettingsTab =
   | 'dot-accounts'
   | 'grok-accounts'
   | 'hark-accounts'
+  | 'hermes-accounts'
   | 'proxy-pool'
   | 'general'
 
@@ -77,7 +79,8 @@ const PLATFORM_LABELS: Record<PlatformId, string> = {
   'meta-muse': 'Meta Muse',
   dot: 'ChatGPT Dot',
   grok: 'Grok Bot',
-  hark: 'Hark Pro'
+  hark: 'Hark Pro',
+  hermes: 'Hermes'
 }
 
 export function SettingsView() {
@@ -168,6 +171,7 @@ export function SettingsView() {
   const grokAccounts = useMemo(() => allAccounts.filter((a) => a.platformId === 'grok'), [allAccounts])
   const harkBots = useMemo(() => bots.filter((b) => b.platformId === 'hark'), [bots])
   const harkAccounts = useMemo(() => allAccounts.filter((a) => a.platformId === 'hark'), [allAccounts])
+  const hermesAccounts = useMemo(() => allAccounts.filter((a) => a.platformId === 'hermes'), [allAccounts])
 
   const onlineAccountsCount = useMemo(
     () => allAccounts.filter((a) => a.status === 'online' || a.status === 'busy' || a.status === 'attention').length,
@@ -673,6 +677,7 @@ export function SettingsView() {
     { id: 'dot-accounts', label: 'Dot 账号管理', icon: Users, platformId: 'dot', count: dotAccounts.length },
     { id: 'grok-accounts', label: 'Grok Bot 账号管理', icon: Users, platformId: 'grok', count: grokAccounts.length },
     { id: 'hark-accounts', label: 'Hark 账号管理', icon: Users, platformId: 'hark', count: harkAccounts.length },
+    { id: 'hermes-accounts', label: 'Hermes 实例管理', icon: Server, platformId: 'hermes', count: hermesAccounts.length },
     { id: 'proxy-pool', label: '代理池与自动分配', icon: Server, count: pool.length },
     { id: 'general', label: '常规、分组与安全', icon: Settings }
   ]
@@ -823,13 +828,14 @@ export function SettingsView() {
                 </div>
 
                 {/* Platform Breakdown Cards */}
-                <div className="grid grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-5 gap-2.5">
                   {(
                     [
                       { id: 'meta-muse', tab: 'muse-accounts', name: 'Meta Muse', list: museAccounts, desc: 'Noise WSS 隧道' },
                       { id: 'dot', tab: 'dot-accounts', name: 'ChatGPT Dot', list: dotAccounts, desc: 'Calpico + OAuth RT' },
                       { id: 'grok', tab: 'grok-accounts', name: 'Grok Bot', list: grokAccounts, desc: 'Sand PKCE OAuth' },
-                      { id: 'hark', tab: 'hark-accounts', name: 'Hark Pro', list: harkAccounts, desc: 'Sync SSE + Session' }
+                      { id: 'hark', tab: 'hark-accounts', name: 'Hark Pro', list: harkAccounts, desc: 'Sync SSE + Session' },
+                      { id: 'hermes', tab: 'hermes-accounts', name: 'Hermes', list: hermesAccounts, desc: 'Open-Source Gateway' }
                     ] as const
                   ).map((p) => {
                     const onCount = p.list.filter(
@@ -1848,6 +1854,8 @@ export function SettingsView() {
                 )}
               </div>
             )}
+
+            {settingsTab === 'hermes-accounts' && <HermesAccountsSettingsPanel />}
 
             {settingsTab === 'proxy-pool' && (
               <div className="flex flex-col gap-5 animate-veil-in">

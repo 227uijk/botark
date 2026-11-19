@@ -125,6 +125,7 @@
 | <img src="../../src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | 獨立分區視窗登入，或**信箱列表自動收碼批次匯入** | 1 個獨立帳號 → 1 個 Muse 助手（支援多號並行） | 額度即時監控、Sentinel 操作審批、多會話切換、排程任務、長期目標、記憶與技能、檔案預覽與雲電腦視圖 |
 | <img src="../../src/renderer/src/assets/platforms/dot.svg" width="18" height="18" align="absmiddle" /> **ChatGPT Dot** | 網頁彈窗登入，或**單條 / 多行批次貼上 AT、RT、JSON 匯入** | 1 個帳號 → 1 個 Dot 助手（內建 Refresh Token 自動續期） | Orbit 角色切換、Dot / Native 雙模式、核心目標編輯、**換號一鍵遷移目標與記憶**、Pages 頁面與檔案庫 |
 | <img src="../../src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / 信箱視窗登入，或**貼上 Session Cookie 匯入** | 1 個帳號 → 1 個 Hark 助手 | 快捷工作流卡片、歷史會話切換、排程巡檢任務、生成檔案下載、雲端瀏覽器即時畫面與工作區連接器 |
+| <img src="../../src/renderer/src/assets/platforms/hermes.png" width="18" height="18" align="absmiddle" /> **Hermes** | **自動偵測本機 `~/.hermes`**，或填寫遠端 API Server 網址與 `API_SERVER_KEY`（鑰匙圈加密） | 1 個實例 / Profile（`/p/<name>`）→ 1 個 Hermes 助手 | 原生 Session SSE 串流工具呼叫、危險指令審批、歷史會話切換、Cron 排程、Skills 與工具集 |
 
 ---
 

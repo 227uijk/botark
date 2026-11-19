@@ -87,6 +87,7 @@ Muse, Grok Bot, Hark और Dot के बॉट साइडबार में
 | **Grok Bot** (`grok.com`) | Sand गेटवे (`*.sand.x.ai`) के ज़रिए Connect-RPC / Protobuf | कई खाते, Sand क्लाउड वर्कस्पेस, लाइव स्ट्रीमिंग, टूल कॉल का इतिहास, सेशन, शेड्यूल किए गए काम, मेमोरी और स्किल्स |
 | **Hark** (`hark.com`) | WebSocket RPC + मल्टीमोडल REST | ब्राउज़र से साइन इन (Google या ईमेल), बैकग्राउंड में जवाब सिंक के साथ लाइव स्ट्रीमिंग, फ़ाइल और इमेज अटैचमेंट, डॉक्यूमेंट कार्ड, शेड्यूल किए गए काम, मेमोरी और कनेक्टर |
 | **Dot** (`chatgpt.com/dots`) | OpenAI Orbit/TBO REST + सर्वर-सेंट इवेंट्स (SSE) | ब्राउज़र से OAuth साइन इन या Access/Refresh Token इंपोर्ट, एन्क्रिप्टेड टोकन स्टोरेज, लाइव स्ट्रीमिंग, फ़ाइल अपलोड, स्किल्स, ऑटोमेशन, कनेक्टर और हर खाते के लिए प्रॉक्सी |
+| **Hermes** (`NousResearch/hermes-agent`) | Open-Source Gateway REST + Native Session SSE | लोकल `~/.hermes` ऑटो-डिटेक्ट, रिमोट सर्वर कनेक्शन (Keychain एन्क्रिप्टेड), SSE स्ट्रीमिंग व टूल कॉल्स, कमांड अप्रूवल, सेशन्स, Cron, Skills व Toolsets |
 
 ## ✨ सुविधाएँ
 

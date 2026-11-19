@@ -33,6 +33,13 @@ import {
   DotLibrarySection,
   DotOrbitProfilesSection
 } from '@/components/dot/DotInfoSections'
+import {
+  HermesJobsSection,
+  HermesServerSection,
+  HermesSessionsSection,
+  HermesSkillsSection,
+  HermesToolsetsSection
+} from '@/components/hermes/HermesInfoSections'
 import { MemorySection } from '@/components/muse/MemorySection'
 import { PermissionsSection } from '@/components/muse/PermissionsSection'
 import { SkillsSection } from '@/components/muse/SkillsSection'
@@ -333,6 +340,14 @@ export function InfoPanel() {
                     <DotOrbitProfilesSection accountId={bot.activeAccountId} botId={bot.id} />
                   </>
                 )}
+                {bot.platformId === 'hermes' && bot.activeAccountId && (
+                  <>
+                    <HermesServerSection accountId={bot.activeAccountId} />
+                    <ApprovalsSection accountId={bot.activeAccountId} platformId="hermes" />
+                    <HermesSessionsSection accountId={bot.activeAccountId} botId={bot.id} />
+                    <HermesJobsSection accountId={bot.activeAccountId} />
+                  </>
+                )}
 
                 <Section title={t('Accounts')} flush>
                   <AccountList bot={bot} accounts={accounts} />
@@ -400,6 +415,11 @@ export function InfoPanel() {
                     accountId={bot.activeAccountId}
                     agentId={bot.selectedAgentId}
                   />
+                </>
+              ) : bot.platformId === 'hermes' ? (
+                <>
+                  <HermesSkillsSection accountId={bot.activeAccountId} />
+                  <HermesToolsetsSection accountId={bot.activeAccountId} />
                 </>
               ) : (
                 <HarkComputerSection accountId={bot.activeAccountId} botId={bot.id} />

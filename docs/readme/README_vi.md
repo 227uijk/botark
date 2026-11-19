@@ -87,6 +87,7 @@ Sau đó bấm **+** ở thanh bên, chọn nền tảng và đăng nhập. Mỗ
 | **Grok Bot** (`grok.com`) | Connect-RPC / Protobuf qua cổng Sand (`*.sand.x.ai`) | Nhiều tài khoản, không gian làm việc đám mây Sand, phát trực tiếp, lịch sử gọi công cụ, phiên, tác vụ theo lịch, bộ nhớ và kỹ năng |
 | **Hark** (`hark.com`) | WebSocket RPC + REST đa phương thức | Đăng nhập qua trình duyệt (Google hoặc email), phát trực tiếp kèm đồng bộ phản hồi ở chế độ nền, đính kèm tệp và hình ảnh, thẻ tài liệu, tác vụ theo lịch, bộ nhớ và connector |
 | **Dot** (`chatgpt.com/dots`) | REST OpenAI Orbit/TBO + sự kiện do máy chủ gửi (SSE) | Đăng nhập OAuth qua trình duyệt hoặc nhập Access/Refresh Token, lưu token được mã hóa, phát trực tiếp, tải tệp lên, kỹ năng, tự động hóa, connector và proxy cho từng tài khoản |
+| **Hermes** (`NousResearch/hermes-agent`) | Open-Source Gateway REST + Native Session SSE | Tự động phát hiện `~/.hermes`, kết nối máy chủ từ xa (mã hóa Keychain), streaming SSE & công cụ, phê duyệt lệnh, chuyển phiên, Cron, Skills & Toolsets |
 
 ## ✨ Tính năng
 

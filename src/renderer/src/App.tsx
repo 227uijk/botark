@@ -31,7 +31,8 @@ export default function App() {
         account.platformId === 'meta-muse' ||
         account.platformId === 'grok' ||
         account.platformId === 'hark' ||
-        account.platformId === 'dot'
+        account.platformId === 'dot' ||
+        account.platformId === 'hermes'
       ) {
         void connectAccount(account.id)
       }

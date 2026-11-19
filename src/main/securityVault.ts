@@ -44,11 +44,12 @@ const AUDITED_STORES: ReadonlyArray<{ id: string; label: string; fileName: strin
   { id: 'proxy-pool', label: '全局代理池密文库', fileName: 'muse-proxy-pool.json' },
   { id: 'grok-tokens', label: 'Grok Sand 令牌保险箱', fileName: 'grok-sand-tokens.json' },
   { id: 'dot-tokens', label: 'Dot OAuth 凭据保险箱', fileName: 'dot-accounts.json' },
+  { id: 'hermes-accounts', label: 'Hermes 网关密钥保险箱', fileName: 'hermes-accounts.json' },
   { id: 'secrets-vault', label: '记忆快照与私密数据保险箱', fileName: VAULT_FILE }
 ]
 
 const PLATFORM_SECURITY_SPECS: Record<
-  'meta-muse' | 'grok' | 'hark' | 'dot',
+  'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes',
   { transportProtocol: string; credentialIsolation: string }
 > = {
   'meta-muse': {
@@ -66,6 +67,10 @@ const PLATFORM_SECURITY_SPECS: Record<
   dot: {
     transportProtocol: 'Calpico REST + Celsius WSS（TLS 1.3）',
     credentialIsolation: '系统钥匙串 SafeStorage 令牌库 + 加密记忆迁移保险箱'
+  },
+  hermes: {
+    transportProtocol: 'Hermes Gateway REST + Native Session SSE（主进程代理转发）',
+    credentialIsolation: '系统钥匙串 SafeStorage API Key 密文存储（渲染层零密钥暴露）'
   }
 }
 
