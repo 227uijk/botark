@@ -19,22 +19,18 @@ struct QRScannerSheet: View {
                     scannerHero
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Label("或手动粘贴配对链接", systemImage: "link.badge.plus")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-
-                        Text("在电脑端 BotArk「设置 → iOS 扫码同步」点击“复制配对链接”，或者在模拟器中直接粘贴测试。")
-                            .font(.caption)
+                        Text("粘贴配对链接")
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.secondary)
 
                         HStack(spacing: 8) {
-                            TextField("botark://pair?v=1&hosts=...", text: $manualUri, axis: .vertical)
+                            TextField("botark://pair?...", text: $manualUri, axis: .vertical)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
-                                .font(.caption.monospaced())
-                                .lineLimit(2...4)
+                                .font(.system(size: 12, design: .monospaced))
+                                .lineLimit(2...3)
                                 .padding(10)
-                                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                                .background(ArkTheme.subtleFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                             Button {
                                 if let pasted = UIPasteboard.general.string {
@@ -42,58 +38,59 @@ struct QRScannerSheet: View {
                                 }
                             } label: {
                                 Image(systemName: "doc.on.clipboard")
-                                    .font(.body.weight(.medium))
-                                    .frame(width: 40, height: 40)
-                                    .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .frame(width: 38, height: 38)
+                                    .background(ArkTheme.subtleFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             }
-                            .accessibilityLabel("粘贴剪贴板")
+                            .accessibilityLabel("粘贴")
                         }
 
                         Button {
                             Task { await performPairing(uri: manualUri) }
                         } label: {
-                            HStack(spacing: 8) {
+                            HStack(spacing: 6) {
                                 if store.pairingBusy {
-                                    ProgressView()
-                                        .tint(.white)
+                                    ProgressView().tint(.white)
                                 } else {
-                                    Image(systemName: "bolt.horizontal.circle.fill")
+                                    Image(systemName: "bolt.horizontal.fill")
+                                        .font(.system(size: 13, weight: .semibold))
                                 }
-                                Text(store.pairingBusy ? "正在握手并同步..." : "立即配对并同步")
-                                    .fontWeight(.semibold)
+                                Text(store.pairingBusy ? "配对中..." : "立即配对")
+                                    .font(.system(size: 14, weight: .semibold))
                             }
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
+                            .frame(height: 42)
+                            .background(ArkTheme.accent, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.plain)
                         .disabled(store.pairingBusy || manualUri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
-                    .padding(16)
-                    .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 16))
+                    .padding(14)
+                    .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .strokeBorder(Color(uiColor: .separator).opacity(0.35), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
                     )
 
                     if let err = localError ?? store.lastError {
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 12))
                                 .foregroundStyle(.orange)
                             Text(err)
-                                .font(.footnote)
+                                .font(.system(size: 12.5))
                                 .foregroundStyle(.primary)
                             Spacer(minLength: 0)
                         }
-                        .padding(12)
-                        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(11)
+                        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 12))
                     }
-
-                    zeroServerTipsCard
                 }
                 .padding(16)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("扫码配对电脑端")
+            .background(ArkTheme.canvas.ignoresSafeArea())
+            .navigationTitle("扫码配对")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -42,24 +42,40 @@ struct BotListView: View {
                     botListContent
                 }
             }
-            .navigationTitle("BotArk")
-            .navigationBarTitleDisplayMode(.large)
+            .background(ArkTheme.canvas.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    HStack(spacing: 7) {
+                        Image("BotArkLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 22, height: 22)
+                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        Text("BotArk")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                    }
+                }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
                         showAddHermes = true
                     } label: {
-                        Image(systemName: "plus.circle")
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(width: 30, height: 30)
+                            .background(ArkTheme.subtleFill, in: Circle())
                     }
-                    .accessibilityLabel("添加独立 Hermes")
+                    .accessibilityLabel("添加 Hermes")
 
                     Button {
                         showQRScanner = true
                     } label: {
                         Image(systemName: "qrcode.viewfinder")
-                            .fontWeight(.semibold)
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(width: 30, height: 30)
+                            .background(ArkTheme.accent.opacity(0.12), in: Circle())
                     }
-                    .accessibilityLabel("扫码配对电脑端")
+                    .accessibilityLabel("扫码配对")
                 }
             }
             .navigationDestination(for: String.self) { botId in
@@ -80,240 +96,239 @@ struct BotListView: View {
         }
     }
 
+    // MARK: - Minimal, Refined Onboarding
+
     private var emptyOnboardingView: some View {
-        ScrollView {
-            VStack(spacing: 22) {
-                Spacer(minLength: 18)
+        VStack(spacing: 0) {
+            Spacer(minLength: 28)
+
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [ArkTheme.accent.opacity(0.18), .clear],
+                            center: .center,
+                            startRadius: 8,
+                            endRadius: 82
+                        )
+                    )
+                    .frame(width: 164, height: 164)
 
                 Image("BotArkLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 96, height: 96)
-                    .shadow(color: Color("AccentColor").opacity(0.24), radius: 18, y: 8)
-
-                VStack(spacing: 8) {
-                    Text("扫码即刻同步你的 AI 智能体")
-                        .font(.title2.bold())
-                        .multilineTextAlignment(.center)
-                    Text("零服务器、零云端中转。在同一 Wi-Fi、手机热点或 Tailscale 下扫一扫电脑端二维码，即可把 Grok Bot、Meta Muse、ChatGPT Dot、Hark 与 Hermes 全部装进口袋。")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 12)
-                }
-
-                // 5 platform chips showcase
-                HStack(spacing: 8) {
-                    ForEach(PlatformId.allCases) { platform in
-                        VStack(spacing: 5) {
-                            PlatformIconView(platform: platform, size: 28)
-                            Text(platform.shortLabel)
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
-                    }
-                }
-
-                VStack(spacing: 12) {
-                    Button {
-                        showQRScanner = true
-                    } label: {
-                        Label("扫码配对电脑端 BotArk", systemImage: "qrcode.viewfinder")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                    Button {
-                        showAddHermes = true
-                    } label: {
-                        Label("无需电脑：直接接入 Hermes 服务器", systemImage: "server.rack")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                    }
-                    .buttonStyle(.bordered)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    featureRow(
-                        icon: "wifi",
-                        color: .blue,
-                        title: "局域网 / Tailscale 实时桥接",
-                        detail: "扫码建立端到端配对，手机端实时流式收发所有 5 个平台对话与安全审批。"
-                    )
-                    featureRow(
-                        icon: "lock.fill",
-                        color: .green,
-                        title: "离线 AirDrop 加密包 & 脱机直连",
-                        detail: "支持隔空投送 AES-256-GCM 加密的 .botark-sync 同步包；Hermes 凭据写入 iOS Keychain，电脑休眠也能直连。"
-                    )
-                }
-                .padding(16)
-                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+                    .frame(width: 78, height: 78)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .shadow(color: .black.opacity(0.16), radius: 16, y: 8)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 32)
-        }
-        .background(Color(uiColor: .systemGroupedBackground))
-    }
 
-    private func featureRow(icon: String, color: Color, title: String, detail: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(color)
-                .frame(width: 30, height: 30)
-                .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Text(detail)
-                    .font(.caption)
+            VStack(spacing: 6) {
+                Text("把所有 AI 助手装进口袋")
+                    .font(.system(size: 20, weight: .bold))
+                    .tracking(-0.3)
+
+                Text("零服务器 · 扫码直连电脑端")
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
+            .padding(.top, 4)
+
+            // Compact 5-platform strip
+            HStack(spacing: 8) {
+                ForEach(PlatformId.allCases) { platform in
+                    VStack(spacing: 5) {
+                        PlatformIconView(platform: platform, size: 22)
+                        Text(platform.shortLabel)
+                            .font(.system(size: 10.5, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
+                    )
+                }
+            }
+            .padding(.top, 26)
+
+            VStack(spacing: 10) {
+                Button {
+                    showQRScanner = true
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: "qrcode.viewfinder")
+                            .font(.system(size: 15, weight: .semibold))
+                        Text("扫码配对电脑端")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(ArkTheme.accent, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showAddHermes = true
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: "server.rack")
+                            .font(.system(size: 13, weight: .medium))
+                        Text("直连 Hermes 服务器")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .strokeBorder(ArkTheme.hairline, lineWidth: 0.9)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 24)
+
+            Spacer()
+
+            HStack(spacing: 14) {
+                badgeTag(icon: "wifi", label: "局域网 / Tailscale")
+                badgeTag(icon: "lock.fill", label: "AES-256-GCM")
+                badgeTag(icon: "key.fill", label: "Keychain")
+            }
+            .padding(.bottom, 22)
         }
+        .padding(.horizontal, 20)
     }
 
-    private var botListContent: some View {
-        List {
-            Section {
-                connectionStatusRow
-            }
-            .listRowInsets(EdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14))
-
-            Section {
-                platformFilterStrip
-            }
-            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
-            .listRowBackground(Color.clear)
-
-            if !pinnedBots.isEmpty {
-                Section("置顶") {
-                    ForEach(pinnedBots) { bot in
-                        botNavigationRow(bot)
-                    }
-                }
-            }
-
-            if store.snapshot.groups.isEmpty {
-                Section("全部智能体") {
-                    ForEach(unpinnedBots) { bot in
-                        botNavigationRow(bot)
-                    }
-                }
-            } else {
-                ForEach(store.snapshot.groups) { group in
-                    let members = unpinnedBots.filter { $0.groupId == group.id }
-                    if !members.isEmpty {
-                        Section(group.name) {
-                            ForEach(members) { bot in
-                                botNavigationRow(bot)
-                            }
-                        }
-                    }
-                }
-                let knownGroupIds = Set(store.snapshot.groups.map(\.id))
-                let ungrouped = unpinnedBots.filter { !knownGroupIds.contains($0.groupId) }
-                if !ungrouped.isEmpty {
-                    Section("其他") {
-                        ForEach(ungrouped) { bot in
-                            botNavigationRow(bot)
-                        }
-                    }
-                }
-            }
+    private func badgeTag(icon: String, label: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .semibold))
+            Text(label)
+                .font(.system(size: 10.5, weight: .medium))
         }
-        .listStyle(.insetGrouped)
-        .searchable(text: $searchText, prompt: "搜索智能体或聊天内容")
+        .foregroundStyle(.secondary)
+    }
+
+    // MARK: - Sleek Bot Workspace List
+
+    private var botListContent: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                connectionStatusBar
+
+                platformFilterStrip
+
+                if !pinnedBots.isEmpty {
+                    botSectionCard(title: "置顶", bots: pinnedBots)
+                }
+
+                if store.snapshot.groups.isEmpty {
+                    botSectionCard(title: "全部", bots: unpinnedBots)
+                } else {
+                    ForEach(store.snapshot.groups) { group in
+                        let members = unpinnedBots.filter { $0.groupId == group.id }
+                        if !members.isEmpty {
+                            botSectionCard(title: group.name, bots: members)
+                        }
+                    }
+                    let knownGroupIds = Set(store.snapshot.groups.map(\.id))
+                    let ungrouped = unpinnedBots.filter { !knownGroupIds.contains($0.groupId) }
+                    if !ungrouped.isEmpty {
+                        botSectionCard(title: "其他", bots: ungrouped)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
+        }
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "搜索")
         .refreshable {
             await store.reconnectDesktop()
         }
     }
 
-    private var connectionStatusRow: some View {
-        HStack(spacing: 10) {
+    private var connectionStatusBar: some View {
+        HStack(spacing: 8) {
             Circle()
                 .fill(connectionDotColor)
-                .frame(width: 10, height: 10)
+                .frame(width: 7, height: 7)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(connectionTitle)
-                    .font(.subheadline.weight(.semibold))
-                Text(connectionSubtitle)
-                    .font(.caption)
+            Text(connectionTitle)
+                .font(.system(size: 12.5, weight: .semibold))
+                .lineLimit(1)
+
+            if let meta = connectionMeta {
+                Text("·")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.tertiary)
+                Text(meta)
+                    .font(.system(size: 11.5, design: .monospaced))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
-            Spacer()
+            Spacer(minLength: 4)
 
             if case .connecting = store.connectionState {
                 ProgressView()
-                    .controlSize(.small)
+                    .controlSize(.mini)
             } else if store.pairedDesktop != nil, !store.connectionState.isBridgeConnected {
                 Button("重连") {
                     Task { await store.reconnectDesktop() }
                 }
-                .font(.caption.weight(.semibold))
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(ArkTheme.accent)
             } else if store.pairedDesktop == nil {
-                Button("扫码同步") {
+                Button("配对") {
                     showQRScanner = true
                 }
-                .font(.caption.weight(.semibold))
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(ArkTheme.accent)
             }
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
+        )
     }
 
     private var connectionDotColor: Color {
         switch store.connectionState {
-        case .connected: return .green
+        case .connected: return Color(red: 0.13, green: 0.77, blue: 0.37)
         case .connecting: return .orange
-        case .offline: return store.directHermesCredentials.isEmpty ? .gray : .blue
-        case .unpaired: return store.directHermesCredentials.isEmpty ? .gray : .blue
+        case .offline, .unpaired: return store.directHermesCredentials.isEmpty ? .gray : ArkTheme.accent
         }
     }
 
     private var connectionTitle: String {
         switch store.connectionState {
-        case .connected(let hostName, _):
-            return "已实时连接 \(hostName)"
-        case .connecting:
-            return "正在连接电脑端..."
-        case .offline(let hostName):
-            return "\(hostName) 当前离线"
-        case .unpaired:
-            return store.directHermesCredentials.isEmpty ? "未配对电脑端" : "Hermes 独立直连模式"
+        case .connected(let hostName, _): return hostName
+        case .connecting: return "连接中..."
+        case .offline(let hostName): return "\(hostName) 离线"
+        case .unpaired: return store.directHermesCredentials.isEmpty ? "未配对" : "Hermes 直连"
         }
     }
 
-    private var connectionSubtitle: String {
+    private var connectionMeta: String? {
         switch store.connectionState {
-        case .connected(_, let activeHost):
-            return "零服务器局域网直连 · \(activeHost)"
-        case .connecting:
-            return "正在探测局域网与 Tailscale 地址"
-        case .offline:
-            return store.directHermesCredentials.isEmpty
-                ? "离线浏览缓存，回到同一 Wi-Fi 自动恢复"
-                : "已配对 Hermes 仍可脱机直连对话"
-        case .unpaired:
-            return "点击右上角扫一扫同步电脑端全部智能体"
+        case .connected(_, let activeHost): return activeHost
+        case .offline: return store.directHermesCredentials.isEmpty ? "离线缓存" : "Hermes 可直连"
+        default: return nil
         }
     }
 
     private var platformFilterStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 filterChip(title: "全部", platform: nil, count: store.snapshot.bots.count)
                 ForEach(PlatformId.allCases) { platform in
                     let count = store.snapshot.bots.filter { $0.platformId == platform }.count
@@ -322,104 +337,131 @@ struct BotListView: View {
                     }
                 }
             }
-            .padding(.vertical, 2)
         }
     }
 
     private func filterChip(title: String, platform: PlatformId?, count: Int) -> some View {
         let active = selectedPlatform == platform
         return Button {
-            withAnimation(.snappy(duration: 0.2)) {
+            withAnimation(.snappy(duration: 0.18)) {
                 selectedPlatform = platform
             }
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: 4) {
                 if let platform {
-                    PlatformIconView(platform: platform, size: 15)
+                    PlatformIconView(platform: platform, size: 13)
                 }
-                Text("\(title) \(count)")
-                    .font(.caption.weight(.semibold))
+                Text(title)
+                    .font(.system(size: 12, weight: active ? .semibold : .medium))
+                Text("\(count)")
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundStyle(active ? .white.opacity(0.8) : .secondary)
             }
-            .padding(.horizontal, 11)
-            .padding(.vertical, 7)
-            .background(
-                active ? Color("AccentColor") : Color(uiColor: .secondarySystemGroupedBackground),
-                in: Capsule()
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(active ? ArkTheme.accent : ArkTheme.surface, in: Capsule())
+            .overlay(
+                Capsule()
+                    .strokeBorder(active ? .clear : ArkTheme.hairline, lineWidth: 0.8)
             )
             .foregroundStyle(active ? .white : .primary)
         }
         .buttonStyle(.plain)
     }
 
-    private func botNavigationRow(_ bot: SyncedBot) -> some View {
+    private func botSectionCard(title: String, bots: [SyncedBot]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 0) {
+                ForEach(Array(bots.enumerated()), id: \.element.id) { idx, bot in
+                    NavigationLink(value: bot.id) {
+                        botRow(bot)
+                    }
+                    .buttonStyle(.plain)
+
+                    if idx < bots.count - 1 {
+                        Divider()
+                            .padding(.leading, 62)
+                    }
+                }
+            }
+            .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
+            )
+        }
+    }
+
+    private func botRow(_ bot: SyncedBot) -> some View {
         let status = store.status(for: bot)
         let lastMsg = store.snapshot.messages[bot.id]?.last
         let isTyping = store.typingByBotId[bot.id] == true
         let pendingCount = (store.snapshot.approvals[bot.activeAccountId] ?? []).filter { $0.status == "pending" }.count
 
-        return NavigationLink(value: bot.id) {
-            HStack(spacing: 12) {
-                BotAvatarView(bot: bot, status: status, size: 46)
+        return HStack(spacing: 11) {
+            BotAvatarView(bot: bot, status: status, size: 40)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Text(bot.name)
-                            .font(.body.weight(.semibold))
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(bot.name)
+                        .font(.system(size: 14.5, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    PlatformBadgePill(platform: bot.platformId)
+                    Spacer(minLength: 4)
+                    if let ts = lastMsg?.createdAt, ts > 0 {
+                        Text(Self.formatShortTime(ts))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+                            .fixedSize()
+                    }
+                }
+
+                HStack(spacing: 6) {
+                    if isTyping {
+                        Text("正在回复...")
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(ArkTheme.accent)
+                    } else if let text = lastMsg?.text, !text.isEmpty {
+                        Text(text.replacingOccurrences(of: "\n", with: " "))
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
-                            .truncationMode(.tail)
-                        PlatformBadgePill(platform: bot.platformId)
-                        Spacer(minLength: 4)
-                        if let ts = lastMsg?.createdAt, ts > 0 {
-                            Text(Self.formatShortTime(ts))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .fixedSize()
-                        }
+                    } else {
+                        Text(bot.platformId.displayName)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
                     }
 
-                    HStack(spacing: 6) {
-                        if isTyping {
-                            Text("正在生成回复...")
-                                .font(.subheadline)
-                                .foregroundStyle(Color("AccentColor"))
-                        } else if let text = lastMsg?.text, !text.isEmpty {
-                            Text(text.replacingOccurrences(of: "\n", with: " "))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        } else {
-                            Text(store.transportSummary(for: bot))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
+                    Spacer(minLength: 4)
 
-                        Spacer(minLength: 4)
-
-                        if pendingCount > 0 {
-                            Text("\(pendingCount) 审批")
-                                .font(.caption2.weight(.bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 2)
-                                .background(Color.orange, in: Capsule())
-                        }
+                    if pendingCount > 0 {
+                        Text("\(pendingCount) 审批")
+                            .font(.system(size: 10.5, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(red: 0.95, green: 0.56, blue: 0.05), in: Capsule())
                     }
                 }
             }
-            .padding(.vertical, 3)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
     }
 
     private static func formatShortTime(_ ms: Double) -> String {
         let date = Date(timeIntervalSince1970: ms / 1000)
         let cal = Calendar.current
         let fmt = DateFormatter()
-        if cal.isDateInToday(date) {
-            fmt.dateFormat = "HH:mm"
-        } else {
-            fmt.dateFormat = "MM/dd"
-        }
+        fmt.dateFormat = cal.isDateInToday(date) ? "HH:mm" : "MM/dd"
         return fmt.string(from: date)
     }
 }

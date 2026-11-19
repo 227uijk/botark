@@ -37,58 +37,32 @@ struct ChatView: View {
         let canSend = store.canSend(to: bot)
 
         return VStack(spacing: 0) {
-            // Transport status strip
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(store.status(for: bot).dotColor)
-                    .frame(width: 7, height: 7)
-                Text(store.transportSummary(for: bot))
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if let account = store.snapshot.accounts[bot.activeAccountId], !account.handle.isEmpty {
-                    Text(account.handle)
-                        .font(.caption2.monospaced())
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-            .background(Color(uiColor: .secondarySystemBackground))
-
-            // Inline pending security approvals for this bot
             if !botApprovals.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     ForEach(botApprovals) { item in
                         InlineApprovalCard(item: item) { decision in
                             Task { await store.decideApproval(item: item, decision: decision) }
                         }
                     }
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(Color.orange.opacity(0.08))
             }
 
-            // Messages list
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: 10) {
                         if messages.isEmpty {
-                            VStack(spacing: 10) {
-                                BotAvatarView(bot: bot, status: store.status(for: bot), size: 58)
+                            VStack(spacing: 8) {
+                                BotAvatarView(bot: bot, status: store.status(for: bot), size: 50)
                                 Text(bot.name)
-                                    .font(.headline)
+                                    .font(.system(size: 15, weight: .semibold))
                                 PlatformBadgePill(platform: bot.platformId)
-                                Text("向 \(bot.name) 发送第一条消息")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
                             }
-                            .padding(.top, 56)
+                            .padding(.top, 64)
                         } else {
                             ForEach(messages) { message in
-                                MessageBubbleRow(message: message, platform: bot.platformId)
+                                MessageBubbleRow(message: message)
                                     .id(message.id)
                             }
                         }
@@ -102,7 +76,7 @@ struct ChatView: View {
                         }
                     }
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 12)
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: messages.count) { _, _ in
@@ -112,74 +86,88 @@ struct ChatView: View {
                     scrollToBottom(proxy: proxy, isTyping: isTyping)
                 }
                 .onChange(of: isTyping) { _, newVal in
-                    if newVal {
-                        scrollToBottom(proxy: proxy, isTyping: true)
-                    }
+                    if newVal { scrollToBottom(proxy: proxy, isTyping: true) }
                 }
                 .onAppear {
                     scrollToBottom(proxy: proxy, isTyping: isTyping)
                 }
             }
 
-            Divider()
-
-            // Composer bar
-            HStack(alignment: .bottom, spacing: 10) {
+            // Sleek floating composer bar
+            HStack(alignment: .bottom, spacing: 8) {
                 TextField(
-                    canSend ? "给 \(bot.name) 发消息..." : "电脑端离线（只读缓存）",
+                    canSend ? "发消息给 \(bot.name)" : "离线只读",
                     text: $draft,
                     axis: .vertical
                 )
+                .font(.system(size: 14))
                 .lineLimit(1...5)
                 .focused($composerFocused)
                 .disabled(!canSend)
                 .padding(.horizontal, 13)
-                .padding(.vertical, 9)
-                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .padding(.vertical, 8)
+                .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(ArkTheme.hairline, lineWidth: 0.9)
+                )
 
                 if isTyping {
                     Button {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         store.stopGeneration(for: bot)
                     } label: {
-                        Image(systemName: "stop.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(.red)
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 32, height: 32)
+                            .background(Color.red, in: Circle())
                     }
-                    .accessibilityLabel("停止生成")
+                    .accessibilityLabel("停止")
                 } else {
+                    let ready = canSend && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     Button {
                         let textToSend = draft.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !textToSend.isEmpty else { return }
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         draft = ""
-                        Task {
-                            await store.sendMessage(to: bot, text: textToSend)
-                        }
+                        Task { await store.sendMessage(to: bot, text: textToSend) }
                     } label: {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(
-                                canSend && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    ? Color("AccentColor")
-                                    : Color.secondary.opacity(0.35)
-                            )
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 32, height: 32)
+                            .background(ready ? ArkTheme.accent : Color.secondary.opacity(0.28), in: Circle())
                     }
-                    .disabled(!canSend || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(!ready)
                     .accessibilityLabel("发送")
                 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(Color(uiColor: .systemBackground))
+            .padding(.vertical, 8)
+            .background(ArkTheme.canvas)
+            .overlay(alignment: .top) {
+                Divider()
+            }
         }
+        .background(ArkTheme.canvas.ignoresSafeArea())
         .toolbar {
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 7) {
-                    PlatformIconView(platform: bot.platformId, size: 18)
-                    Text(bot.name)
-                        .font(.headline)
-                        .lineLimit(1)
+                    PlatformIconView(platform: bot.platformId, size: 17)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(bot.name)
+                            .font(.system(size: 14, weight: .semibold))
+                            .lineLimit(1)
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(store.status(for: bot).dotColor)
+                                .frame(width: 5.5, height: 5.5)
+                            Text(shortTransportLabel(for: bot))
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
@@ -189,16 +177,27 @@ struct ChatView: View {
                         store.startNewSession(for: bot)
                     } label: {
                         Image(systemName: "square.and.pencil")
+                            .font(.system(size: 14))
                     }
                     .disabled(!canSend)
-                    .accessibilityLabel("开启新对话")
+                    .accessibilityLabel("新对话")
                 }
             }
         }
     }
 
+    private func shortTransportLabel(for bot: SyncedBot) -> String {
+        if case .connected(let host, _) = store.connectionState {
+            return "\(host) 桥接"
+        }
+        if store.directCredential(for: bot) != nil {
+            return "Hermes 直连"
+        }
+        return "离线"
+    }
+
     private func scrollToBottom(proxy: ScrollViewProxy, isTyping: Bool) {
-        withAnimation(.easeOut(duration: 0.2)) {
+        withAnimation(.easeOut(duration: 0.18)) {
             if isTyping {
                 proxy.scrollTo("typing-indicator", anchor: .bottom)
             } else if let lastId = messages.last?.id {
@@ -210,13 +209,12 @@ struct ChatView: View {
 
 private struct MessageBubbleRow: View {
     let message: SyncedMessage
-    let platform: PlatformId
 
     var body: some View {
         HStack(alignment: .bottom) {
-            if message.isUser { Spacer(minLength: 48) }
+            if message.isUser { Spacer(minLength: 52) }
 
-            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 6) {
+            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 5) {
                 if let tools = message.tools, !tools.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(tools) { tool in
@@ -231,39 +229,42 @@ private struct MessageBubbleRow: View {
                             Image(uiImage: img)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(maxWidth: 240, maxHeight: 240)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .frame(maxWidth: 230, maxHeight: 230)
+                                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                         }
                     }
                 }
 
                 if !message.text.isEmpty {
                     markdownText(message.text)
-                        .font(.body)
+                        .font(.system(size: 14))
+                        .lineSpacing(3)
                         .foregroundStyle(message.isUser ? .white : .primary)
                         .textSelection(.enabled)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 9)
                         .background(
-                            message.isUser
-                                ? AnyShapeStyle(Color("AccentColor"))
-                                : AnyShapeStyle(Color(uiColor: .secondarySystemBackground)),
-                            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            message.isUser ? ArkTheme.accent : ArkTheme.surface,
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .strokeBorder(message.isUser ? .clear : ArkTheme.hairline, lineWidth: 0.8)
                         )
                 }
 
                 if let error = message.error, !error.isEmpty {
                     Label(error, systemImage: "exclamationmark.circle.fill")
-                        .font(.caption2)
+                        .font(.system(size: 11))
                         .foregroundStyle(.red)
                 } else if message.isUser && message.delivery == "sending" {
-                    Text("发送中...")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    Text("发送中")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(.tertiary)
                 }
             }
 
-            if !message.isUser { Spacer(minLength: 44) }
+            if !message.isUser { Spacer(minLength: 42) }
         }
     }
 
@@ -282,22 +283,22 @@ private struct ToolCallPill: View {
     let tool: SyncedToolCall
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 5) {
             statusIcon
             Text(tool.name)
-                .font(.caption.weight(.semibold))
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
             if let summary = tool.summary, !summary.isEmpty {
                 Text(summary)
-                    .font(.caption2)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Color(uiColor: .tertiarySystemBackground), in: Capsule())
+        .padding(.horizontal, 9)
+        .padding(.vertical, 4)
+        .background(ArkTheme.surface, in: Capsule())
         .overlay(
-            Capsule().strokeBorder(Color(uiColor: .separator).opacity(0.45), lineWidth: 0.75)
+            Capsule().strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
         )
     }
 
@@ -305,19 +306,18 @@ private struct ToolCallPill: View {
     private var statusIcon: some View {
         switch tool.status {
         case "running":
-            ProgressView()
-                .controlSize(.mini)
+            ProgressView().controlSize(.mini)
         case "completed":
             Image(systemName: "checkmark.circle.fill")
-                .font(.caption)
-                .foregroundStyle(.green)
+                .font(.system(size: 11))
+                .foregroundStyle(Color(red: 0.13, green: 0.77, blue: 0.37))
         case "errored", "failed":
             Image(systemName: "xmark.circle.fill")
-                .font(.caption)
+                .font(.system(size: 11))
                 .foregroundStyle(.red)
         default:
-            Image(systemName: "wrench.and.screwdriver.fill")
-                .font(.caption2)
+            Image(systemName: "terminal.fill")
+                .font(.system(size: 10))
                 .foregroundStyle(.secondary)
         }
     }
@@ -327,20 +327,24 @@ private struct TypingIndicatorBubble: View {
     @State private var phase = 0
 
     var body: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 4) {
             ForEach(0..<3, id: \.self) { idx in
                 Circle()
-                    .fill(Color.secondary.opacity(phase == idx ? 0.9 : 0.3))
-                    .frame(width: 7, height: 7)
+                    .fill(Color.secondary.opacity(phase == idx ? 0.85 : 0.25))
+                    .frame(width: 6, height: 6)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
+        )
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 340_000_000)
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation(.easeInOut(duration: 0.22)) {
                     phase = (phase + 1) % 3
                 }
             }
@@ -355,51 +359,56 @@ struct InlineApprovalCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: "exclamationmark.shield.fill")
+                Image(systemName: "shield.lefthalf.filled")
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.orange)
                 Text(item.approval.title)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(2)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
                 Spacer()
             }
 
             if let detail = item.approval.detail, !detail.isEmpty {
                 Text(detail)
-                    .font(.caption.monospaced())
+                    .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
-                    .lineLimit(3)
+                    .lineLimit(2)
             }
 
-            HStack(spacing: 8) {
-                Button("允许本次") {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    onDecide("allow_once")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-
-                Button("本次会话允许") {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    onDecide("allow_session")
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-
+            HStack(spacing: 7) {
+                actionPill(title: "允许", style: .primary) { onDecide("allow_once") }
+                actionPill(title: "本次会话", style: .secondary) { onDecide("allow_session") }
                 Spacer()
-
-                Button("拒绝", role: .destructive) {
-                    UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-                    onDecide("deny")
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                actionPill(title: "拒绝", style: .destructive) { onDecide("deny") }
             }
         }
-        .padding(12)
-        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 12))
+        .padding(11)
+        .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color.orange.opacity(0.45), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .strokeBorder(Color.orange.opacity(0.35), lineWidth: 1)
         )
+    }
+
+    private enum PillStyle { case primary, secondary, destructive }
+
+    private func actionPill(title: String, style: PillStyle, action: @escaping () -> Void) -> some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            action()
+        } label: {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .padding(.horizontal, 11)
+                .padding(.vertical, 5)
+                .foregroundStyle(style == .primary ? .white : (style == .destructive ? .red : .primary))
+                .background(
+                    style == .primary
+                        ? ArkTheme.accent
+                        : (style == .destructive ? Color.red.opacity(0.10) : ArkTheme.subtleFill),
+                    in: Capsule()
+                )
+        }
+        .buttonStyle(.plain)
     }
 }

@@ -530,7 +530,8 @@ code{color:#93c5fd}</style></head><body><div class="card">
           return
         }
 
-        const deviceId = `ios_${randomUUID().replace(/-/g, '').slice(0, 12)}`
+        const prefix = String(body.deviceModel || '').toLowerCase().includes('android') ? 'and' : 'ios'
+        const deviceId = `${prefix}_${randomUUID().replace(/-/g, '').slice(0, 12)}`
         const deviceToken = generateRandomToken(32)
         const deviceName =
           typeof body['deviceName'] === 'string' && body['deviceName'].trim()

@@ -1,14 +1,42 @@
 import SwiftUI
 import UIKit
 
+enum ArkTheme {
+    static let canvas = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.043, green: 0.051, blue: 0.071, alpha: 1)
+            : UIColor(red: 0.965, green: 0.969, blue: 0.980, alpha: 1)
+    })
+
+    static let surface = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.082, green: 0.094, blue: 0.125, alpha: 1)
+            : UIColor.white
+    })
+
+    static let subtleFill = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(white: 1.0, alpha: 0.06)
+            : UIColor(red: 0.06, green: 0.09, blue: 0.16, alpha: 0.045)
+    })
+
+    static let hairline = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(white: 1.0, alpha: 0.09)
+            : UIColor(red: 0.06, green: 0.09, blue: 0.16, alpha: 0.07)
+    })
+
+    static let accent = Color(red: 0.145, green: 0.388, blue: 0.922) // #2563EB
+}
+
 extension PlatformId {
     var brandColor: Color {
         switch self {
-        case .grok: return Color(red: 0.14, green: 0.16, blue: 0.20)
-        case .metaMuse: return Color(red: 0.09, green: 0.48, blue: 0.96)
-        case .dot: return Color(red: 0.06, green: 0.65, blue: 0.52)
-        case .hark: return Color(red: 0.92, green: 0.42, blue: 0.18)
-        case .hermes: return Color(red: 0.46, green: 0.34, blue: 0.95)
+        case .grok: return Color(red: 0.18, green: 0.21, blue: 0.28)
+        case .metaMuse: return Color(red: 0.09, green: 0.46, blue: 0.95)
+        case .dot: return Color(red: 0.05, green: 0.62, blue: 0.49)
+        case .hark: return Color(red: 0.90, green: 0.40, blue: 0.16)
+        case .hermes: return Color(red: 0.44, green: 0.32, blue: 0.93)
         }
     }
 }
@@ -16,18 +44,18 @@ extension PlatformId {
 extension ConnectionStatus {
     var dotColor: Color {
         switch self {
-        case .online: return .green
-        case .busy: return .blue
-        case .attention: return .orange
-        case .offline: return .secondary.opacity(0.55)
-        case .error: return .red
+        case .online: return Color(red: 0.13, green: 0.77, blue: 0.37)
+        case .busy: return ArkTheme.accent
+        case .attention: return Color(red: 0.96, green: 0.62, blue: 0.04)
+        case .offline: return .secondary.opacity(0.45)
+        case .error: return Color(red: 0.94, green: 0.27, blue: 0.27)
         }
     }
 }
 
 struct PlatformIconView: View {
     let platform: PlatformId
-    var size: CGFloat = 20
+    var size: CGFloat = 18
 
     var body: some View {
         Image(platform.assetImageName)
@@ -41,27 +69,26 @@ struct PlatformIconView: View {
 struct BotAvatarView: View {
     let bot: SyncedBot
     let status: ConnectionStatus
-    var size: CGFloat = 44
+    var size: CGFloat = 40
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             avatarCore
                 .frame(width: size, height: size)
-                .clipShape(RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.30, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                        .strokeBorder(bot.platformId.brandColor.opacity(0.18), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: size * 0.30, style: .continuous)
+                        .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
                 )
 
-            // Status indicator dot
             Circle()
                 .fill(status.dotColor)
-                .frame(width: max(10, size * 0.25), height: max(10, size * 0.25))
+                .frame(width: max(9, size * 0.23), height: max(9, size * 0.23))
                 .overlay(
                     Circle()
-                        .stroke(Color(uiColor: .systemBackground), lineWidth: 2)
+                        .stroke(ArkTheme.surface, lineWidth: 1.8)
                 )
-                .offset(x: 2, y: 2)
+                .offset(x: 1.5, y: 1.5)
         }
     }
 
@@ -73,25 +100,21 @@ struct BotAvatarView: View {
                 .scaledToFill()
         } else if let emoji = bot.emoji, !emoji.isEmpty {
             ZStack {
-                LinearGradient(
-                    colors: [bot.platformId.brandColor.opacity(0.22), bot.platformId.brandColor.opacity(0.08)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                bot.platformId.brandColor.opacity(0.10)
                 Text(emoji)
-                    .font(.system(size: size * 0.5))
+                    .font(.system(size: size * 0.48))
             }
         } else {
             ZStack {
                 LinearGradient(
-                    colors: [bot.platformId.brandColor.opacity(0.18), bot.platformId.brandColor.opacity(0.06)],
+                    colors: [bot.platformId.brandColor.opacity(0.13), bot.platformId.brandColor.opacity(0.04)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
                 Image(bot.platformId.assetImageName)
                     .resizable()
                     .scaledToFit()
-                    .padding(size * 0.16)
+                    .padding(size * 0.17)
             }
         }
     }
@@ -114,16 +137,13 @@ struct PlatformBadgePill: View {
     let platform: PlatformId
 
     var body: some View {
-        HStack(spacing: 4) {
-            PlatformIconView(platform: platform, size: 13)
-            Text(platform.shortLabel)
-                .font(.caption2.weight(.semibold))
-                .lineLimit(1)
-        }
-        .fixedSize(horizontal: true, vertical: true)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(platform.brandColor.opacity(0.12), in: Capsule())
-        .foregroundStyle(platform.brandColor)
+        Text(platform.shortLabel)
+            .font(.system(size: 10.5, weight: .semibold))
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: true)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(platform.brandColor.opacity(0.10), in: Capsule())
+            .foregroundStyle(platform.brandColor)
     }
 }

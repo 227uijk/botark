@@ -681,7 +681,7 @@ export function SettingsView() {
     { id: 'grok-accounts', label: 'Grok Bot 账号管理', icon: Users, platformId: 'grok', count: grokAccounts.length },
     { id: 'hark-accounts', label: 'Hark 账号管理', icon: Users, platformId: 'hark', count: harkAccounts.length },
     { id: 'hermes-accounts', label: 'Hermes 实例管理', icon: Server, platformId: 'hermes', count: hermesAccounts.length },
-    { id: 'mobile-sync', label: 'iOS 扫码同步', icon: Smartphone },
+    { id: 'mobile-sync', label: '手机扫码同步', icon: Smartphone },
     { id: 'proxy-pool', label: '代理池与自动分配', icon: Server, count: pool.length },
     { id: 'general', label: '常规、分组与安全', icon: Settings }
   ]

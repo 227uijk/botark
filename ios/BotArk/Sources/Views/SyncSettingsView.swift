@@ -17,15 +17,23 @@ struct SyncSettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                desktopBridgeSection
-                airDropOfflineSection
-                directHermesSection
-                privacyArchitectureSection
-                dangerZoneSection
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    desktopBridgeCard
+                    offlineBundleCard
+                    directHermesCard
+                    footerActions
+                }
+                .padding(16)
             }
-            .listStyle(.insetGrouped)
-            .navigationTitle("零服务器同步")
+            .background(ArkTheme.canvas.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Text("同步")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                }
+            }
             .fileImporter(
                 isPresented: $showBundleImporter,
                 allowedContentTypes: [.data, .json],
@@ -33,201 +41,291 @@ struct SyncSettingsView: View {
             ) { result in
                 handleFileImport(result)
             }
-            .alert("输入同步包传输密钥", isPresented: $showTransferKeyPrompt) {
-                TextField("粘贴电脑端显示的传输密钥", text: $bundleTransferKey)
+            .alert("输入传输密钥", isPresented: $showTransferKeyPrompt) {
+                TextField("粘贴电脑端密钥", text: $bundleTransferKey)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                 Button("取消", role: .cancel) {
                     pendingBundleData = nil
                     bundleTransferKey = ""
                 }
-                Button("解密并导入") {
+                Button("解密导入") {
                     decryptPendingBundle()
                 }
             } message: {
-                Text("正在解密 \(pendingBundleName)，该文件使用 AES-256-GCM 端到端加密。")
+                Text(pendingBundleName)
             }
-            .confirmationDialog("确定清空本机所有同步缓存与密钥？", isPresented: $showWipeConfirm, titleVisibility: .visible) {
+            .confirmationDialog("清空本机同步缓存与密钥？", isPresented: $showWipeConfirm, titleVisibility: .visible) {
                 Button("清空全部数据", role: .destructive) {
                     store.wipeAllLocalData()
                 }
                 Button("取消", role: .cancel) {}
-            } message: {
-                Text("此操作会解除电脑配对、移除 Keychain 中的 Hermes 直连凭据，并清空本地缓存，不会影响电脑端数据。")
             }
         }
     }
 
-    private var desktopBridgeSection: some View {
-        Section {
-            if let desktop = store.pairedDesktop {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Image(systemName: "laptopcomputer.and.iphone")
-                            .font(.title2)
-                            .foregroundStyle(Color("AccentColor"))
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11.5, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 4)
+    }
+
+    private var desktopBridgeCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionLabel("电脑端桥接")
+
+            VStack(alignment: .leading, spacing: 12) {
+                if let desktop = store.pairedDesktop {
+                    HStack(spacing: 10) {
+                        Image(systemName: "laptopcomputer")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(ArkTheme.accent)
+                            .frame(width: 36, height: 36)
+                            .background(ArkTheme.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
                         VStack(alignment: .leading, spacing: 2) {
                             Text(desktop.hostName)
-                                .font(.headline)
-                            Text("\(desktop.activeHost):\(String(desktop.port))")
-                                .font(.caption.monospaced())
+                                .font(.system(size: 14.5, weight: .semibold))
+                            Text("\(desktop.activeHost):\(String(desktop.port)) · \(desktop.fingerprint)")
+                                .font(.system(size: 11.5, design: .monospaced))
                                 .foregroundStyle(.secondary)
                         }
+
                         Spacer()
-                        statusBadge
+
+                        statusPill
                     }
 
-                    HStack(spacing: 12) {
-                        Label("指纹 \(desktop.fingerprint)", systemImage: "checkmark.seal.fill")
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(store.snapshot.bots.count) 个智能体")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    HStack(spacing: 10) {
+                    HStack(spacing: 8) {
                         Button {
                             Task { await store.reconnectDesktop() }
                         } label: {
-                            Label("重新连接", systemImage: "arrow.clockwise")
+                            Label("重连", systemImage: "arrow.clockwise")
+                                .font(.system(size: 12.5, weight: .semibold))
                                 .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(ArkTheme.subtleFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                        .buttonStyle(.plain)
 
                         Button {
                             showQRScanner = true
                         } label: {
                             Label("重新扫码", systemImage: "qrcode.viewfinder")
+                                .font(.system(size: 12.5, weight: .semibold))
+                                .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(ArkTheme.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                    }
-                }
-                .padding(.vertical, 4)
+                        .buttonStyle(.plain)
 
-                Button("解除电脑端配对", role: .destructive) {
-                    store.unpairDesktop()
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("尚未配对电脑端 BotArk")
-                        .font(.headline)
-                    Text("打开 Mac / Windows 上的 BotArk，点击左侧边栏二维码图标，用 iPhone 扫一扫即可完成零服务器同步。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Button {
-                        showQRScanner = true
-                    } label: {
-                        Label("扫一扫配对电脑端", systemImage: "qrcode.viewfinder")
-                            .frame(maxWidth: .infinity)
+                        Button {
+                            store.unpairDesktop()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 12.5, weight: .bold))
+                                .foregroundStyle(.red)
+                                .frame(width: 36, height: 33)
+                                .background(Color.red.opacity(0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("解绑")
                     }
-                    .buttonStyle(.borderedProminent)
+                } else {
+                    HStack(spacing: 10) {
+                        Image(systemName: "qrcode.viewfinder")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(ArkTheme.accent)
+                            .frame(width: 36, height: 36)
+                            .background(ArkTheme.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("未配对电脑端")
+                                .font(.system(size: 14.5, weight: .semibold))
+                            Text("局域网 / 热点 / Tailscale 直连")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Button("扫码") {
+                            showQRScanner = true
+                        }
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(ArkTheme.accent, in: Capsule())
+                        .buttonStyle(.plain)
+                    }
                 }
-                .padding(.vertical, 6)
             }
-        } header: {
-            Text("通道一 · 局域网 / Tailscale 扫码实时同步")
-        } footer: {
-            Text("配对后自动记忆所有局域网与 Tailscale IP，支持 Grok Bot、Meta Muse、ChatGPT Dot、Hark 与 Hermes 全平台同步收发。")
+            .padding(14)
+            .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
+            )
         }
     }
 
-    private var statusBadge: some View {
-        let isConnected = store.connectionState.isBridgeConnected
-        return Text(isConnected ? "实时在线" : "离线")
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(isConnected ? .green : .secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background((isConnected ? Color.green : Color.gray).opacity(0.14), in: Capsule())
+    private var statusPill: some View {
+        let online = store.connectionState.isBridgeConnected
+        return HStack(spacing: 4) {
+            Circle()
+                .fill(online ? Color(red: 0.13, green: 0.77, blue: 0.37) : .gray)
+                .frame(width: 6, height: 6)
+            Text(online ? "在线" : "离线")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(online ? Color(red: 0.08, green: 0.56, blue: 0.25) : .secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background((online ? Color.green : Color.gray).opacity(0.12), in: Capsule())
     }
 
-    private var airDropOfflineSection: some View {
-        Section {
-            Button {
-                showBundleImporter = true
-            } label: {
-                Label("导入加密同步包 (.botark-sync)", systemImage: "square.and.arrow.down.on.square")
-            }
+    private var offlineBundleCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionLabel("离线同步包")
 
-            if let importNotice {
-                Label(importNotice, systemImage: "checkmark.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.green)
+            VStack(spacing: 0) {
+                Button {
+                    showBundleImporter = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.down.doc")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(ArkTheme.accent)
+                            .frame(width: 28)
+                        Text("导入 .botark-sync 加密包")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text("AirDrop")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+
+                if let importNotice {
+                    Divider().padding(.leading, 14)
+                    Label(importNotice, systemImage: "checkmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.green)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 9)
+                }
+                if let importError {
+                    Divider().padding(.leading, 14)
+                    Label(importError, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 9)
+                }
             }
-            if let importError {
-                Label(importError, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-        } header: {
-            Text("通道二 · 无 Wi-Fi 隔空投送离线包")
-        } footer: {
-            Text("即使电脑和手机不在同一局域网，也可在电脑端导出 AES-256-GCM 加密的 .botark-sync 文件，通过隔空投送（AirDrop）传到 iPhone 导入。")
+            .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
+            )
         }
     }
 
-    private var directHermesSection: some View {
-        Section {
-            if store.directHermesCredentials.isEmpty {
-                Text("暂无 Hermes 脱机直连凭据")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else {
+    private var directHermesCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionLabel("Hermes 脱机直连")
+
+            VStack(spacing: 0) {
                 ForEach(store.directHermesCredentials) { cred in
                     HStack(spacing: 10) {
-                        PlatformIconView(platform: .hermes, size: 24)
-                        VStack(alignment: .leading, spacing: 2) {
+                        PlatformIconView(platform: .hermes, size: 22)
+                        VStack(alignment: .leading, spacing: 1) {
                             Text(cred.botName ?? cred.displayName ?? "Hermes")
-                                .font(.subheadline.weight(.semibold))
+                                .font(.system(size: 13.5, weight: .semibold))
                             Text(cred.baseUrl)
-                                .font(.caption2.monospaced())
+                                .font(.system(size: 11, design: .monospaced))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
                         Spacer()
                         Text("Keychain")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.green)
+                            .font(.system(size: 10.5, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.08, green: 0.56, blue: 0.25))
                             .padding(.horizontal, 7)
                             .padding(.vertical, 3)
-                            .background(Color.green.opacity(0.14), in: Capsule())
+                            .background(Color.green.opacity(0.12), in: Capsule())
                     }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+
+                    Divider().padding(.leading, 46)
                 }
+
+                Button {
+                    showAddHermes = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(ArkTheme.accent)
+                            .frame(width: 22)
+                        Text("添加独立 Hermes 服务器")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(ArkTheme.accent)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
             }
+            .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
+            )
+        }
+    }
+
+    private var footerActions: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 14) {
+                Label("无服务器", systemImage: "cloud.slash")
+                Label("AES-256-GCM", systemImage: "lock.shield")
+                Label("Keychain", systemImage: "key")
+            }
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 6)
 
             Button {
-                showAddHermes = true
-            } label: {
-                Label("手动添加独立 Hermes 服务器", systemImage: "plus.circle.fill")
-            }
-        } header: {
-            Text("Hermes 脱机直连（电脑休眠可用）")
-        } footer: {
-            Text("电脑端扫码同步时开启「附带 Hermes 直连凭据」，即可将 API 凭据加密转入 iOS Keychain；离开局域网或电脑关机时也能直接与远程 Hermes Agent 对话。")
-        }
-    }
-
-    private var privacyArchitectureSection: some View {
-        Section("零服务器安全说明") {
-            Label("无云端账号、无第三方中转服务器", systemImage: "cloud.slash.fill")
-                .font(.caption)
-            Label("设备令牌与 API Key 仅存 iOS 硬件 Keychain", systemImage: "key.fill")
-                .font(.caption)
-            Label("扫码传输与离线同步包采用 AES-256-GCM 加密", systemImage: "lock.shield.fill")
-                .font(.caption)
-        }
-    }
-
-    private var dangerZoneSection: some View {
-        Section {
-            Button("清空本机同步缓存与密钥", role: .destructive) {
                 showWipeConfirm = true
+            } label: {
+                Text("清空本机缓存与密钥")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 11)
+                    .background(ArkTheme.surface, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .strokeBorder(ArkTheme.hairline, lineWidth: 0.8)
+                    )
             }
+            .buttonStyle(.plain)
         }
     }
 
@@ -240,13 +338,12 @@ struct SyncSettingsView: View {
             let access = url.startAccessingSecurityScopedResource()
             defer { if access { url.stopAccessingSecurityScopedResource() } }
             do {
-                let data = try Data(contentsOf: url)
-                pendingBundleData = data
+                pendingBundleData = try Data(contentsOf: url)
                 pendingBundleName = url.lastPathComponent
                 bundleTransferKey = ""
                 showTransferKeyPrompt = true
             } catch {
-                importError = "读取文件失败：\(error.localizedDescription)"
+                importError = error.localizedDescription
             }
         case .failure(let error):
             importError = error.localizedDescription
@@ -257,10 +354,10 @@ struct SyncSettingsView: View {
         guard let data = pendingBundleData else { return }
         do {
             try store.importOfflineBundle(fileData: data, transferKey: bundleTransferKey)
-            importNotice = "已成功解密并导入 \(store.snapshot.bots.count) 个智能体。"
+            importNotice = "已导入 \(store.snapshot.bots.count) 个智能体"
             importError = nil
         } catch {
-            importError = "解密失败，请核对传输密钥是否正确（\(error.localizedDescription)）。"
+            importError = "密钥错误或文件已损坏"
         }
         pendingBundleData = nil
         bundleTransferKey = ""
@@ -281,30 +378,20 @@ struct AddStandaloneHermesSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    HStack(spacing: 12) {
-                        PlatformIconView(platform: .hermes, size: 36)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Hermes Agent 独立直连")
-                                .font(.headline)
-                            Text("无需电脑端，直连 OpenAI 兼容 /v1 API Server")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-
-                Section("服务器连接信息") {
-                    TextField("显示名称（如 My Hermes）", text: $name)
-                    TextField("Base URL（如 https://hermes.myhost.ts.net:8642）", text: $baseUrl)
+                Section("连接信息") {
+                    TextField("名称", text: $name)
+                        .font(.system(size: 14))
+                    TextField("Base URL", text: $baseUrl)
+                        .font(.system(size: 14, design: .monospaced))
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.URL)
-                    SecureField("API Key（如无鉴权可留空）", text: $apiKey)
+                    SecureField("API Key（可选）", text: $apiKey)
+                        .font(.system(size: 14))
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    TextField("模型名（留空自动探测默认模型）", text: $model)
+                    TextField("模型（留空自动探测）", text: $model)
+                        .font(.system(size: 14))
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                 }
@@ -312,7 +399,7 @@ struct AddStandaloneHermesSheet: View {
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
-                            .font(.footnote)
+                            .font(.system(size: 12.5))
                             .foregroundStyle(.red)
                     }
                 }
@@ -327,12 +414,7 @@ struct AddStandaloneHermesSheet: View {
                     Button {
                         Task { await connect() }
                     } label: {
-                        if busy {
-                            ProgressView()
-                        } else {
-                            Text("测试并添加")
-                                .fontWeight(.semibold)
-                        }
+                        if busy { ProgressView() } else { Text("添加").fontWeight(.semibold) }
                     }
                     .disabled(busy || baseUrl.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }

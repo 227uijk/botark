@@ -10,9 +10,10 @@ export type PlatformKey = 'grok' | 'muse' | 'dot' | 'hark' | 'hermes'
 
 export const RELEASE_URLS = {
   latest: 'https://github.com/qybaihe/botark/releases/latest',
-  macArm: 'https://github.com/qybaihe/botark/releases/download/v0.8.0/BotArk-0.8.0-arm64.dmg',
-  macIntel: 'https://github.com/qybaihe/botark/releases/download/v0.8.0/BotArk-0.8.0-x64.dmg',
-  winX64: 'https://github.com/qybaihe/botark/releases/download/v0.8.0/BotArk-Setup-0.8.0-x64.exe',
+  macArm: 'https://github.com/qybaihe/botark/releases/download/v0.9.0/BotArk-0.9.0-arm64.dmg',
+  macIntel: 'https://github.com/qybaihe/botark/releases/download/v0.9.0/BotArk-0.9.0-x64.dmg',
+  winX64: 'https://github.com/qybaihe/botark/releases/download/v0.9.0/BotArk-Setup-0.9.0-x64.exe',
+  androidApk: 'https://github.com/qybaihe/botark/releases/download/v0.9.0/BotArk-0.9.0-android.apk',
   iosRepo: 'https://github.com/qybaihe/botark/tree/main/ios/BotArk',
   repo: 'https://github.com/qybaihe/botark',
   discussions: 'https://github.com/qybaihe/botark/discussions'

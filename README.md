@@ -133,38 +133,38 @@ Rather than wrapping web pages in generic tabs, BotArk adapts the right-side wor
 
 ---
 
-## 📱 Native iOS Companion App (100% Zero-Server QR Sync)
+## 📱 Native iOS & Android Companion Apps (100% Zero-Server QR Sync)
 
-Take all 5 platforms with you on iPhone — **without deploying or trusting any cloud server**:
+Take all 5 platforms with you on **iPhone & Android** — **without deploying or trusting any cloud server**:
 
 <div align="center">
   <table>
     <tr>
       <td align="center" width="25%">
-        <img src="docs/assets/ios-onboarding.png" alt="BotArk iOS Onboarding & QR Pairing" width="100%" /><br />
-        <sub><b>1. Scan QR to Pair</b><br />Zero cloud account needed</sub>
+        <img src="docs/assets/ios-onboarding.png" alt="BotArk iOS QR Pairing" width="100%" /><br />
+        <sub><b>iOS · Scan QR to Pair</b><br />Zero cloud account</sub>
       </td>
       <td align="center" width="25%">
-        <img src="docs/assets/ios-synced.png" alt="BotArk iOS Synced 5-Platform Bot List" width="100%" /><br />
-        <sub><b>2. All 5 Platforms Synced</b><br />Live LAN / Tailscale bridge</sub>
+        <img src="docs/assets/ios-synced.png" alt="BotArk iOS Synced 5-Platform List" width="100%" /><br />
+        <sub><b>iOS · 5 Platforms Live</b><br />LAN / Tailscale bridge</sub>
       </td>
       <td align="center" width="25%">
-        <img src="docs/assets/ios-chat.png" alt="BotArk iOS Streaming Chat & Inline Approvals" width="100%" /><br />
-        <sub><b>3. Live Chat &amp; Approvals</b><br />Tool calls + 1-tap allow/deny</sub>
+        <img src="docs/assets/android-chat.png" alt="BotArk Android Chat & Approvals" width="100%" /><br />
+        <sub><b>Android · Chat &amp; Approvals</b><br />Tool calls + 1-tap allow/deny</sub>
       </td>
       <td align="center" width="25%">
-        <img src="docs/assets/ios-sync-settings.png" alt="BotArk iOS Zero-Server Sync & Keychain" width="100%" /><br />
-        <sub><b>4. AirDrop &amp; Keychain</b><br />Offline bundle + Hermes direct</sub>
+        <img src="docs/assets/android-sync-settings.png" alt="BotArk Android Zero-Server Sync" width="100%" /><br />
+        <sub><b>Android · Offline &amp; Keystore</b><br />Encrypted bundle + Hermes direct</sub>
       </td>
     </tr>
   </table>
 </div>
 
-- **Zero-Server LAN / Hotspot / Tailscale Live Bridge**: Click the QR icon in BotArk Desktop's sidebar and scan with the native SwiftUI iOS app (`ios/BotArk`). Instantly syncs all Grok Bot, Meta Muse, ChatGPT Dot, Hark & Hermes bots, streaming chats, tool calls, and 1-tap security approvals.
-- **AES-256-GCM Offline AirDrop Bundle (`.botark-sync`)**: Export an encrypted workspace snapshot from Desktop and AirDrop it directly to your iPhone when off the same Wi-Fi.
-- **Hermes Direct Mode (Works While Computer Is Asleep)**: Opt-in end-to-end AES-256-GCM credential handoff into iOS hardware Keychain lets your iPhone stream directly from remote Hermes instances even when your Mac/PC is offline, or add standalone Hermes servers without a computer.
+- **Zero-Server LAN / Hotspot / Tailscale Live Bridge**: Click the QR icon in BotArk Desktop's sidebar and scan with **BotArk for iOS** (SwiftUI, `ios/BotArk`) or **BotArk for Android** (Jetpack Compose, `android/BotArk` — zero GMS required). Instantly syncs all Grok Bot, Meta Muse, ChatGPT Dot, Hark & Hermes bots, streaming chats, tool calls, and 1-tap security approvals.
+- **AES-256-GCM Offline Sync Bundle (`.botark-sync`)**: Export an encrypted workspace snapshot from Desktop and transfer via AirDrop / Quick Share / USB when off the same Wi-Fi.
+- **Hermes Direct Mode (Works While Computer Is Asleep)**: Opt-in end-to-end AES-256-GCM credential handoff into iOS Keychain / Android Keystore lets your phone stream directly from remote Hermes instances even when your Mac/PC is offline.
 
-👉 See [**`ios/BotArk/README.md`**](ios/BotArk/README.md) to build & run the native SwiftUI iOS app in Xcode in 2 minutes.
+👉 **iOS (SwiftUI)**: [**`ios/BotArk/README.md`**](ios/BotArk/README.md) · **Android (Jetpack Compose + Direct APK)**: [**`android/BotArk/README.md`**](android/BotArk/README.md) & [**GitHub Releases**](https://github.com/qybaihe/botark/releases/latest)
 
 ---
 
