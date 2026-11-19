@@ -221,6 +221,13 @@ npm run dev
 
 ---
 
+## 🤝 社区与致谢
+
+- 感谢 [**LINUX DO**](https://linux.do/) 社区与各位佬友的交流、反馈与支持 —— 真诚、友善、团结、专业，共建你我引以为荣之社区。
+- 欢迎在 [**GitHub Discussions**](https://github.com/qybaihe/botark/discussions) 分享你的多 Agent 工作流或提议下一个想接入的平台。
+
+---
+
 ## 📈 Star 增长趋势
 
 <div align="center">

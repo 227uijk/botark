@@ -145,6 +145,13 @@
 
 ---
 
+## 🤝 社群與致謝
+
+- 感謝 [**LINUX DO**](https://linux.do/) 社群與各位開發者的交流、回饋與支持。
+- 歡迎在 [**GitHub Discussions**](https://github.com/qybaihe/botark/discussions) 分享你的多 Agent 工作流或建議下一個想接入的平台。
+
+---
+
 ## 📈 Star 增長趨勢
 
 <div align="center">

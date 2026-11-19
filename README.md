@@ -221,6 +221,13 @@ Everything stays locally on your computer (`~/Library/Application Support/botark
 
 ---
 
+## 🤝 Community & Acknowledgements
+
+- Built with support and feedback from the [**LINUX DO**](https://linux.do/) community — where builders share ideas openly, honestly, and generously.
+- Questions, workflow tips, or new agent platform requests? Join [**GitHub Discussions**](https://github.com/qybaihe/botark/discussions).
+
+---
+
 ## 📈 Star History
 
 <div align="center">
