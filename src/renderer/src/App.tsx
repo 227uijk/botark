@@ -10,6 +10,7 @@ import { Sidebar } from '@/components/sidebar/Sidebar'
 import { UpdateBanner } from '@/components/update/UpdateBanner'
 import { useGlobalShortcuts } from '@/lib/shortcuts'
 import { startAdapterBridge } from '@/services/adapterBridge'
+import { startMobileSyncBridge } from '@/services/mobileSyncBridge'
 import { useBotStore } from '@/store/botStore'
 import { startPrefsSync, usePrefsStore } from '@/store/prefsStore'
 
@@ -23,6 +24,7 @@ export default function App() {
 
   useEffect(() => {
     const stop = startAdapterBridge()
+    const stopMobileSync = startMobileSyncBridge()
     // After reload the zustand status may still say online, but adapters have
     // no live session — reconnect Muse/Grok/Hark so send does not fail.
     const { accounts, connectAccount, addBot, removeAccountFromBot } = useBotStore.getState()
@@ -118,7 +120,10 @@ export default function App() {
         })
         .catch(() => undefined)
     }
-    return stop
+    return () => {
+      stopMobileSync()
+      stop()
+    }
   }, [])
 
   // Handle `--open-grok-login` startup trigger or first-visit full-screen guide

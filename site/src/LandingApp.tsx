@@ -267,7 +267,7 @@ export function LandingApp() {
             <img src="./logo.png" alt="BotArk" className="size-8 rounded-lg object-contain" />
             <span className="text-[16px] font-bold tracking-tight">BotArk</span>
             <span className="hidden rounded-full border border-blue-400/30 bg-blue-500/15 px-2 py-0.5 font-mono text-[11px] font-medium text-blue-300 sm:inline-block">
-              v0.7.0
+              v0.8.0
             </span>
           </a>
 
@@ -1423,12 +1423,12 @@ export function LandingApp() {
               </h2>
               <p className="mt-2 max-w-xl text-[15px] text-slate-300">
                 {L(
-                  '立即下载 BotArk v0.7.0 正式版，开启干净、隔离、顺手的多智能体桌面工作流。',
-                  'Download BotArk v0.7.0 for macOS or Windows — free, MIT-licensed, and 100% local.'
+                  '立即下载 BotArk v0.8.0 正式版（支持原生 SwiftUI iOS 零服务器扫码同步），开启干净、隔离、顺手的多智能体工作流。',
+                  'Download BotArk v0.8.0 for macOS & Windows + zero-server QR sync to native SwiftUI iOS — free, MIT-licensed, and 100% local.'
                 )}
               </p>
 
-              <div className="mt-8 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
+              <div className="mt-8 grid w-full max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <a
                   href={RELEASE_URLS.macArm}
                   className="flex flex-col items-center gap-1 rounded-2xl border border-blue-400/40 bg-blue-500/18 p-4 text-white transition hover:-translate-y-0.5 hover:bg-blue-500/28"
@@ -1438,7 +1438,7 @@ export function LandingApp() {
                     <span>macOS (Apple Silicon)</span>
                   </div>
                   <span className="font-mono text-[11px] text-blue-200">
-                    BotArk-0.7.0-arm64.dmg
+                    BotArk-0.8.0-arm64.dmg
                   </span>
                 </a>
 
@@ -1451,7 +1451,7 @@ export function LandingApp() {
                     <span>macOS (Intel x64)</span>
                   </div>
                   <span className="font-mono text-[11px] text-slate-400">
-                    BotArk-0.7.0-x64.dmg
+                    BotArk-0.8.0-x64.dmg
                   </span>
                 </a>
 
@@ -1464,7 +1464,22 @@ export function LandingApp() {
                     <span>Windows 10 / 11</span>
                   </div>
                   <span className="font-mono text-[11px] text-slate-400">
-                    BotArk-Setup-0.7.0-x64.exe
+                    BotArk-Setup-0.8.0-x64.exe
+                  </span>
+                </a>
+
+                <a
+                  href={RELEASE_URLS.iosRepo}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center gap-1 rounded-2xl border border-emerald-400/35 bg-emerald-500/14 p-4 text-white transition hover:-translate-y-0.5 hover:bg-emerald-500/24"
+                >
+                  <div className="flex items-center gap-2 text-[14.5px] font-bold">
+                    <Apple className="size-4 text-emerald-300" />
+                    <span>{L('iOS 扫码同步端', 'iOS Companion')}</span>
+                  </div>
+                  <span className="font-mono text-[11px] text-emerald-200">
+                    SwiftUI · ios/BotArk
                   </span>
                 </a>
               </div>

@@ -16,6 +16,11 @@ import {
   type MuseMainEvent,
   type UpdateStatusEvent
 } from '@shared/ipc'
+import {
+  MOBILE_SYNC_CHANNELS,
+  type MobileRelayCommand,
+  type MobileSyncStateView
+} from '@shared/mobileSync'
 
 const bridge: BotHubBridge = {
   platform: process.platform,
@@ -148,6 +153,28 @@ const bridge: BotHubBridge = {
       const handler = (_event: unknown, payload: HermesMainEvent) => listener(payload)
       ipcRenderer.on(HERMES_CHANNELS.event, handler)
       return () => ipcRenderer.removeListener(HERMES_CHANNELS.event, handler)
+    }
+  },
+  mobileSync: {
+    getState: () => ipcRenderer.invoke(MOBILE_SYNC_CHANNELS.getState),
+    start: () => ipcRenderer.invoke(MOBILE_SYNC_CHANNELS.start),
+    stop: () => ipcRenderer.invoke(MOBILE_SYNC_CHANNELS.stop),
+    rotatePairing: () => ipcRenderer.invoke(MOBILE_SYNC_CHANNELS.rotatePairing),
+    setIncludeDirectCredentials: (enabled) =>
+      ipcRenderer.invoke(MOBILE_SYNC_CHANNELS.setIncludeDirectCredentials, enabled),
+    revokeDevice: (deviceId) => ipcRenderer.invoke(MOBILE_SYNC_CHANNELS.revokeDevice, deviceId),
+    exportOfflineBundle: () => ipcRenderer.invoke(MOBILE_SYNC_CHANNELS.exportOfflineBundle),
+    pushSnapshot: (snapshot) => ipcRenderer.send(MOBILE_SYNC_CHANNELS.pushSnapshot, snapshot),
+    pushEvent: (event) => ipcRenderer.send(MOBILE_SYNC_CHANNELS.pushEvent, event),
+    onStateChanged: (listener) => {
+      const handler = (_event: unknown, payload: MobileSyncStateView) => listener(payload)
+      ipcRenderer.on(MOBILE_SYNC_CHANNELS.stateChanged, handler)
+      return () => ipcRenderer.removeListener(MOBILE_SYNC_CHANNELS.stateChanged, handler)
+    },
+    onCommand: (listener) => {
+      const handler = (_event: unknown, payload: MobileRelayCommand) => listener(payload)
+      ipcRenderer.on(MOBILE_SYNC_CHANNELS.command, handler)
+      return () => ipcRenderer.removeListener(MOBILE_SYNC_CHANNELS.command, handler)
     }
   },
   vault: {

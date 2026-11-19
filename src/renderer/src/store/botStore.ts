@@ -67,6 +67,7 @@ export interface BotHubState {
     | 'grok-accounts'
     | 'hark-accounts'
     | 'hermes-accounts'
+    | 'mobile-sync'
     | 'proxy-pool'
   /** Active document/article opened in the right-side Split-Pane Document Canvas. */
   activeDocument: import('@/components/chat/NativeDocumentDialog').NativeDocumentTarget | null
@@ -106,6 +107,7 @@ export interface BotHubState {
       | 'grok-accounts'
       | 'hark-accounts'
       | 'hermes-accounts'
+      | 'mobile-sync'
       | 'proxy-pool'
   ) => void
   openPalette: (query?: string) => void

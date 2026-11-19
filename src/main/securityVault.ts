@@ -45,6 +45,7 @@ const AUDITED_STORES: ReadonlyArray<{ id: string; label: string; fileName: strin
   { id: 'grok-tokens', label: 'Grok Sand 令牌保险箱', fileName: 'grok-sand-tokens.json' },
   { id: 'dot-tokens', label: 'Dot OAuth 凭据保险箱', fileName: 'dot-accounts.json' },
   { id: 'hermes-accounts', label: 'Hermes 网关密钥保险箱', fileName: 'hermes-accounts.json' },
+  { id: 'mobile-sync', label: 'iOS 配对设备令牌哈希库', fileName: 'mobile-sync-devices.json' },
   { id: 'secrets-vault', label: '记忆快照与私密数据保险箱', fileName: VAULT_FILE }
 ]
 

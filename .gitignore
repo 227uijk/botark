@@ -14,3 +14,6 @@ hold-*.mjs
 *.bak
 *.local
 .tmp-screenshots/
+xcuserdata/
+DerivedData/
+*.xcresult

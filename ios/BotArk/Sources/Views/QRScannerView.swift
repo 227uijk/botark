@@ -1,0 +1,311 @@
+import AVFoundation
+import SwiftUI
+import UIKit
+
+struct QRScannerSheet: View {
+    @Bindable var store: BotArkStore
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var manualUri = ""
+    @State private var torchEnabled = false
+    @State private var cameraAvailable = false
+    @State private var scannedOnce = false
+    @State private var localError: String?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 18) {
+                    scannerHero
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("或手动粘贴配对链接", systemImage: "link.badge.plus")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+
+                        Text("在电脑端 BotArk「设置 → iOS 扫码同步」点击“复制配对链接”，或者在模拟器中直接粘贴测试。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: 8) {
+                            TextField("botark://pair?v=1&hosts=...", text: $manualUri, axis: .vertical)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .font(.caption.monospaced())
+                                .lineLimit(2...4)
+                                .padding(10)
+                                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+
+                            Button {
+                                if let pasted = UIPasteboard.general.string {
+                                    manualUri = pasted
+                                }
+                            } label: {
+                                Image(systemName: "doc.on.clipboard")
+                                    .font(.body.weight(.medium))
+                                    .frame(width: 40, height: 40)
+                                    .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                            }
+                            .accessibilityLabel("粘贴剪贴板")
+                        }
+
+                        Button {
+                            Task { await performPairing(uri: manualUri) }
+                        } label: {
+                            HStack(spacing: 8) {
+                                if store.pairingBusy {
+                                    ProgressView()
+                                        .tint(.white)
+                                } else {
+                                    Image(systemName: "bolt.horizontal.circle.fill")
+                                }
+                                Text(store.pairingBusy ? "正在握手并同步..." : "立即配对并同步")
+                                    .fontWeight(.semibold)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(store.pairingBusy || manualUri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .padding(16)
+                    .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .strokeBorder(Color(uiColor: .separator).opacity(0.35), lineWidth: 1)
+                    )
+
+                    if let err = localError ?? store.lastError {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text(err)
+                                .font(.footnote)
+                                .foregroundStyle(.primary)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(12)
+                        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    zeroServerTipsCard
+                }
+                .padding(16)
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle("扫码配对电脑端")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+            .onAppear {
+                cameraAvailable = AVCaptureDevice.default(for: .video) != nil
+            }
+        }
+    }
+
+    private var scannerHero: some View {
+        ZStack {
+            if cameraAvailable {
+                CameraQRPreview(torchEnabled: $torchEnabled) { code in
+                    guard !scannedOnce, !store.pairingBusy else { return }
+                    scannedOnce = true
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    manualUri = code
+                    Task {
+                        await performPairing(uri: code)
+                    }
+                }
+                .frame(height: 270)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(scannerReticle)
+                .overlay(alignment: .topTrailing) {
+                    Button {
+                        torchEnabled.toggle()
+                    } label: {
+                        Image(systemName: torchEnabled ? "flashlight.on.fill" : "flashlight.off.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(10)
+                            .background(.black.opacity(0.55), in: Circle())
+                    }
+                    .padding(12)
+                }
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "qrcode.viewfinder")
+                        .font(.system(size: 46, weight: .light))
+                        .foregroundStyle(Color("AccentColor"))
+                    Text("当前设备未检测到后置摄像头")
+                        .font(.subheadline.weight(.semibold))
+                    Text("若在 Xcode 模拟器中预览，请直接在下方粘贴电脑端生成的 botark://pair?... 链接，或使用系统 URL Scheme 唤起。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 12)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 190)
+                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            }
+        }
+    }
+
+    private var scannerReticle: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(.white.opacity(0.85), lineWidth: 2.5)
+                .frame(width: 190, height: 190)
+
+            VStack {
+                Spacer()
+                Text("对准电脑端 BotArk 配对二维码")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.55), in: Capsule())
+                    .padding(.bottom, 14)
+            }
+        }
+    }
+
+    private var zeroServerTipsCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("100% 无服务器直连", systemImage: "lock.shield.fill")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.green)
+            Text("扫码后手机与电脑在同一 Wi-Fi、手机热点或 Tailscale 虚拟局域网内点对点加密握手，全程不经过任何第三方中转服务器。敏感凭据采用 AES-256-GCM 传输并写入 iOS Keychain。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func performPairing(uri: String) async {
+        localError = nil
+        await store.pair(withUri: uri)
+        if store.connectionState.isBridgeConnected {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            dismiss()
+        } else {
+            scannedOnce = false
+            localError = store.lastError
+        }
+    }
+}
+
+private struct CameraQRPreview: UIViewControllerRepresentable {
+    @Binding var torchEnabled: Bool
+    let onCodeScanned: (String) -> Void
+
+    func makeUIViewController(context: Context) -> QRScannerViewController {
+        let vc = QRScannerViewController()
+        vc.onCodeScanned = onCodeScanned
+        return vc
+    }
+
+    func updateUIViewController(_ uiViewController: QRScannerViewController, context: Context) {
+        uiViewController.setTorch(enabled: torchEnabled)
+    }
+}
+
+private final class QRScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+    var onCodeScanned: ((String) -> Void)?
+    private let session = AVCaptureSession()
+    private var previewLayer: AVCaptureVideoPreviewLayer?
+    private var isConfigured = false
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .black
+        configureCaptureIfAuthorized()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        previewLayer?.frame = view.bounds
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if isConfigured && !session.isRunning {
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                self?.session.startRunning()
+            }
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        setTorch(enabled: false)
+        if session.isRunning {
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                self?.session.stopRunning()
+            }
+        }
+    }
+
+    func setTorch(enabled: Bool) {
+        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
+        try? device.lockForConfiguration()
+        device.torchMode = enabled ? .on : .off
+        device.unlockForConfiguration()
+    }
+
+    private func configureCaptureIfAuthorized() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            setupSession()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                if granted {
+                    DispatchQueue.main.async { self?.setupSession() }
+                }
+            }
+        default:
+            break
+        }
+    }
+
+    private func setupSession() {
+        guard !isConfigured,
+              let device = AVCaptureDevice.default(for: .video),
+              let input = try? AVCaptureDeviceInput(device: device),
+              session.canAddInput(input) else { return }
+
+        session.addInput(input)
+        let output = AVCaptureMetadataOutput()
+        guard session.canAddOutput(output) else { return }
+        session.addOutput(output)
+        output.setMetadataObjectsDelegate(self, queue: .main)
+        output.metadataObjectTypes = [.qr]
+
+        let preview = AVCaptureVideoPreviewLayer(session: session)
+        preview.videoGravity = .resizeAspectFill
+        preview.frame = view.bounds
+        view.layer.addSublayer(preview)
+        previewLayer = preview
+        isConfigured = true
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.session.startRunning()
+        }
+    }
+
+    func metadataOutput(
+        _ output: AVCaptureMetadataOutput,
+        didOutput metadataObjects: [AVMetadataObject],
+        from connection: AVCaptureConnection
+    ) {
+        guard let readable = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
+              readable.type == .qr,
+              let value = readable.stringValue,
+              !value.isEmpty else { return }
+        onCodeScanned?(value)
+    }
+}

@@ -49,6 +49,12 @@ import type {
   SecurityVaultStatus,
   VaultStatusRequest
 } from './ipc'
+import type {
+  MobileBridgeLiveEvent,
+  MobileRelayCommand,
+  MobileSyncStateView,
+  MobileWorkspaceSnapshot
+} from './mobileSync'
 
 /** Controls embedded platform web sessions (Electron WebContentsView). */
 export interface WebViewBridge {
@@ -193,6 +199,23 @@ export interface HermesBridge {
   onEvent(listener: (event: HermesMainEvent) => void): () => void
 }
 
+export interface MobileSyncBridge {
+  getState(): Promise<MobileSyncStateView>
+  start(): Promise<MobileSyncStateView>
+  stop(): Promise<MobileSyncStateView>
+  rotatePairing(): Promise<MobileSyncStateView>
+  setIncludeDirectCredentials(enabled: boolean): Promise<MobileSyncStateView>
+  revokeDevice(deviceId: string): Promise<MobileSyncStateView>
+  exportOfflineBundle(): Promise<
+    | { canceled: true }
+    | { canceled: false; filePath: string; transferKey: string; fingerprint: string }
+  >
+  pushSnapshot(snapshot: MobileWorkspaceSnapshot): void
+  pushEvent(event: MobileBridgeLiveEvent): void
+  onStateChanged(listener: (state: MobileSyncStateView) => void): () => void
+  onCommand(listener: (command: MobileRelayCommand) => void): () => void
+}
+
 export interface VaultBridge {
   status(request?: VaultStatusRequest): Promise<SecurityVaultStatus>
   getSecret(key: string): Promise<string | null>
@@ -217,5 +240,6 @@ export interface BotHubBridge {
   readonly hark: HarkBridge
   readonly dot: DotBridge
   readonly hermes: HermesBridge
+  readonly mobileSync?: MobileSyncBridge
   readonly vault?: VaultBridge
 }

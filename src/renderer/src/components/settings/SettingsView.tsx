@@ -20,6 +20,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Shuffle,
+  Smartphone,
   Sparkles,
   Trash2,
   Users
@@ -39,6 +40,7 @@ import { cn } from '@/lib/cn'
 import { useT, t } from '@/lib/i18n'
 import { platformIcon } from '@/lib/platformIcons'
 import { HermesAccountsSettingsPanel } from '@/components/hermes/HermesAccountsSettingsPanel'
+import { MobileSyncSettingsPanel } from '@/components/mobile-sync/MobileSyncSettingsPanel'
 import { useBotStore } from '@/store/botStore'
 import { usePrefsStore, type Locale, type ThemePref } from '@/store/prefsStore'
 
@@ -49,6 +51,7 @@ type SettingsTab =
   | 'grok-accounts'
   | 'hark-accounts'
   | 'hermes-accounts'
+  | 'mobile-sync'
   | 'proxy-pool'
   | 'general'
 
@@ -678,6 +681,7 @@ export function SettingsView() {
     { id: 'grok-accounts', label: 'Grok Bot 账号管理', icon: Users, platformId: 'grok', count: grokAccounts.length },
     { id: 'hark-accounts', label: 'Hark 账号管理', icon: Users, platformId: 'hark', count: harkAccounts.length },
     { id: 'hermes-accounts', label: 'Hermes 实例管理', icon: Server, platformId: 'hermes', count: hermesAccounts.length },
+    { id: 'mobile-sync', label: 'iOS 扫码同步', icon: Smartphone },
     { id: 'proxy-pool', label: '代理池与自动分配', icon: Server, count: pool.length },
     { id: 'general', label: '常规、分组与安全', icon: Settings }
   ]
@@ -1856,6 +1860,8 @@ export function SettingsView() {
             )}
 
             {settingsTab === 'hermes-accounts' && <HermesAccountsSettingsPanel />}
+
+            {settingsTab === 'mobile-sync' && <MobileSyncSettingsPanel />}
 
             {settingsTab === 'proxy-pool' && (
               <div className="flex flex-col gap-5 animate-veil-in">

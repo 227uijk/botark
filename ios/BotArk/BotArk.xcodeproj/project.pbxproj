@@ -1,0 +1,508 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0DB9B3C5B66B7B8C7493110C /* SyncProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 063FAFCB0FC48429332792E7 /* SyncProtocolTests.swift */; };
+		19A641BF12E3005FD8CC3291 /* SyncCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3FA2D59707EA72BF86B1743 /* SyncCrypto.swift */; };
+		31836BB72159C6351E402046 /* SyncProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BED8010708C71AD4DDBD184 /* SyncProtocol.swift */; };
+		4C7ACF35171F48BB1F1DF925 /* DirectHermesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5789E36DE6128E8D47A28888 /* DirectHermesClient.swift */; };
+		66503001C65F11F6E60CA420 /* SyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53CE6D2458F68E63E53D7FB4 /* SyncSettingsView.swift */; };
+		75572630A7938AE162D6C923 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2C91A7CE05653D5CFEF103 /* RootTabView.swift */; };
+		7DEFDEAA5AECC8E3BD6651E3 /* BotArkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C4071142A7324A7DE5D74F1 /* BotArkStore.swift */; };
+		84082B8424F641D2DB2EDAF2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7FAC39B77E6E821846094A99 /* Assets.xcassets */; };
+		AC99A0A9940C8F36BC566BF0 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D421E4D33505238D2C84C35 /* ChatView.swift */; };
+		C6E9D1C77DCF59509D0BF5DC /* BotListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C926A7C489C17FB34A432FA /* BotListView.swift */; };
+		CFA622F17392323B37B617B9 /* BotArkApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F6463B8194B75E651BD4DE /* BotArkApp.swift */; };
+		D04F5894C92A08315C0D6FD7 /* PlatformBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C9998F25E8CAF5F0B3DE9C /* PlatformBadgeView.swift */; };
+		EEACECD7D25DF2FEDFD26B71 /* DesktopBridgeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FCC5FEFFD1300EDAA07E /* DesktopBridgeClient.swift */; };
+		F1EB6DA6B413A0414D6E7B39 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DAD3586F316948194631689 /* KeychainStore.swift */; };
+		F899D10530639F1FA1B3DD73 /* ApprovalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D58FAF1BF12C3BADE6AF0C5 /* ApprovalsView.swift */; };
+		F8C40DA2C27CE2B9F0E55FE5 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B91B7B4B2C0786F1752C45 /* QRScannerView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		695F323D230CCD8BEB87C7B8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B0922BCDB6EA277AAFE36F0E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C3F31BCD306C8DAFE588EAE4;
+			remoteInfo = BotArk;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		063FAFCB0FC48429332792E7 /* SyncProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProtocolTests.swift; sourceTree = "<group>"; };
+		0D421E4D33505238D2C84C35 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		11B3C531B4746FC539D17EC1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		164A36EA8BBC5C07274FF168 /* BotArkTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BotArkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1D58FAF1BF12C3BADE6AF0C5 /* ApprovalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalsView.swift; sourceTree = "<group>"; };
+		31DD84DD44207E40AB73D880 /* BotArk.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BotArk.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3500FCC5FEFFD1300EDAA07E /* DesktopBridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopBridgeClient.swift; sourceTree = "<group>"; };
+		46B91B7B4B2C0786F1752C45 /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
+		53CE6D2458F68E63E53D7FB4 /* SyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
+		5789E36DE6128E8D47A28888 /* DirectHermesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectHermesClient.swift; sourceTree = "<group>"; };
+		6C4071142A7324A7DE5D74F1 /* BotArkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotArkStore.swift; sourceTree = "<group>"; };
+		6C926A7C489C17FB34A432FA /* BotListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotListView.swift; sourceTree = "<group>"; };
+		6DAD3586F316948194631689 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		7FAC39B77E6E821846094A99 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9BED8010708C71AD4DDBD184 /* SyncProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProtocol.swift; sourceTree = "<group>"; };
+		A1C9998F25E8CAF5F0B3DE9C /* PlatformBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformBadgeView.swift; sourceTree = "<group>"; };
+		DD2C91A7CE05653D5CFEF103 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+		F3FA2D59707EA72BF86B1743 /* SyncCrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCrypto.swift; sourceTree = "<group>"; };
+		F6F6463B8194B75E651BD4DE /* BotArkApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotArkApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		13C4FED726635269138A1CEA /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				6C4071142A7324A7DE5D74F1 /* BotArkStore.swift */,
+				3500FCC5FEFFD1300EDAA07E /* DesktopBridgeClient.swift */,
+				5789E36DE6128E8D47A28888 /* DirectHermesClient.swift */,
+				6DAD3586F316948194631689 /* KeychainStore.swift */,
+				F3FA2D59707EA72BF86B1743 /* SyncCrypto.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		281B4545E833D49AE7C0495A /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				FEF165AB4494412C3257214C /* Models */,
+				13C4FED726635269138A1CEA /* Services */,
+				90A88A213BB9629CCE480687 /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		3D22DBBEE742E79C76B7206A = {
+			isa = PBXGroup;
+			children = (
+				F0EFD6EE05305ECC7F809BCC /* BotArkTests */,
+				D7AC6C4CFD33D67F9B8E7A5E /* Resources */,
+				281B4545E833D49AE7C0495A /* Sources */,
+				E62C82D98EB76954F26053FF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		90A88A213BB9629CCE480687 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1D58FAF1BF12C3BADE6AF0C5 /* ApprovalsView.swift */,
+				F6F6463B8194B75E651BD4DE /* BotArkApp.swift */,
+				6C926A7C489C17FB34A432FA /* BotListView.swift */,
+				0D421E4D33505238D2C84C35 /* ChatView.swift */,
+				A1C9998F25E8CAF5F0B3DE9C /* PlatformBadgeView.swift */,
+				46B91B7B4B2C0786F1752C45 /* QRScannerView.swift */,
+				DD2C91A7CE05653D5CFEF103 /* RootTabView.swift */,
+				53CE6D2458F68E63E53D7FB4 /* SyncSettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D7AC6C4CFD33D67F9B8E7A5E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				7FAC39B77E6E821846094A99 /* Assets.xcassets */,
+				11B3C531B4746FC539D17EC1 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		E62C82D98EB76954F26053FF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				31DD84DD44207E40AB73D880 /* BotArk.app */,
+				164A36EA8BBC5C07274FF168 /* BotArkTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F0EFD6EE05305ECC7F809BCC /* BotArkTests */ = {
+			isa = PBXGroup;
+			children = (
+				063FAFCB0FC48429332792E7 /* SyncProtocolTests.swift */,
+			);
+			path = BotArkTests;
+			sourceTree = "<group>";
+		};
+		FEF165AB4494412C3257214C /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				9BED8010708C71AD4DDBD184 /* SyncProtocol.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5BA9ED61C765069B297183A9 /* BotArkTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C1B8210E7C61771E4DEEAD14 /* Build configuration list for PBXNativeTarget "BotArkTests" */;
+			buildPhases = (
+				C67A4A5418B2D9D4D33E528F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				61DA7F9CBBE920595C31B670 /* PBXTargetDependency */,
+			);
+			name = BotArkTests;
+			packageProductDependencies = (
+			);
+			productName = BotArkTests;
+			productReference = 164A36EA8BBC5C07274FF168 /* BotArkTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		C3F31BCD306C8DAFE588EAE4 /* BotArk */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F56C84DA7A76287EC095ACBA /* Build configuration list for PBXNativeTarget "BotArk" */;
+			buildPhases = (
+				5EF90C6D3F4A550600693B7F /* Sources */,
+				7D74B56BE4CDB81D9008A5F8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BotArk;
+			packageProductDependencies = (
+			);
+			productName = BotArk;
+			productReference = 31DD84DD44207E40AB73D880 /* BotArk.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B0922BCDB6EA277AAFE36F0E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 7103CA6F3CDD05ABDAD0D555 /* Build configuration list for PBXProject "BotArk" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3D22DBBEE742E79C76B7206A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E62C82D98EB76954F26053FF /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C3F31BCD306C8DAFE588EAE4 /* BotArk */,
+				5BA9ED61C765069B297183A9 /* BotArkTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7D74B56BE4CDB81D9008A5F8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				84082B8424F641D2DB2EDAF2 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5EF90C6D3F4A550600693B7F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F899D10530639F1FA1B3DD73 /* ApprovalsView.swift in Sources */,
+				CFA622F17392323B37B617B9 /* BotArkApp.swift in Sources */,
+				7DEFDEAA5AECC8E3BD6651E3 /* BotArkStore.swift in Sources */,
+				C6E9D1C77DCF59509D0BF5DC /* BotListView.swift in Sources */,
+				AC99A0A9940C8F36BC566BF0 /* ChatView.swift in Sources */,
+				EEACECD7D25DF2FEDFD26B71 /* DesktopBridgeClient.swift in Sources */,
+				4C7ACF35171F48BB1F1DF925 /* DirectHermesClient.swift in Sources */,
+				F1EB6DA6B413A0414D6E7B39 /* KeychainStore.swift in Sources */,
+				D04F5894C92A08315C0D6FD7 /* PlatformBadgeView.swift in Sources */,
+				F8C40DA2C27CE2B9F0E55FE5 /* QRScannerView.swift in Sources */,
+				75572630A7938AE162D6C923 /* RootTabView.swift in Sources */,
+				19A641BF12E3005FD8CC3291 /* SyncCrypto.swift in Sources */,
+				31836BB72159C6351E402046 /* SyncProtocol.swift in Sources */,
+				66503001C65F11F6E60CA420 /* SyncSettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C67A4A5418B2D9D4D33E528F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0DB9B3C5B66B7B8C7493110C /* SyncProtocolTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		61DA7F9CBBE920595C31B670 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C3F31BCD306C8DAFE588EAE4 /* BotArk */;
+			targetProxy = 695F323D230CCD8BEB87C7B8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		881D1530E3AFEFCD7AC30B96 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qybaihe.botark.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BotArk.app/BotArk";
+			};
+			name = Release;
+		};
+		B24F0C5B5AB80420BCC73087 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.8.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C55FCC79A875C74BA7E76444 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.8.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C74B7CB2EF3F53B7C503E117 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BotArk;
+				INFOPLIST_KEY_NSCameraUsageDescription = "扫描 BotArk 电脑端配对二维码，在局域网或 Tailscale 下零服务器直接同步全部 AI 助手。";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "BotArk 需要访问本地网络以直连同一局域网或 Tailscale 中的电脑端 BotArk，无需任何云端服务器。";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qybaihe.botark.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		CC6E39A57D848157DC57FC8C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BotArk;
+				INFOPLIST_KEY_NSCameraUsageDescription = "扫描 BotArk 电脑端配对二维码，在局域网或 Tailscale 下零服务器直接同步全部 AI 助手。";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "BotArk 需要访问本地网络以直连同一局域网或 Tailscale 中的电脑端 BotArk，无需任何云端服务器。";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qybaihe.botark.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F21EDFE1A3047EC9D599E746 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qybaihe.botark.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BotArk.app/BotArk";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7103CA6F3CDD05ABDAD0D555 /* Build configuration list for PBXProject "BotArk" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B24F0C5B5AB80420BCC73087 /* Debug */,
+				C55FCC79A875C74BA7E76444 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C1B8210E7C61771E4DEEAD14 /* Build configuration list for PBXNativeTarget "BotArkTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F21EDFE1A3047EC9D599E746 /* Debug */,
+				881D1530E3AFEFCD7AC30B96 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F56C84DA7A76287EC095ACBA /* Build configuration list for PBXNativeTarget "BotArk" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CC6E39A57D848157DC57FC8C /* Debug */,
+				C74B7CB2EF3F53B7C503E117 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B0922BCDB6EA277AAFE36F0E /* Project object */;
+}

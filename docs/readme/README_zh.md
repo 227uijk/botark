@@ -133,6 +133,41 @@ BotArk 不是简单的网页套壳，右侧操作台（`⌘I`）会根据每个�
 
 ---
 
+## 📱 原生 SwiftUI iOS 伴侣端（100% 无服务器扫码同步）
+
+把 5 大平台的 AI 智能体全部装进 iPhone——**全程不需要任何云端服务器或中转账号**：
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="25%">
+        <img src="../assets/ios-onboarding.png" alt="BotArk iOS 扫码配对引导" width="100%" /><br />
+        <sub><b>1. 扫一扫电脑端二维码</b><br />无需云端账号与服务器</sub>
+      </td>
+      <td align="center" width="25%">
+        <img src="../assets/ios-synced.png" alt="BotArk iOS 五大平台实时同步列表" width="100%" /><br />
+        <sub><b>2. 五大平台全部同步</b><br />局域网 / Tailscale 实时直连</sub>
+      </td>
+      <td align="center" width="25%">
+        <img src="../assets/ios-chat.png" alt="BotArk iOS 流式对话与安全审批" width="100%" /><br />
+        <sub><b>3. 流式对话与一键审批</b><br />工具调用进度 + 行内审批卡</sub>
+      </td>
+      <td align="center" width="25%">
+        <img src="../assets/ios-sync-settings.png" alt="BotArk iOS 零服务器同步与 Keychain 管理" width="100%" /><br />
+        <sub><b>4. 隔空投送 &amp; Keychain</b><br />离线加密包 + Hermes 脱机直连</sub>
+      </td>
+    </tr>
+  </table>
+</div>
+
+- **通道一 · 局域网 / 热点 / Tailscale 扫码实时桥接**：点击电脑端左侧栏二维码按钮开启本地同步桥，用原生 SwiftUI iOS 端（`ios/BotArk`）扫一扫即可点对点同步 Grok Bot、Meta Muse、ChatGPT Dot、Hark 与 Hermes 全部对话与安全审批。
+- **通道二 · 无 Wi-Fi 隔空投送加密离线包（`.botark-sync`）**：不在同一局域网时，可从电脑端导出 AES-256-GCM 加密同步包，通过 AirDrop 传到 iPhone 解密导入。
+- **Hermes 脱机直连（电脑休眠可用）**：扫码时可选将 Hermes 凭据端到端加密转入 iOS 硬件 Keychain，即使 Mac/PC 关机休眠也能直接流式对话，并支持免电脑手动添加独立 Hermes 服务器。
+
+👉 查看 [**`ios/BotArk/README.md`**](../../ios/BotArk/README.md)，2 分钟用 Xcode 编译安装到自己的 iPhone。
+
+---
+
 ## ⚡ 30 秒快速开始
 
 ### 1. 下载安装

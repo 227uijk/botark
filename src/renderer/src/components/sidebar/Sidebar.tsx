@@ -1,5 +1,5 @@
 import { type KeyboardEvent } from 'react'
-import { PanelLeft, Plus, Search, Settings, Sparkles } from 'lucide-react'
+import { PanelLeft, Plus, QrCode, Search, Settings, Sparkles } from 'lucide-react'
 import { hasSeenOnboarding } from '@/components/onboarding/OnboardingGuide'
 import { GrokBotMark } from '@/components/ui/GrokBotMark'
 import { IconButton } from '@/components/ui/IconButton'
@@ -146,6 +146,13 @@ export function Sidebar({ onAddBot }: SidebarProps) {
           </span>
           <Settings className="size-4 shrink-0 text-ink-secondary" aria-hidden />
         </button>
+        <IconButton
+          round
+          label="iOS 扫码同步"
+          onClick={() => setSettingsOpen(true, 'mobile-sync')}
+        >
+          <QrCode />
+        </IconButton>
         <span className="relative shrink-0">
           <IconButton
             round
