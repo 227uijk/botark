@@ -188,6 +188,14 @@ Interested in contributing or adding another agent platform? See [**CONTRIBUTING
 
 ---
 
+## 🗺️ Roadmap
+
+- [ ] **Claude Duet Integration**: Native adapter & right-side workbench support for Anthropic's **Claude Duet** (proactive tasks, approvals, cloud VM files, memories & skills).
+- [ ] **Android & iOS Companion Apps**: Mobile apps for on-the-go agent chat and push alerts, with **direct account import** (Token / Cookie / encrypted local transfer from desktop).
+- [ ] **Expanded Fleet & Workflow Tools**: Richer batch import workflows, cross-platform task inbox, and continuous protocol compatibility across all platforms.
+
+---
+
 ## ❓ FAQ
 
 <details>
