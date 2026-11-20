@@ -245,8 +245,44 @@ function prevMediaMerge(
   prev: import('@/types').ChatMediaPart[] | undefined,
   incoming: import('@/types').ChatMediaPart[] | undefined
 ): import('@/types').ChatMediaPart[] | undefined {
-  if (incoming?.length) return incoming
-  return prev
+  if (!incoming?.length) return prev
+  if (!prev?.length) return incoming
+  const out = [...prev]
+  const byPath = new Map<string, number>()
+  for (let i = 0; i < out.length; i += 1) {
+    byPath.set(out[i]!.path, i)
+  }
+  let changed = false
+  for (const part of incoming) {
+    const idx = byPath.get(part.path)
+    if (idx === undefined) {
+      byPath.set(part.path, out.length)
+      out.push(part)
+      changed = true
+    } else {
+      const cur = out[idx]!
+      const nextKind = cur.kind === 'image' || part.kind === 'image' ? 'image' : cur.kind
+      const nextName = cur.name || part.name
+      const nextMime = cur.mimeType || part.mimeType
+      const nextImgId = cur.imageId || part.imageId
+      if (
+        nextKind !== cur.kind ||
+        nextName !== cur.name ||
+        nextMime !== cur.mimeType ||
+        nextImgId !== cur.imageId
+      ) {
+        out[idx] = {
+          ...cur,
+          kind: nextKind,
+          name: nextName,
+          mimeType: nextMime,
+          imageId: nextImgId
+        }
+        changed = true
+      }
+    }
+  }
+  return changed ? out : prev
 }
 
 function normalizeDotMsgId(rawId: string, role: 'user' | 'bot'): string {
@@ -267,6 +303,14 @@ function mergeHydratedMessages(existing: ChatMessage[], hydrated: ChatMessage[])
       m.id.startsWith('dot_dot_') ? { ...m, id: m.id.replace(/^dot_dot_/, 'dot_') } : m
     )
   const hydratedById = new Map(hydrated.map((m) => [m.id, m]))
+  const existingById = new Map(normalizedExisting.map((m) => [m.id, m]))
+  const mergedHydrated = hydrated.map((h) => {
+    const local = existingById.get(h.id)
+    if (!local) return h
+    const media = prevMediaMerge(local.media, h.media)
+    if (media === h.media) return h
+    return { ...h, media }
+  })
   const keptLocal: ChatMessage[] = []
   const earliestHydratedTs = hydrated[0]?.createdAt ?? 0
 
@@ -298,7 +342,7 @@ function mergeHydratedMessages(existing: ChatMessage[], hydrated: ChatMessage[])
     }
   }
 
-  const combined = [...keptLocal, ...hydrated]
+  const combined = [...keptLocal, ...mergedHydrated]
   combined.sort((a, b) => a.createdAt - b.createdAt)
   const seen = new Set<string>()
   return combined.filter((m) => {
@@ -842,7 +886,7 @@ export const useBotStore = create<BotHubState>()(
           createdAt: existingIdx >= 0 ? list[existingIdx]!.createdAt : incoming.createdAt,
           widgets: incomingWidgets?.length ? incomingWidgets : prevWidgets,
           tools: incomingTools?.length ? incomingTools : prevTools,
-          media: incomingMedia?.length ? incomingMedia : prevMedia,
+          media: prevMediaMerge(prevMedia, incomingMedia),
           richWidgets: incomingRich?.length ? incomingRich : prevRich
         }
         const selected = state.selectedBotId === botId
@@ -899,7 +943,7 @@ export const useBotStore = create<BotHubState>()(
           const prevMsg = list[existingIdx]!
           const nextWidgets = widgets?.length ? widgets : prevMsg.widgets
           const nextTools = tools?.length ? tools : prevMsg.tools
-          const nextMedia = media?.length ? media : prevMediaMerge(prevMsg.media, media)
+          const nextMedia = prevMediaMerge(prevMsg.media, media)
           const nextRich = richWidgets?.length ? richWidgets : prevMsg.richWidgets
           if (
             next === prev &&

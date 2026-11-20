@@ -19,7 +19,12 @@ import {
   type MuseChatEvent,
   type MuseOptionWidget
 } from '../muse-native'
-import { fetchFsRawPreview, uploadWorkspaceFile, buildWorkspaceUploadPath } from '../muse-native/fs'
+import {
+  fetchFsRawPreview,
+  sniffImageMimeFromBytes,
+  uploadWorkspaceFile,
+  buildWorkspaceUploadPath
+} from '../muse-native/fs'
 import { applyProxyToPartition, createProxyAgent, releaseProxyPoolAccount } from './accountProxy'
 import {
   cleanMuseChromeUserAgent,
@@ -507,7 +512,9 @@ export class MuseSessionManager {
       e.name === 'delta.text_append' ||
       e.name === 'delta.message_done' ||
       e.name === 'delta.presentation' ||
-      e.name === 'delta.placeholder'
+      e.name === 'delta.placeholder' ||
+      e.name === 'delta.tool_done' ||
+      e.name === 'tool_call.completed'
     if (!watched) return
     const widgets = parseOptionWidgets(p)
     const richWidgets = parseRichWidgets(p)
@@ -518,6 +525,22 @@ export class MuseSessionManager {
       (typeof p['display_text'] === 'string' && p['display_text']) ||
       (typeof p['content'] === 'string' && p['content']) ||
       ''
+    if (e.name === 'delta.tool_done' || e.name === 'tool_call.completed') {
+      if (!media.length && !widgets.length && !richWidgets.length) return
+      const body = this.watchTexts.get(watchKey) || ''
+      this.emit({
+        type: 'stream',
+        accountId,
+        conversationId,
+        messageId: `muse_native_${id}`,
+        text: body,
+        done: false,
+        widgets: widgets.length ? widgets : undefined,
+        richWidgets: richWidgets.length ? richWidgets : undefined,
+        media: media.length ? media : undefined
+      })
+      return
+    }
     if (e.name === 'delta.message_start' || e.name === 'delta.placeholder') {
       const placeholder = e.name === 'delta.placeholder' ? String(p['text'] ?? p['placeholder'] ?? '') : ''
       this.watchTexts.set(watchKey, placeholder)
@@ -776,15 +799,54 @@ export class MuseSessionManager {
   }
 
 
-  /** Preview a workspace file via fs.raw (binary). Caps ~8MiB for UI. */
+  /** Preview a workspace file via fs.raw (binary) or authenticated Muse HTTP URL. Caps ~8MiB for UI. */
   async previewWorkspaceFile(
     accountId: string,
     path: string
   ): Promise<{ path: string; mimeType: string; dataBase64: string; byteLength: number }> {
+    const trimmed = path.trim()
+    const isHttpUrl = /^https?:\/\//i.test(trimmed)
+    const isFsRawHttpUrl = /^https?:\/\/[^/]+\/fs\/raw\//i.test(trimmed)
+
+    const fetchViaSession = async (url: string) => {
+      const ses = electronSession.fromPartition(partitionForAccount(accountId))
+      const res = await ses.fetch(url, { method: 'GET' })
+      if (!res.ok) throw new Error(`HTTP ${res.status} fetching Muse media`)
+      const buf = new Uint8Array(await res.arrayBuffer())
+      const clipped = buf.byteLength > 8 * 1024 * 1024 ? buf.subarray(0, 8 * 1024 * 1024) : buf
+      const rawCt = res.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase()
+      const sniffed = sniffImageMimeFromBytes(clipped)
+      const mimeType =
+        (rawCt && rawCt !== 'application/octet-stream' && rawCt !== 'binary/octet-stream' ? rawCt : undefined) ||
+        sniffed ||
+        rawCt ||
+        'application/octet-stream'
+      return {
+        path: url,
+        mimeType,
+        dataBase64: Buffer.from(clipped).toString('base64'),
+        byteLength: clipped.byteLength
+      }
+    }
+
+    if (isHttpUrl && !isFsRawHttpUrl) {
+      return fetchViaSession(trimmed)
+    }
+
     await this.ensure('muse', accountId)
     const client = this.native.get(accountId)
-    if (!client) throw new Error('Muse native client not ready')
-    return fetchFsRawPreview(client.gateway, path)
+    if (!client) {
+      if (isHttpUrl) return fetchViaSession(trimmed)
+      throw new Error('Muse native client not ready')
+    }
+    try {
+      return await fetchFsRawPreview(client.gateway, trimmed)
+    } catch (err) {
+      if (isHttpUrl) {
+        return fetchViaSession(trimmed)
+      }
+      throw err
+    }
   }
 
   /**

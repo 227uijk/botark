@@ -146,6 +146,60 @@ function isHarkMedia(accountId: string, path: string): boolean {
   )
 }
 
+function isMuseMedia(accountId: string | undefined, path: string): boolean {
+  const trimmed = path.trim()
+  if (!trimmed || /^data:/i.test(trimmed)) return false
+  if (/^\/?(?:fs\/raw\/)?workspace\//i.test(trimmed)) return true
+  if (/^https?:\/\/(?:[^/]*\.)?muse\.ai\//i.test(trimmed)) return true
+  if (accountId && useBotStore.getState().accounts[accountId]?.platformId === 'meta-muse') return true
+  return false
+}
+
+function isMuseAuthHttpUrl(path: string): boolean {
+  return /^https?:\/\/(?:[^/]*\.)?muse\.ai\//i.test(path.trim())
+}
+
+function sniffImageMimeFromBase64(b64: string): string | undefined {
+  if (b64.startsWith('iVBORw0KGgo')) return 'image/png'
+  if (b64.startsWith('/9j/')) return 'image/jpeg'
+  if (b64.startsWith('UklGR')) return 'image/webp'
+  if (b64.startsWith('R0lGOD')) return 'image/gif'
+  if (b64.startsWith('PHN2Zy') || b64.startsWith('PD94bW')) return 'image/svg+xml'
+  return undefined
+}
+
+function extractWorkspaceMarkdownImages(text: string): ChatMediaPart[] {
+  if (!text || !text.includes('![')) return []
+  const out: ChatMediaPart[] = []
+  const seen = new Set<string>()
+  const re = /!\[([^\]]*)\]\(([^)]+)\)/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(text)) !== null) {
+    const alt = m[1]?.trim() || undefined
+    const raw = m[2]?.trim() || ''
+    if (!raw || /^data:image\//i.test(raw)) continue
+    if (/^https?:\/\//i.test(raw) && !isMuseAuthHttpUrl(raw)) continue
+    if (
+      !/^\/?(?:fs\/raw\/)?workspace\//i.test(raw) &&
+      !isMuseAuthHttpUrl(raw) &&
+      !/\.(png|jpe?g|gif|webp|svg)(?:[?#].*)?$/i.test(raw)
+    ) {
+      continue
+    }
+    const normalized = isMuseAuthHttpUrl(raw)
+      ? raw
+      : raw.replace(/^\/?fs\/raw\//i, '').replace(/^\/+/, '')
+    if (!normalized || seen.has(normalized)) continue
+    seen.add(normalized)
+    out.push({
+      kind: 'image',
+      path: normalized,
+      name: alt || normalized.split('/').pop()?.split('?')[0] || normalized
+    })
+  }
+  return out
+}
+
 async function downloadHarkMedia(accountId: string, part: ChatMediaPart) {
   const bridge = getBridge()?.hark
   if (!bridge?.rpc) throw new Error('Hark download unavailable')
@@ -169,17 +223,31 @@ function WorkspaceImage({
   part: ChatMediaPart
   accountId?: string
 }) {
-  const [src, setSrc] = useState<string | null>(
-    isHttp(part.path) || /^data:image\//i.test(part.path) ? part.path : null
-  )
+  const initialDirectSrc =
+    /^data:image\//i.test(part.path) || (isHttp(part.path) && !isMuseAuthHttpUrl(part.path))
+      ? part.path
+      : null
+  const [src, setSrc] = useState<string | null>(initialDirectSrc)
   const [failed, setFailed] = useState(false)
+  const [triedProxy, setTriedProxy] = useState(false)
+  const [retryNonce, setRetryNonce] = useState(0)
+
+  useEffect(() => {
+    const nextDirect =
+      /^data:image\//i.test(part.path) || (isHttp(part.path) && !isMuseAuthHttpUrl(part.path))
+        ? part.path
+        : null
+    setSrc(nextDirect)
+    setFailed(false)
+    setTriedProxy(false)
+  }, [part.path])
 
   useEffect(() => {
     if (src || failed || !accountId) return
     let cancelled = false
     void (async () => {
       try {
-        if (part.path.startsWith('workspace/')) {
+        if (isMuseMedia(accountId, part.path)) {
           const muse = getBridge()?.muse
           if (!muse?.previewWorkspaceFile) {
             if (!cancelled) setFailed(true)
@@ -187,11 +255,18 @@ function WorkspaceImage({
           }
           const preview = await muse.previewWorkspaceFile(accountId, part.path)
           if (cancelled) return
-          if (!preview.mimeType.startsWith('image/') || !preview.dataBase64) {
+          const mime =
+            (preview.mimeType && preview.mimeType.toLowerCase().startsWith('image/')
+              ? preview.mimeType
+              : undefined) ||
+            sniffImageMimeFromBase64(preview.dataBase64 || '') ||
+            (part.mimeType?.toLowerCase().startsWith('image/') ? part.mimeType : undefined) ||
+            (looksLikeImage(part) ? 'image/png' : '')
+          if (!preview.dataBase64 || !mime) {
             setFailed(true)
             return
           }
-          setSrc(`data:${preview.mimeType};base64,${preview.dataBase64}`)
+          setSrc(`data:${mime};base64,${preview.dataBase64}`)
           return
         }
         if (isHarkMedia(accountId, part.path)) {
@@ -230,26 +305,52 @@ function WorkspaceImage({
     return () => {
       cancelled = true
     }
-  }, [accountId, part.name, part.mimeType, part.path, src, failed])
+  }, [accountId, part, src, failed, retryNonce])
 
   if (src) {
     return (
       <a href={isHttp(part.path) ? part.path : undefined} target="_blank" rel="noreferrer" className="block">
-        <img src={src} alt={part.name || part.path} className="max-h-64 max-w-full object-contain" />
+        <img
+          src={src}
+          alt={part.name || part.path}
+          className="max-h-64 max-w-full object-contain"
+          onError={() => {
+            if (isHttp(src) && !triedProxy && accountId && isMuseMedia(accountId, part.path)) {
+              setTriedProxy(true)
+              setSrc(null)
+            } else {
+              setSrc(null)
+              setFailed(true)
+            }
+          }}
+        />
       </a>
     )
   }
   return (
     <div className="flex items-center gap-2 px-2.5 py-2 text-[12px]">
-      <span className="grid size-7 place-items-center rounded-lg bg-accent-50 text-accent-600">
+      <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-50 text-accent-600">
         <ImageIcon className="size-4" aria-hidden />
       </span>
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block max-w-56 truncate font-medium text-ink">{part.name || part.path}</span>
         <span className="block truncate text-caption text-ink-muted" title={part.path}>
           {failed ? t('Preview unavailable') : t('Loading preview…')}
         </span>
       </span>
+      {failed && accountId && (
+        <button
+          type="button"
+          onClick={() => {
+            setFailed(false)
+            setTriedProxy(false)
+            setRetryNonce((n) => n + 1)
+          }}
+          className="shrink-0 rounded-full bg-hover px-2 py-0.5 text-[11px] font-medium text-accent-600 hover:bg-active"
+        >
+          重试
+        </button>
+      )}
     </div>
   )
 }
@@ -264,7 +365,7 @@ function WorkspaceAV({
   kind: 'audio' | 'video'
 }) {
   const [src, setSrc] = useState<string | null>(
-    isHttp(part.path) || /^data:image\//i.test(part.path) ? part.path : null
+    isHttp(part.path) && !isMuseAuthHttpUrl(part.path) ? part.path : null
   )
   const [failed, setFailed] = useState(false)
 
@@ -274,7 +375,7 @@ function WorkspaceAV({
     let objectUrl: string | null = null
     void (async () => {
       try {
-        if (part.path.startsWith('workspace/')) {
+        if (isMuseMedia(accountId, part.path)) {
           const muse = getBridge()?.muse
           if (!muse?.previewWorkspaceFile) {
             if (!cancelled) setFailed(true)
@@ -392,8 +493,10 @@ function MediaParts({
       const rawPath = (part.path || '').trim()
       const isHttpUrl = /^https?:\/\//i.test(rawPath)
       const isHarkFile = isHarkMedia(accountId, rawPath)
+      const isMuseFile = !isHarkFile && isMuseMedia(accountId, rawPath)
       const isDotFile =
         !isHarkFile &&
+        !isMuseFile &&
         (isHttpUrl || /^(CalpicoFile_|file_|libfile_|sediment:\/\/|dotfile:\/\/|dotatt:\/\/)/i.test(rawPath))
 
       let dataBase64 = ''
@@ -405,6 +508,10 @@ function MediaParts({
         dataBase64 = downloaded.dataBase64
         mimeType = downloaded.mimeType || mimeType
         filename = downloaded.filename || filename
+      } else if (isMuseFile && bridge?.muse?.previewWorkspaceFile) {
+        const res = await bridge.muse.previewWorkspaceFile(accountId, rawPath)
+        dataBase64 = res.dataBase64
+        mimeType = res.mimeType || mimeType
       } else if (isDotFile && bridge?.dot?.rpc) {
         const res = await bridge.dot.rpc({
           accountId,
@@ -419,10 +526,6 @@ function MediaParts({
           mimeType = d.mimeType || mimeType
           filename = d.filename || d.name || filename
         }
-      } else if (bridge?.muse?.previewWorkspaceFile && rawPath.startsWith('workspace/')) {
-        const res = await bridge.muse.previewWorkspaceFile(accountId, rawPath)
-        dataBase64 = res.dataBase64
-        mimeType = res.mimeType || mimeType
       }
 
       if (dataBase64) {
@@ -739,7 +842,7 @@ function RichWidgets({
                 {t('Image options')}
                 {w.multiSelect ? ` · ${t('Multi-select')}` : ''}
               </p>
-              <ul className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+              <ul className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                 {w.images.slice(0, 12).map((img, i) => {
                   const picked =
                     (w.selectedPath && w.selectedPath === img.path) ||
@@ -754,16 +857,19 @@ function RichWidgets({
                       }
                       title={img.path}
                     >
-                      <div className="flex aspect-square items-center justify-center px-1 text-center text-[10px] text-ink-muted">
-                        {img.path.split('/').pop() || img.path}
-                      </div>
+                      <WorkspaceImage
+                        part={{
+                          kind: 'image',
+                          path: img.path,
+                          name: img.path.split('/').pop() || img.path,
+                          imageId: img.imageId
+                        }}
+                        accountId={accountId}
+                      />
                     </li>
                   )
                 })}
               </ul>
-              <p className="mt-1.5 text-[11px] text-ink-muted">
-                {t('Read-only — image_options persist shape not confirmed in muse.ai JS')}
-              </p>
             </li>
           )
         }
@@ -1295,7 +1401,15 @@ export const MessageBubble = memo(function MessageBubble({
   const mine = message.role === 'user'
   const optionWidgets = (!mine && message.widgets?.filter((w) => w.kind === 'option')) || []
   const tools = (!mine && message.tools) || []
-  const media = (!mine && message.media) || []
+  const baseMedia = (!mine && message.media) || []
+  const inlineWorkspaceImgs = !mine ? extractWorkspaceMarkdownImages(message.text) : []
+  const media =
+    inlineWorkspaceImgs.length === 0
+      ? baseMedia
+      : [
+          ...baseMedia,
+          ...inlineWorkspaceImgs.filter((img) => !baseMedia.some((existing) => existing.path === img.path))
+        ]
   const rich = (!mine && message.richWidgets) || []
   const setActiveDocument = useBotStore((s) => s.setActiveDocument)
   const setReplyTarget = useBotStore((s) => s.setReplyTarget)
@@ -1464,6 +1578,7 @@ export const MessageBubble = memo(function MessageBubble({
             >
               <MarkdownText
                 text={message.text}
+                suppressWorkspaceImages={media.length > 0}
                 onFileLinkClick={(path, label) =>
                   openDocument({
                     accountId: message.accountId,
@@ -1517,6 +1632,7 @@ export const MessageBubble = memo(function MessageBubble({
             ) : (
               <MarkdownText
                 text={message.text}
+                suppressWorkspaceImages={media.length > 0}
                 onFileLinkClick={(path, label) =>
                   openDocument({
                     accountId: message.accountId,

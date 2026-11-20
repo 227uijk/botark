@@ -655,77 +655,230 @@ export function parseToolCall(
   return { id, name, toolType, status, summary }
 }
 
+const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)(?:[?#].*)?$/i
+
+function isImageHint(path: string, mime?: string, explicitType?: string): boolean {
+  if (explicitType && /image|photo|picture|img/i.test(explicitType)) return true
+  if (mime && mime.toLowerCase().startsWith('image/')) return true
+  if (/^data:image\//i.test(path)) return true
+  return IMAGE_EXT_RE.test(path)
+}
+
+function normalizeMediaPath(raw: string): string {
+  const s = raw.trim()
+  if (!s) return ''
+  if (/^data:/i.test(s) || /^https?:\/\//i.test(s)) return s
+  const noFileScheme = s.replace(/^file:\/\//i, '')
+  const strippedFs = noFileScheme.replace(/^\/?fs\/raw\//i, '')
+  // Keep workspace/... canonical if present inside an absolute VM path (/home/muse/workspace/...)
+  const wsIdx = strippedFs.search(/(?:^|\/)workspace\//i)
+  if (wsIdx >= 0) {
+    return strippedFs.slice(wsIdx).replace(/^\/+/, '')
+  }
+  return strippedFs.replace(/^\/+/, '')
+}
+
+function extractInlineImageUri(o: Record<string, unknown>, fallbackMime?: string): string {
+  const b64 = str(o['data_base64'] || o['dataBase64'] || o['base64'] || o['b64_json'] || o['data']).trim()
+  if (!b64) return ''
+  if (/^data:image\//i.test(b64)) return b64
+  // Only treat strings that look like real base64 payloads (avoid short JSON/text fields)
+  if (b64.length >= 64 && /^[A-Za-z0-9+/=\s]+$/.test(b64)) {
+    const cleanB64 = b64.replace(/\s+/g, '')
+    const mime =
+      str(o['mime_type'] || o['mimeType'] || o['media_type']) ||
+      fallbackMime ||
+      (cleanB64.startsWith('iVBORw0KGgo')
+        ? 'image/png'
+        : cleanB64.startsWith('/9j/')
+          ? 'image/jpeg'
+          : cleanB64.startsWith('UklGR')
+            ? 'image/webp'
+            : cleanB64.startsWith('R0lGOD')
+              ? 'image/gif'
+              : 'image/png')
+    return `data:${mime};base64,${cleanB64}`
+  }
+  return ''
+}
+
 export function parseMediaParts(payload: Record<string, unknown>): MuseMediaPart[] {
   const out: MuseMediaPart[] = []
   const seen = new Set<string>()
-  const push = (kind: 'image' | 'file', path: string, extra?: Partial<MuseMediaPart>) => {
-    const p = path.trim()
+  const push = (kind: 'image' | 'file', rawPath: string, extra?: Partial<MuseMediaPart>) => {
+    const p = normalizeMediaPath(rawPath)
     if (!p || seen.has(p)) return
     seen.add(p)
-    const name = extra?.name || p.split('/').pop() || p
-    out.push({ kind, path: p, name, imageId: extra?.imageId, mimeType: extra?.mimeType })
+    const effectiveKind: 'image' | 'file' =
+      kind === 'image' || isImageHint(p, extra?.mimeType) ? 'image' : 'file'
+    const name = extra?.name || (/^data:/i.test(p) ? 'image.png' : p.split('/').pop()?.split('?')[0] || p)
+    out.push({
+      kind: effectiveKind,
+      path: p,
+      name,
+      imageId: extra?.imageId,
+      mimeType: extra?.mimeType
+    })
   }
-  const walkContent = (items: unknown) => {
-    if (!Array.isArray(items)) return
-    for (const raw of items) {
-      const c = obj(raw)
-      const typ = str(c['type']).toLowerCase()
-      if (typ === 'image') {
-        const path = str(c['path']) || str(c['url'])
-        if (path) push('image', path, { imageId: str(c['image_id'] || c['imageId']) || undefined, mimeType: str(c['mime_type']) || undefined })
-      } else if (typ === 'images' && Array.isArray(c['images'])) {
-        for (const im of c['images'] as unknown[]) {
-          const i = obj(im)
-          const path = str(i['path']) || str(i['url'])
-          if (path) push('image', path, { imageId: str(i['image_id'] || i['imageId']) || undefined })
+
+  const inspectObject = (raw: unknown, depth = 0) => {
+    if (depth > 4 || !raw) return
+    if (typeof raw === 'string') {
+      if (IMAGE_EXT_RE.test(raw) && (/^https?:\/\//i.test(raw) || raw.includes('/'))) {
+        push('image', raw)
+      }
+      return
+    }
+    if (Array.isArray(raw)) {
+      for (const item of raw) inspectObject(item, depth + 1)
+      return
+    }
+    const c = asObj(raw)
+    if (!c) return
+
+    const typ = str(c['type'] || c['kind'] || c['widget_kind'] || c['widgetKind']).toLowerCase()
+    // Rich widgets that render their own images in RichWidgets shouldn't duplicate as standalone MediaParts.
+    if (
+      typ === 'shopping_results' ||
+      typ === 'shopping_results_v2' ||
+      typ === 'shopping_cart' ||
+      typ === 'marketplace_map' ||
+      typ === 'hotel_results' ||
+      typ === 'image_options'
+    ) {
+      return
+    }
+    const mime = str(c['mime_type'] || c['mimeType'] || c['media_type'] || c['content_type']) || undefined
+    const name = str(c['filename'] || c['file_name'] || c['name'] || c['label'] || c['title']) || undefined
+    const imageId = str(c['image_id'] || c['imageId']) || undefined
+
+    // Explicit image / attachment / file objects
+    const sourceObj = asObj(c['source'])
+    const sourceMime = sourceObj ? str(sourceObj['media_type'] || sourceObj['mime_type'] || sourceObj['mimeType']) || mime : mime
+    const sourcePath = sourceObj
+      ? str(sourceObj['url'] || sourceObj['path']) || extractInlineImageUri(sourceObj, sourceMime)
+      : ''
+    const fileRefObj = asObj(c['file_ref'] ?? c['fileRef'])
+    const fileRefPath = fileRefObj
+      ? str(fileRefObj['path'] || fileRefObj['file_path'] || fileRefObj['url'])
+      : ''
+    const directPath =
+      str(c['path'] || c['file_path'] || c['filePath'] || c['image_path'] || c['imagePath'] || c['output_path'] || c['outputPath'] || c['artifact_path']) ||
+      fileRefPath ||
+      str(c['image_url'] || c['imageUrl'] || c['url'] || c['uri'] || c['src']) ||
+      sourcePath ||
+      extractInlineImageUri(c, mime)
+
+    if (
+      typ === 'image' ||
+      typ === 'image_url' ||
+      typ === 'generated_image' ||
+      typ === 'photo' ||
+      typ === 'media'
+    ) {
+      const nestedImgUrl = asObj(c['image_url'])
+      const nestedUrl = nestedImgUrl ? str(nestedImgUrl['url']) : ''
+      const p = directPath || nestedUrl
+      if (p) push('image', p, { imageId, mimeType: sourceMime, name })
+    } else if (
+      typ === 'file' ||
+      typ === 'file_ref' ||
+      typ === 'attachment' ||
+      typ === 'artifact' ||
+      typ === 'audio' ||
+      typ === 'video'
+    ) {
+      const p = directPath || str(c['filename'])
+      if (p) {
+        const effMime =
+          sourceMime || (typ === 'audio' ? 'audio/*' : typ === 'video' ? 'video/*' : undefined)
+        push(isImageHint(p, effMime, typ) ? 'image' : 'file', p, { name, mimeType: effMime, imageId })
+      }
+    } else if (directPath && (isImageHint(directPath, sourceMime, typ) || str(c['file_type']) === 'image')) {
+      // Untyped attachment/image object carrying an image path/URL (e.g. inside images[] or attachments[])
+      push('image', directPath, { imageId, mimeType: sourceMime, name })
+    }
+
+    // Parse JSON-encoded tool_result content strings (e.g. {"path":"workspace/out.png"})
+    if (typ === 'tool_result' && typeof c['content'] === 'string') {
+      const rawContent = (c['content'] as string).trim()
+      if (rawContent.length <= 262_144 && (rawContent.startsWith('{') || rawContent.startsWith('['))) {
+        try {
+          inspectObject(JSON.parse(rawContent), depth + 1)
+        } catch {
+          /* ignore non-JSON tool result text */
         }
-      } else if (typ === 'file' || typ === 'file_ref' || typ === 'audio' || typ === 'video') {
-        const path = str(c['path']) || str(c['filename']) || str(c['url'])
-        if (path) {
-          const mime =
-            str(c['mime_type'] || c['mimeType']) ||
-            (typ === 'audio' ? 'audio/*' : typ === 'video' ? 'video/*' : '') ||
-            undefined
-          push('file', path, {
-            name: str(c['filename'] || c['label']) || undefined,
-            mimeType: mime || undefined
-          })
+      }
+    }
+
+    // Recurse into known container keys (never walk arbitrary text fields)
+    for (const key of [
+      'content',
+      'items',
+      'images',
+      'generated_images',
+      'attachments',
+      'files',
+      'media',
+      'artifacts',
+      'resources',
+      'image',
+      'file',
+      'file_ref',
+      'fileRef',
+      'source',
+      'data',
+      'presentation',
+      'presentations',
+      'widgets',
+      'result',
+      'output',
+      'outputs',
+      'metadata'
+    ]) {
+      if (c[key] !== undefined && c[key] !== null && typeof c[key] === 'object') {
+        inspectObject(c[key], depth + 1)
+      }
+    }
+
+    // file_paths[] arrays (tool result metadata)
+    const filePaths = c['file_paths'] ?? c['filePaths'] ?? c['image_paths'] ?? c['imagePaths']
+    if (Array.isArray(filePaths)) {
+      const ft = str(c['file_type'] || c['fileType'])
+      for (const fp of filePaths) {
+        if (typeof fp === 'string' && fp.trim()) {
+          push(ft === 'image' || isImageHint(fp) ? 'image' : 'file', fp)
         }
       }
     }
   }
-  walkContent(payload['content'])
-  const transcript = obj(payload['transcript'])
-  const messages = transcript['messages']
-  if (Array.isArray(messages)) {
-    for (const msg of messages) {
-      walkContent(obj(msg)['content'])
+
+  inspectObject(payload, 0)
+
+  const transcript = asObj(payload['transcript'])
+  if (transcript && Array.isArray(transcript['messages'])) {
+    for (const msg of transcript['messages'] as unknown[]) {
+      const mm = asObj(msg)
+      if (!mm || mm['role'] === 'user') continue
+      inspectObject(mm, 1)
     }
   }
-  // resources[] on the envelope sometimes carries media URIs
-  const resources = payload['resources']
-  if (Array.isArray(resources)) {
-    for (const r of resources) {
-      const o = obj(r)
-      const path = str(o['path']) || str(o['uri']) || str(o['url'])
-      if (!path) continue
-      const mt = str(o['mime_type'] || o['mimeType'] || o['media_type']).toLowerCase()
-      const kind: 'image' | 'file' = mt.startsWith('image') || str(o['file_type']) === 'image' ? 'image' : 'file'
-      push(kind, path, { mimeType: mt || undefined, name: str(o['name']) || undefined })
-    }
-  }
-  // tool result metadata file_paths
-  const result = obj(payload['result'])
-  const meta = obj(result['metadata'])
-  const filePaths = meta['file_paths']
-  if (Array.isArray(filePaths)) {
-    const ft = str(meta['file_type']) || 'file'
-    for (const fp of filePaths) {
-      if (typeof fp === 'string' && fp.trim()) {
-        push(ft === 'image' ? 'image' : 'file', fp)
+
+  // Also capture inline Markdown workspace image references (`![alt](workspace/...)` or `![alt](/fs/raw/...)`)
+  const textCandidates = [str(payload['display_text']), str(payload['text']), transcriptText(payload)]
+  const mdImgRe = /!\[([^\]]*)\]\(([^)]+)\)/g
+  for (const txt of textCandidates) {
+    if (!txt || !txt.includes('![')) continue
+    let m: RegExpExecArray | null
+    while ((m = mdImgRe.exec(txt)) !== null) {
+      const alt = m[1]?.trim() || undefined
+      const url = m[2]?.trim() || ''
+      if (url && (/^\/?(?:fs\/raw\/)?workspace\//i.test(url) || /^\/home\/[^/]+\/workspace\//i.test(url))) {
+        push('image', url, { name: alt })
       }
     }
   }
+
   return out
 }
 
@@ -917,6 +1070,7 @@ export async function streamChat(
   const richWidgets = new Map<string, MuseRichWidget[]>()
   const tools = new Map<string, MuseToolCall[]>()
   const media = new Map<string, MuseMediaPart[]>()
+  const pendingMedia: MuseMediaPart[] = []
   const order: string[] = []
   const doneIds = new Set<string>()
   let sessionId = input.sessionId ?? ''
@@ -949,11 +1103,31 @@ export async function streamChat(
     }, settleMs)
   }
 
+  const mergeMediaList = (id: string, parts: MuseMediaPart[]): boolean => {
+    if (!parts.length) return false
+    const prev = media.get(id) ?? []
+    const seen = new Set(prev.map((x) => x.path))
+    const merged = [...prev]
+    let added = false
+    for (const part of parts) {
+      if (seen.has(part.path)) continue
+      seen.add(part.path)
+      merged.push(part)
+      added = true
+    }
+    if (added) media.set(id, merged)
+    return added
+  }
+
   const ensureBubble = (id: string): void => {
     if (!id) return
     if (!texts.has(id)) {
       texts.set(id, '')
       order.push(id)
+    }
+    if (pendingMedia.length > 0) {
+      const drained = pendingMedia.splice(0, pendingMedia.length)
+      mergeMediaList(id, drained)
     }
   }
 
@@ -976,18 +1150,21 @@ export async function streamChat(
     return !str(ctx['device_id']) || str(ctx['device_id']) === input.nodeId
   }
 
-  const applyMedia = (id: string, p: Record<string, unknown>): void => {
+  const applyMedia = (id: string, p: Record<string, unknown>): boolean => {
     const parsed = parseMediaParts(p)
-    if (!parsed.length) return
-    const prev = media.get(id) ?? []
-    const seen = new Set(prev.map((x) => x.path))
-    const merged = [...prev]
-    for (const part of parsed) {
-      if (seen.has(part.path)) continue
-      seen.add(part.path)
-      merged.push(part)
+    if (!parsed.length) return false
+    const target = id || order[order.length - 1] || ''
+    if (!target) {
+      const seen = new Set(pendingMedia.map((x) => x.path))
+      for (const part of parsed) {
+        if (!seen.has(part.path)) {
+          seen.add(part.path)
+          pendingMedia.push(part)
+        }
+      }
+      return false
     }
-    media.set(id, merged)
+    return mergeMediaList(target, parsed)
   }
 
   const upsertTool = (id: string, tool: MuseToolCall): void => {
@@ -1019,6 +1196,12 @@ export async function streamChat(
     ensureBubble(id)
     if (doneIds.has(id)) {
       applyWidgets(id, p)
+      const addedMedia = applyMedia(id, p)
+      const nextText = mergeMonotonic(texts.get(id) ?? '', assistantTextFromPayload(p))
+      if (addedMedia || nextText !== texts.get(id)) {
+        texts.set(id, nextText)
+        pushUpdate(id, true)
+      }
       return
     }
     const status = str(p['status'])
@@ -1026,6 +1209,7 @@ export async function streamChat(
       if (status === 'failed' || status === 'error' || status === 'cancelled' || status === 'interrupted') {
         doneIds.add(id)
         applyWidgets(id, p)
+        applyMedia(id, p)
         pushUpdate(id, true)
         armSettleIfIdle()
       }
@@ -1052,7 +1236,8 @@ export async function streamChat(
       e.name === 'agent.status' ||
       e.name === 'message.assistant' ||
       e.name === 'tool_call.started' ||
-      e.name === 'tool_call.completed'
+      e.name === 'tool_call.completed' ||
+      /presentation|attachment|media|artifact/i.test(e.name)
     if (!watched) return
     if (e.name !== 'agent.status' && !mine(p)) return
     counts[e.name] = (counts[e.name] ?? 0) + 1
@@ -1089,20 +1274,23 @@ export async function streamChat(
         pushUpdate(id, false)
         break
       }
-      case 'delta.presentation':
+      case 'delta.presentation': {
         if (!started) break
         applyWidgets(id, p)
-        if (id) applyMedia(id, p)
-        // Presentation-carrier with no text still needs a bubble.
-        if (id) {
-          ensureBubble(id)
-          if (!texts.get(id)) {
+        const targetId = id || order[order.length - 1] || ''
+        if (targetId) {
+          ensureBubble(targetId)
+          applyMedia(targetId, p)
+          if (!texts.get(targetId)) {
             const t = assistantTextFromPayload(p)
-            if (t) texts.set(id, t)
+            if (t) texts.set(targetId, t)
           }
-          pushUpdate(id, doneIds.has(id))
+          pushUpdate(targetId, doneIds.has(targetId))
+        } else {
+          applyMedia('', p)
         }
         break
+      }
       case 'delta.message_done':
       case 'message.assistant': {
         if (!started) break
@@ -1114,13 +1302,20 @@ export async function streamChat(
       case 'delta.tool_done':
       case 'tool_call.started':
       case 'tool_call.completed': {
-        if (!started || !id) break
-        ensureBubble(id)
-        const tool = parseToolCall(e.name, p, str(p['tool_id']) || id)
-        if (tool) upsertTool(id, tool)
-        applyMedia(id, p)
-        clearSettle()
-        pushUpdate(id, doneIds.has(id))
+        if (!started) break
+        const targetId = id || order[order.length - 1] || ''
+        if (targetId) {
+          ensureBubble(targetId)
+          const tool = parseToolCall(e.name, p, str(p['tool_id']) || targetId)
+          if (tool) upsertTool(targetId, tool)
+          applyMedia(targetId, p)
+          clearSettle()
+          pushUpdate(targetId, doneIds.has(targetId))
+        } else {
+          // Tool completed with generated image before the assistant bubble exists — queue for next bubble!
+          applyMedia('', p)
+          clearSettle()
+        }
         break
       }
       case 'agent.status': {
@@ -1133,8 +1328,17 @@ export async function streamChat(
         }
         break
       }
-      default:
+      default: {
+        // Catch-all for presentation / attachment / media / artifact events
+        if (!started) break
+        applyWidgets(id, p)
+        const added = applyMedia(id, p)
+        const targetId = id || order[order.length - 1] || ''
+        if (added && targetId) {
+          pushUpdate(targetId, doneIds.has(targetId))
+        }
         break
+      }
     }
   }
 
@@ -1157,17 +1361,26 @@ export async function streamChat(
       if (!row.id) continue
       ensureBubble(row.id)
       const merged = mergeMonotonic(texts.get(row.id) ?? '', row.text)
+      let changed = false
       if (merged !== texts.get(row.id)) {
         texts.set(row.id, merged)
-        pushUpdate(row.id, false)
+        changed = true
       }
       if (row.widgets?.length) {
         widgets.set(row.id, row.widgets)
+        changed = true
+      }
+      if (row.richWidgets?.length) {
+        richWidgets.set(row.id, row.richWidgets)
+        changed = true
+      }
+      if (row.media?.length && mergeMediaList(row.id, row.media)) {
+        changed = true
       }
       if (row.completed && !doneIds.has(row.id)) {
         doneIds.add(row.id)
         pushUpdate(row.id, true)
-      } else if (row.widgets?.length) {
+      } else if (changed) {
         pushUpdate(row.id, doneIds.has(row.id))
       }
     }
@@ -1343,6 +1556,7 @@ interface HistoryRow {
   completed: boolean
   widgets?: MuseOptionWidget[]
   richWidgets?: MuseRichWidget[]
+  media?: MuseMediaPart[]
 }
 
 /** Assistant rows from chat.history (`{ok,result:{events|chat_events|messages}}`), oldest first. */
@@ -1352,14 +1566,23 @@ export function historyAssistants(raw: unknown): HistoryRow[] {
   const list = (r['chat_events'] ?? r['events'] ?? r['messages'] ?? r['items'] ?? (Array.isArray(raw) ? raw : [])) as unknown
   if (!Array.isArray(list)) return []
   const rows: Array<HistoryRow & { at: number }> = []
+  let pendingToolMedia: MuseMediaPart[] = []
   for (const item of list) {
     const e = obj(item)
     const p = obj(e['payload'])
     const name = str(e['event_name']) || str(e['event']) || str(e['type'])
     const role = str(e['role']) || str(p['role'])
-    const isPresentation = /presentation/i.test(name)
-    if (!/assistant/.test(name) && role !== 'assistant' && !isPresentation) continue
     const mergedPayload = { ...e, ...p }
+    if (/tool_call|delta\.tool|attachment|media|artifact/i.test(name) && !/assistant/.test(name)) {
+      const tm = parseMediaParts(mergedPayload)
+      if (tm.length) pendingToolMedia.push(...tm)
+      continue
+    }
+    const isAssistantEvent = /assistant|message_done|presentation/i.test(name) || role === 'assistant'
+    if (!isAssistantEvent) {
+      if (/message\.user/i.test(name) || role === 'user') pendingToolMedia = []
+      continue
+    }
     const text =
       transcriptText(p) ||
       transcriptText(e) ||
@@ -1371,11 +1594,28 @@ export function historyAssistants(raw: unknown): HistoryRow[] {
     const status = (str(p['status']) || str(e['status'])).toLowerCase()
     const w = parseOptionWidgets(mergedPayload)
     const rw = parseRichWidgets(mergedPayload)
+    const ownMedia = parseMediaParts(mergedPayload)
+    const combinedMedia = [...pendingToolMedia, ...ownMedia]
+    pendingToolMedia = []
+    const dedupMedia: MuseMediaPart[] = []
+    const seen = new Set<string>()
+    for (const m of combinedMedia) {
+      if (seen.has(m.path)) continue
+      seen.add(m.path)
+      dedupMedia.push(m)
+    }
     rows.push({
       id: str(e['message_id']) || str(p['message_id']) || str(e['id']),
       text,
-      completed: status === 'completed' || status === 'complete' || status === 'done' || status === 'finished' || (!status && Boolean(text || w.length)),
-      widgets: w.length ? w : undefined, richWidgets: rw.length ? rw : undefined,
+      completed:
+        status === 'completed' ||
+        status === 'complete' ||
+        status === 'done' ||
+        status === 'finished' ||
+        (!status && Boolean(text || w.length || rw.length || dedupMedia.length)),
+      widgets: w.length ? w : undefined,
+      richWidgets: rw.length ? rw : undefined,
+      media: dedupMedia.length ? dedupMedia : undefined,
       at: Number(e['occurred_at_ms'] ?? e['created_at_ms'] ?? e['ts_ms'] ?? 0) || 0
     })
   }
@@ -1423,6 +1663,35 @@ function userTextFromPayload(p: Record<string, unknown>, e: Record<string, unkno
   return ''
 }
 
+function mergeMediaPartsDedup(
+  a: MuseMediaPart[] | undefined,
+  b: MuseMediaPart[] | undefined
+): MuseMediaPart[] | undefined {
+  if (!a?.length && !b?.length) return undefined
+  const out: MuseMediaPart[] = []
+  const byPath = new Map<string, number>()
+  for (const list of [a, b]) {
+    if (!list) continue
+    for (const part of list) {
+      const idx = byPath.get(part.path)
+      if (idx === undefined) {
+        byPath.set(part.path, out.length)
+        out.push(part)
+      } else {
+        const cur = out[idx]!
+        out[idx] = {
+          ...cur,
+          kind: cur.kind === 'image' || part.kind === 'image' ? 'image' : cur.kind,
+          name: cur.name || part.name,
+          mimeType: cur.mimeType || part.mimeType,
+          imageId: cur.imageId || part.imageId
+        }
+      }
+    }
+  }
+  return out.length ? out : undefined
+}
+
 /** Full conversation transcript from chat.history (both user and assistant turns), oldest first. */
 export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
   let r = obj(raw)
@@ -1430,6 +1699,8 @@ export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
   const list = (r['chat_events'] ?? r['events'] ?? r['messages'] ?? r['items'] ?? (Array.isArray(raw) ? raw : [])) as unknown
   if (!Array.isArray(list)) return []
   const byId = new Map<string, MuseHistoryMessage & { seq: number }>()
+  let pendingToolMedia: MuseMediaPart[] = []
+  let lastBotId: string | null = null
   let idx = 0
   for (const item of list) {
     idx += 1
@@ -1443,13 +1714,31 @@ export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
       /message_done/i.test(name) ||
       /presentation/i.test(name) ||
       roleRaw === 'assistant'
-    if (!isUser && !isAssistant) continue
+    const mergedPayload = { ...e, ...p }
+    if (!isUser && !isAssistant) {
+      const extraMedia = parseMediaParts(mergedPayload)
+      if (extraMedia.length) {
+        const rawRefId = str(e['message_id']) || str(p['message_id'])
+        const existingBot = rawRefId ? byId.get(`muse_native_${rawRefId}`) : undefined
+        if (existingBot && existingBot.role === 'bot') {
+          existingBot.media = mergeMediaPartsDedup(existingBot.media, extraMedia)
+        } else {
+          pendingToolMedia = mergeMediaPartsDedup(pendingToolMedia, extraMedia) ?? []
+        }
+      }
+      continue
+    }
     const rawId = str(e['message_id']) || str(p['message_id']) || str(e['id']) || `hist_${idx}`
     const id = isUser ? `muse_user_${rawId}` : `muse_native_${rawId}`
     const at = Number(e['occurred_at_ms'] ?? e['created_at_ms'] ?? e['ts_ms'] ?? p['created_at_ms'] ?? Date.now()) || Date.now()
     const seq = Number(e['seq'] ?? idx) || idx
-    const mergedPayload = { ...e, ...p }
     if (isUser) {
+      // Flush any dangling media from the previous assistant turn before resetting for the next turn
+      if (pendingToolMedia.length && lastBotId) {
+        const prevBot = byId.get(lastBotId)
+        if (prevBot) prevBot.media = mergeMediaPartsDedup(prevBot.media, pendingToolMedia)
+      }
+      pendingToolMedia = []
       const text = userTextFromPayload(p, e)
       if (!text) continue
       const prev = byId.get(id)
@@ -1471,8 +1760,10 @@ export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
         str(e['content'])
       const w = parseOptionWidgets(mergedPayload)
       const rw = parseRichWidgets(mergedPayload)
-      const m = parseMediaParts(mergedPayload)
-      if (!text && !w.length && !rw.length && !m.length) continue
+      const ownMedia = parseMediaParts(mergedPayload)
+      const combinedMedia = mergeMediaPartsDedup(pendingToolMedia, ownMedia)
+      pendingToolMedia = []
+      if (!text && !w.length && !rw.length && !combinedMedia?.length) continue
       const prev = byId.get(id)
       byId.set(id, {
         id,
@@ -1481,10 +1772,15 @@ export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
         createdAt: prev?.createdAt ?? at,
         widgets: w.length ? w : prev?.widgets,
         richWidgets: rw.length ? rw : prev?.richWidgets,
-        media: m.length ? m : prev?.media,
+        media: mergeMediaPartsDedup(prev?.media, combinedMedia),
         seq: prev?.seq ?? seq
       })
+      lastBotId = id
     }
+  }
+  if (pendingToolMedia.length && lastBotId) {
+    const prevBot = byId.get(lastBotId)
+    if (prevBot) prevBot.media = mergeMediaPartsDedup(prevBot.media, pendingToolMedia)
   }
   const rows = [...byId.values()]
   rows.sort((a, b) => (a.createdAt !== b.createdAt ? a.createdAt - b.createdAt : a.seq - b.seq))

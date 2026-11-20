@@ -29,8 +29,26 @@ export function buildWorkspaceUploadPath(filename: string, counter = 0): string 
   return `workspace/user/files/${base}_${counter}_${rand}${ext}`
 }
 
-function normalizeFsPath(path: string): string {
-  const s = path.trim().replace(/^\/+/, '')
+export function normalizeMuseFsPath(path: string): string {
+  let s = path.trim()
+  const wasFsRawUrl = /^https?:\/\/[^/]+\/fs\/raw\//i.test(s) || /^\/?fs\/raw\//i.test(s)
+  // Strip full muse.ai/fs/raw/ URL if passed verbatim
+  s = s.replace(/^https?:\/\/[^/]+\/fs\/raw\//i, '')
+  if (wasFsRawUrl) {
+    s = s.split(/[?#]/, 1)[0] ?? s
+    try {
+      s = decodeURIComponent(s)
+    } catch {
+      /* keep raw if malformed percent-encoding */
+    }
+  }
+  // Strip leading slashes and /fs/raw/ prefix
+  s = s.replace(/^\/+/, '').replace(/^fs\/raw\//i, '').replace(/^\/+/, '')
+  // Normalize VM absolute home paths like home/muse/workspace/... -> workspace/...
+  const wsIdx = s.search(/(?:^|\/)workspace\//i)
+  if (wsIdx > 0) {
+    s = s.slice(wsIdx).replace(/^\/+/, '')
+  }
   if (!s) throw new Error('empty fs path')
   for (const seg of s.split('/')) {
     if (!seg || seg === '.' || seg === '..' || seg.includes('\\') || seg.includes('\0')) {
@@ -38,6 +56,48 @@ function normalizeFsPath(path: string): string {
     }
   }
   return s
+}
+
+function normalizeFsPath(path: string): string {
+  return normalizeMuseFsPath(path)
+}
+
+export function sniffImageMimeFromBytes(bytes: Uint8Array): string | undefined {
+  if (bytes.byteLength >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    return 'image/png'
+  }
+  if (bytes.byteLength >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return 'image/jpeg'
+  }
+  if (
+    bytes.byteLength >= 6 &&
+    bytes[0] === 0x47 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x38
+  ) {
+    return 'image/gif'
+  }
+  if (
+    bytes.byteLength >= 12 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return 'image/webp'
+  }
+  if (bytes.byteLength >= 5) {
+    const head = new TextDecoder().decode(bytes.subarray(0, Math.min(256, bytes.byteLength))).trimStart()
+    if (/^(?:<\?xml[^>]*>\s*)?<svg[\s>]/i.test(head)) {
+      return 'image/svg+xml'
+    }
+  }
+  return undefined
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -103,15 +163,34 @@ export async function fetchFsRawPreview(
   path: string
 ): Promise<{ path: string; mimeType: string; dataBase64: string; byteLength: number }> {
   const p = normalizeFsPath(path)
-  const { body, contentType } = await gw.requestBinary('fs.raw', { path: p, _range: { start: 0, end: PREVIEW_MAX - 1 } }, 120_000)
+  let res: { body: Uint8Array; contentType?: string }
+  let resolvedPath = p
+  try {
+    res = await gw.requestBinary('fs.raw', { path: p, _range: { start: 0, end: PREVIEW_MAX - 1 } }, 120_000)
+  } catch (err) {
+    // If a relative path like `images/out.png` 404s, retry under `workspace/`.
+    if (!p.startsWith('workspace/')) {
+      const alt = `workspace/${p}`
+      res = await gw.requestBinary('fs.raw', { path: alt, _range: { start: 0, end: PREVIEW_MAX - 1 } }, 120_000)
+      resolvedPath = alt
+    } else {
+      throw err
+    }
+  }
+  const { body, contentType } = res
+  const rawCt = contentType?.split(';')[0]?.trim().toLowerCase()
+  const sniffed = sniffImageMimeFromBytes(body)
+  const guessed = guessMime(resolvedPath)
   const mime =
-    (contentType && contentType.split(';')[0]?.trim()) ||
-    guessMime(p) ||
+    (rawCt && rawCt !== 'application/octet-stream' && rawCt !== 'binary/octet-stream' ? rawCt : undefined) ||
+    sniffed ||
+    guessed ||
+    rawCt ||
     'application/octet-stream'
   // If server ignored Range and returned a huge body, truncate for UI.
   const clipped = body.byteLength > PREVIEW_MAX ? body.subarray(0, PREVIEW_MAX) : body
   return {
-    path: p,
+    path: resolvedPath,
     mimeType: mime,
     dataBase64: bytesToBase64(clipped),
     byteLength: clipped.byteLength

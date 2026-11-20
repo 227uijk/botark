@@ -50,7 +50,8 @@ function CodeBlock({ lang, code }: { lang: string; code: string }) {
 function renderInline(
   text: string,
   keyPrefix: string,
-  onFileLinkClick?: (path: string, label: string) => void
+  onFileLinkClick?: (path: string, label: string) => void,
+  suppressWorkspaceImages?: boolean
 ): ReactNode[] {
   const nodes: ReactNode[] = []
   // Match image ![alt](url), link [label](url), **bold**, ~~strike~~, *italic*, `code`, or bare https:// URL
@@ -78,6 +79,25 @@ function renderInline(
             className="my-1.5 max-h-72 max-w-full rounded-lg border border-line object-contain"
           />
         )
+      } else if (/^\/?(?:fs\/raw\/)?workspace\//i.test(url) || /\.(png|jpe?g|gif|webp|svg)(?:[?#].*)?$/i.test(url)) {
+        if (!suppressWorkspaceImages) {
+          const cleanPath = url.replace(/^\/?fs\/raw\//i, '').replace(/^\/+/, '')
+          const label = alt || cleanPath.split('/').pop() || cleanPath
+          if (onFileLinkClick) {
+            nodes.push(
+              <button
+                key={`${keyPrefix}-wimg-${i}`}
+                type="button"
+                onClick={() => onFileLinkClick(cleanPath, label)}
+                className="inline-flex items-center gap-1 rounded-md border border-line bg-accent-50/80 px-2 py-0.5 font-mono text-[12px] font-medium text-accent-600 transition-colors hover:bg-accent-100"
+              >
+                🖼️ {label}
+              </button>
+            )
+          } else {
+            nodes.push(label)
+          }
+        }
       } else {
         nodes.push(token)
       }
@@ -208,7 +228,12 @@ function splitTableCells(line: string): string[] {
     .map((c) => c.trim())
 }
 
-function renderBlocks(text: string, onFileLinkClick?: (path: string, label: string) => void): ReactNode[] {
+function renderBlocks(
+  text: string,
+  onFileLinkClick?: (path: string, label: string) => void,
+  suppressWorkspaceImages?: boolean
+): ReactNode[] {
+  const inline = (s: string, key: string) => renderInline(s, key, onFileLinkClick, suppressWorkspaceImages)
   const cleaned = text.replace(/\[\[hatch_widget:[^\]]+\]\]/g, '').replace(/\r\n/g, '\n')
   const lines = cleaned.split('\n')
   const blocks: ReactNode[] = []
@@ -399,7 +424,7 @@ function renderBlocks(text: string, onFileLinkClick?: (path: string, label: stri
     }
     blocks.push(
       <p key={`p-${block++}`} className="my-1 whitespace-pre-wrap leading-[1.6] first:mt-0 last:mb-0">
-        {renderInline(para.join('\n'), `p${block}`, onFileLinkClick)}
+        {inline(para.join('\n'), `p${block}`)}
       </p>
     )
   }
@@ -410,14 +435,20 @@ function renderBlocks(text: string, onFileLinkClick?: (path: string, label: stri
 export const MarkdownText = memo(function MarkdownText({
   text,
   className,
-  onFileLinkClick
+  onFileLinkClick,
+  suppressWorkspaceImages
 }: {
   text: string
   className?: string
   onFileLinkClick?: (path: string, label: string) => void
+  suppressWorkspaceImages?: boolean
 }) {
   if (!/[*_`#\-|>~\[\]]|\n\d+\.|https?:\/\//.test(text) && !text.includes('```')) {
     return <span className={cn('whitespace-pre-wrap break-words', className)}>{text}</span>
   }
-  return <div className={cn('break-words [&_p+p]:mt-2', className)}>{renderBlocks(text, onFileLinkClick)}</div>
+  return (
+    <div className={cn('break-words [&_p+p]:mt-2', className)}>
+      {renderBlocks(text, onFileLinkClick, suppressWorkspaceImages)}
+    </div>
+  )
 })
