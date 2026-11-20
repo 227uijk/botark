@@ -24,10 +24,13 @@ enum class PlatformId(
     HARK("hark", "Hark", "Hark"),
 
     @SerialName("hermes")
-    HERMES("hermes", "Hermes", "Hermes");
+    HERMES("hermes", "Hermes", "Hermes"),
+
+    @SerialName("antigravity")
+    ANTIGRAVITY("antigravity", "Antigravity", "Antigravity");
 
     val supportsQuickNewSession: Boolean
-        get() = this == META_MUSE || this == GROK || this == HERMES
+        get() = this == META_MUSE || this == GROK || this == HERMES || this == ANTIGRAVITY
 }
 
 @Serializable

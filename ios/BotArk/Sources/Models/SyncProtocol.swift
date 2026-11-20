@@ -6,6 +6,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
     case dot = "dot"
     case hark = "hark"
     case hermes = "hermes"
+    case antigravity = "antigravity"
 
     public var id: String { rawValue }
 
@@ -16,6 +17,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
         case .dot: return "ChatGPT Dot"
         case .hark: return "Hark"
         case .hermes: return "Hermes"
+        case .antigravity: return "Antigravity"
         }
     }
 
@@ -26,6 +28,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
         case .dot: return "Dot"
         case .hark: return "Hark"
         case .hermes: return "Hermes"
+        case .antigravity: return "Antigravity"
         }
     }
 
@@ -36,11 +39,12 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
         case .dot: return "PlatformDot"
         case .hark: return "PlatformHark"
         case .hermes: return "PlatformHermes"
+        case .antigravity: return "PlatformAntigravity"
         }
     }
 
     public var supportsQuickNewSession: Bool {
-        self == .metaMuse || self == .grok || self == .hermes
+        self == .metaMuse || self == .grok || self == .hermes || self == .antigravity
     }
 }
 
