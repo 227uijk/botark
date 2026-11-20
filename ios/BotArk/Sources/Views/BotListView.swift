@@ -3,7 +3,8 @@ import SwiftUI
 struct BotListView: View {
     @Bindable var store: BotArkStore
     @Binding var showQRScanner: Bool
-    @Binding var showAddHermes: Bool
+    @Binding var showAddPicker: Bool
+    let onPickPlatform: (PlatformId) -> Void
     let onSelectBot: (String) -> Void
 
     @State private var selectedPlatform: PlatformId? = nil
@@ -80,7 +81,7 @@ struct BotListView: View {
             Spacer(minLength: 4)
 
             Button {
-                showAddHermes = true
+                showAddPicker = true
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 13.5, weight: .semibold))
@@ -91,7 +92,7 @@ struct BotListView: View {
                     .shadow(color: ArkTheme.cardShadow, radius: 6, y: 2)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("添加 Hermes")
+            .accessibilityLabel("添加独立智能体")
 
             Button {
                 showQRScanner = true
@@ -116,7 +117,7 @@ struct BotListView: View {
             switch store.connectionState {
             case .connected: return ArkTheme.emerald
             case .connecting: return ArkTheme.amber
-            case .offline, .unpaired: return store.directHermesCredentials.isEmpty ? .gray : ArkTheme.accent
+            case .offline, .unpaired: return store.hasStandaloneBots ? ArkTheme.emerald : .gray
             }
         }()
 
@@ -124,8 +125,8 @@ struct BotListView: View {
             switch store.connectionState {
             case .connected(let host, _): return host
             case .connecting: return "连接中"
-            case .offline(let host): return "\(host) 离线"
-            case .unpaired: return store.directHermesCredentials.isEmpty ? "未配对" : "直连"
+            case .offline(let host): return store.hasStandaloneBots ? "独立运行" : "\(host) 离线"
+            case .unpaired: return store.hasStandaloneBots ? "独立运行" : "未配对"
             }
         }()
 
@@ -156,137 +157,105 @@ struct BotListView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Signature Living Onboarding
+    // MARK: - Signature Living Onboarding (Pick Any Platform Right Away!)
+
+    private let onboardingColumns = [
+        GridItem(.flexible(), spacing: 10),
+        GridItem(.flexible(), spacing: 10)
+    ]
 
     private var signatureOnboarding: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 18)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                // Compact living 4-color prismatic orbital emblem
+                ZStack {
+                    Circle()
+                        .fill(ArkTheme.prismBlue.opacity(0.18))
+                        .frame(width: 78, height: 78)
+                        .blur(radius: 18)
+                        .offset(x: -16, y: -8)
+                    Circle()
+                        .fill(ArkTheme.prismViolet.opacity(0.16))
+                        .frame(width: 76, height: 76)
+                        .blur(radius: 18)
+                        .offset(x: 16, y: -6)
+                    Circle()
+                        .fill(ArkTheme.prismAmber.opacity(0.14))
+                        .frame(width: 70, height: 70)
+                        .blur(radius: 16)
+                        .offset(x: -12, y: 12)
+                    Circle()
+                        .fill(ArkTheme.prismTeal.opacity(0.14))
+                        .frame(width: 70, height: 70)
+                        .blur(radius: 16)
+                        .offset(x: 14, y: 12)
 
-            // Living 4-color prismatic orbital emblem
-            ZStack {
-                Circle()
-                    .fill(ArkTheme.prismBlue.opacity(0.20))
-                    .frame(width: 112, height: 112)
-                    .blur(radius: 26)
-                    .offset(x: -24, y: -18)
-                Circle()
-                    .fill(ArkTheme.prismViolet.opacity(0.18))
-                    .frame(width: 108, height: 108)
-                    .blur(radius: 26)
-                    .offset(x: 24, y: -12)
-                Circle()
-                    .fill(ArkTheme.prismAmber.opacity(0.18))
-                    .frame(width: 96, height: 96)
-                    .blur(radius: 24)
-                    .offset(x: -18, y: 22)
-                Circle()
-                    .fill(ArkTheme.prismTeal.opacity(0.18))
-                    .frame(width: 96, height: 96)
-                    .blur(radius: 24)
-                    .offset(x: 20, y: 20)
+                    Circle()
+                        .strokeBorder(ArkTheme.hairline, style: StrokeStyle(lineWidth: 1, dash: [3, 5]))
+                        .frame(width: 98, height: 98)
+                        .scaleEffect(glowBreath ? 1.03 : 0.98)
+                        .animation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true), value: glowBreath)
 
-                Circle()
-                    .strokeBorder(ArkTheme.hairline, style: StrokeStyle(lineWidth: 1, dash: [3, 5]))
-                    .frame(width: 132, height: 132)
-                    .scaleEffect(glowBreath ? 1.03 : 0.98)
-                    .animation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true), value: glowBreath)
-
-                Image("BotArkLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 76, height: 76)
-                    .clipShape(RoundedRectangle(cornerRadius: 21, style: .continuous))
-                    .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
-            }
-            .frame(height: 158)
-            .onAppear { glowBreath = true }
-
-            VStack(spacing: 6) {
-                Text("你的随身 AI 方舟")
-                    .font(ArkFont.bold(22))
-                    .tracking(-0.5)
-
-                Text("零服务器 · 扫一扫直连电脑端")
-                    .font(ArkFont.regular(13))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.top, 4)
-
-            // Graceful 2-row staggered floating platform pill constellation (NOT 5 rigid squares!)
-            VStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    constellationPill(.grok)
-                    constellationPill(.metaMuse)
-                    constellationPill(.dot)
+                    Image("BotArkLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 58, height: 58)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .shadow(color: .black.opacity(0.16), radius: 14, y: 8)
                 }
-                HStack(spacing: 8) {
-                    constellationPill(.hark)
-                    constellationPill(.hermes)
-                }
-            }
-            .padding(.top, 24)
+                .frame(height: 122)
+                .padding(.top, 2)
+                .onAppear { glowBreath = true }
 
-            // Tactile Obsidian primary pill + delicate secondary pill
-            VStack(spacing: 10) {
+                VStack(spacing: 5) {
+                    Text("你的随身 AI 方舟")
+                        .font(ArkFont.bold(21))
+                        .tracking(-0.5)
+
+                    Text("选一个平台直接开用 · 无需电脑")
+                        .font(ArkFont.regular(12.5))
+                        .foregroundStyle(.secondary)
+                }
+
+                // Instant 2x3 Interactive Platform Picker Grid right on Launch!
+                LazyVGrid(columns: onboardingColumns, spacing: 10) {
+                    ForEach(PlatformId.pickerOrder) { platform in
+                        PlatformPickerCard(platform: platform) {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onPickPlatform(platform)
+                        }
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 18)
+
+                // Tactile Obsidian secondary pill for Zero-Server Desktop QR Sync
                 Button {
                     showQRScanner = true
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "qrcode.viewfinder")
-                            .font(.system(size: 15, weight: .semibold))
-                        Text("扫码配对电脑端")
-                            .font(ArkFont.semibold(14.5))
+                            .font(.system(size: 14.5, weight: .semibold))
+                        Text("扫码同步电脑端（零服务器）")
+                            .font(ArkFont.semibold(13.5))
                     }
                     .foregroundStyle(ArkTheme.onInk)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 48)
+                    .frame(height: 46)
                     .background(ArkTheme.ink, in: Capsule())
-                    .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
+                    .shadow(color: .black.opacity(0.14), radius: 12, y: 5)
                 }
                 .buttonStyle(.plain)
+                .padding(.horizontal, 18)
+                .padding(.top, 16)
 
-                Button {
-                    showAddHermes = true
-                } label: {
-                    HStack(spacing: 7) {
-                        Image(systemName: "server.rack")
-                            .font(.system(size: 13, weight: .medium))
-                        Text("直连 Hermes 服务器")
-                            .font(ArkFont.medium(13.5))
-                    }
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(ArkTheme.surface, in: Capsule())
-                    .overlay(Capsule().strokeBorder(ArkTheme.hairline, lineWidth: 0.9))
-                }
-                .buttonStyle(.plain)
+                Text("独立直连 · 隔离分区 · 零服务器")
+                    .font(ArkFont.mono(10))
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 14)
+                    .padding(.bottom, 92)
             }
-            .padding(.top, 26)
-            .padding(.horizontal, 24)
-
-            Spacer()
-
-            Text("LAN · Tailscale · AES-256-GCM")
-                .font(ArkFont.mono(10.5))
-                .foregroundStyle(.tertiary)
-                .padding(.bottom, 76)
         }
-    }
-
-    private func constellationPill(_ platform: PlatformId) -> some View {
-        HStack(spacing: 6) {
-            PlatformIconView(platform: platform, size: 17)
-            Text(platform.displayName)
-                .font(ArkFont.medium(12))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(ArkTheme.surface, in: Capsule())
-        .overlay(Capsule().strokeBorder(ArkTheme.hairline, lineWidth: 0.8))
-        .shadow(color: ArkTheme.cardShadow, radius: 8, y: 3)
     }
 
     // MARK: - Editorial Workspace Feed (Pinned Bento Deck + Clean Cards)
@@ -524,7 +493,11 @@ struct BotListView: View {
                             .font(ArkFont.medium(12.5))
                             .foregroundStyle(ArkTheme.accent)
                     } else {
-                        Text(cleanPreview(lastMsg?.text) ?? bot.platformId.displayName)
+                        Text(
+                            bot.isStandaloneWeb
+                                ? "手机独立直连 · \(URL(string: bot.standaloneUrl ?? "")?.host ?? bot.platformId.displayName)"
+                                : (cleanPreview(lastMsg?.text) ?? bot.platformId.displayName)
+                        )
                             .font(ArkFont.regular(12.5))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)

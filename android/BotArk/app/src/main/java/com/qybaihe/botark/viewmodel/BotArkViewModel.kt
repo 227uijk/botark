@@ -57,6 +57,9 @@ data class BotArkUiState(
             return out
         }
 
+    val hasStandaloneBots: Boolean
+        get() = directHermesCredentials.isNotEmpty() || snapshot.bots.any { it.isStandaloneWeb }
+
     fun directCredential(forBot: SyncedBot): DirectHermesCredential? {
         if (forBot.platformId != PlatformId.HERMES) return null
         return directHermesCredentials.firstOrNull {
@@ -65,6 +68,7 @@ data class BotArkUiState(
     }
 
     fun status(forBot: SyncedBot): ConnectionStatus {
+        if (forBot.isStandaloneWeb) return ConnectionStatus.ONLINE
         val acc = snapshot.accounts[forBot.activeAccountId]
         if (acc != null) {
             if (!connectionState.isBridgeConnected && forBot.platformId == PlatformId.HERMES && directCredential(forBot) != null) {
@@ -76,11 +80,13 @@ data class BotArkUiState(
     }
 
     fun canSend(toBot: SyncedBot): Boolean {
+        if (toBot.isStandaloneWeb) return true
         if (connectionState.isBridgeConnected) return true
         return directCredential(toBot) != null
     }
 
     fun shortTransportLabel(forBot: SyncedBot): String {
+        if (forBot.isStandaloneWeb) return "独立直连"
         val cs = connectionState
         if (cs is BridgeConnectionState.Connected) return "${cs.hostName} · 桥接"
         if (directCredential(forBot) != null) return "Hermes 直连"
@@ -131,12 +137,13 @@ class BotArkViewModel(application: Application) : AndroidViewModel(application) 
                 val (info, initialSnapshot, directCreds) = bridge.pair(payload)
                 vault.savePairedDesktop(info)
                 val mergedCreds = mergeDirectCreds(directCreds)
-                vault.saveSnapshotCache(initialSnapshot)
+                val mergedSnap = mergeWithLocalStandalone(_uiState.value.snapshot, initialSnapshot)
+                vault.saveSnapshotCache(mergedSnap)
                 _uiState.update {
                     it.copy(
                         pairedDesktop = info,
                         directHermesCredentials = mergedCreds,
-                        snapshot = initialSnapshot,
+                        snapshot = mergedSnap,
                         connectionState = BridgeConnectionState.Connected(info.hostName, info.activeHost),
                         pairingBusy = false,
                         lastError = null
@@ -166,7 +173,7 @@ class BotArkViewModel(application: Application) : AndroidViewModel(application) 
                 val updated = desktop.copy(activeHost = best)
                 vault.savePairedDesktop(updated)
                 try {
-                    val fresh = bridge.fetchSnapshot(updated)
+                    val fresh = mergeWithLocalStandalone(_uiState.value.snapshot, bridge.fetchSnapshot(updated))
                     vault.saveSnapshotCache(fresh)
                     _uiState.update {
                         it.copy(
@@ -220,15 +227,16 @@ class BotArkViewModel(application: Application) : AndroidViewModel(application) 
             val plain = SyncCrypto.decryptAesGcmCombined(outer.payload, transferKey).toString(Charsets.UTF_8)
             val inner = json.decodeFromString<OfflineSyncInnerPayload>(plain)
             val merged = mergeDirectCreds(inner.directCredentials.orEmpty())
-            vault.saveSnapshotCache(inner.snapshot)
+            val mergedSnap = mergeWithLocalStandalone(_uiState.value.snapshot, inner.snapshot)
+            vault.saveSnapshotCache(mergedSnap)
             _uiState.update {
                 it.copy(
-                    snapshot = inner.snapshot,
+                    snapshot = mergedSnap,
                     directHermesCredentials = merged,
                     lastError = null
                 )
             }
-            inner.snapshot.bots.size
+            mergedSnap.bots.size
         }
     }
 
@@ -280,6 +288,71 @@ class BotArkViewModel(application: Application) : AndroidViewModel(application) 
             )
             vault.saveSnapshotCache(updatedSnap)
             state.copy(snapshot = updatedSnap, directHermesCredentials = mergedCreds)
+        }
+    }
+
+    fun addStandaloneWebBot(
+        platformId: PlatformId,
+        name: String,
+        customUrl: String? = null
+    ): SyncedBot {
+        val displayName = name.trim().ifEmpty { platformId.displayName }
+        val rawUrl = customUrl?.trim()?.takeIf { it.isNotEmpty() } ?: platformId.defaultHomeUrl
+        val finalUrl = if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+            rawUrl
+        } else {
+            "https://$rawUrl"
+        }
+        val host = runCatching { java.net.URI(finalUrl).host }.getOrNull().orEmpty().ifBlank { finalUrl }
+        val suffix = UUID.randomUUID().toString().take(8)
+        val accountId = "acc_and_${platformId.wireId}_$suffix"
+        val botId = "bot_and_${platformId.wireId}_$suffix"
+
+        val newBot = SyncedBot(
+            id = botId,
+            platformId = platformId,
+            name = displayName,
+            groupId = _uiState.value.snapshot.groups.firstOrNull()?.id ?: "grp_standalone",
+            activeAccountId = accountId,
+            standaloneUrl = finalUrl,
+            lastActivityAt = System.currentTimeMillis().toDouble()
+        )
+
+        _uiState.update { state ->
+            val snap = state.snapshot
+            val groups = if (snap.groups.isNotEmpty()) snap.groups else listOf(SyncedGroup("grp_standalone", "个人智能体"))
+            val groupId = groups.first().id
+            val resolvedBot = newBot.copy(groupId = groupId)
+            val newAccounts = snap.accounts.toMutableMap().apply {
+                put(accountId, SyncedAccount(accountId, platformId, displayName, host, ConnectionStatus.ONLINE))
+            }
+            val newMessages = snap.messages.toMutableMap().apply { putIfAbsent(botId, emptyList()) }
+            val updatedSnap = snap.copy(
+                groups = groups,
+                accounts = newAccounts,
+                bots = listOf(resolvedBot) + snap.bots,
+                messages = newMessages
+            )
+            vault.saveSnapshotCache(updatedSnap)
+            state.copy(snapshot = updatedSnap)
+        }
+        return newBot
+    }
+
+    fun removeStandaloneBot(botId: String) {
+        _uiState.update { state ->
+            val snap = state.snapshot
+            val removed = snap.bots.firstOrNull { it.id == botId } ?: return@update state
+            val newBots = snap.bots.filterNot { it.id == botId }
+            val newAccounts = snap.accounts.toMutableMap().apply { remove(removed.activeAccountId) }
+            val newMessages = snap.messages.toMutableMap().apply { remove(botId) }
+            val updatedSnap = snap.copy(bots = newBots, accounts = newAccounts, messages = newMessages)
+            val updatedCreds = state.directHermesCredentials.filterNot {
+                it.botId == botId || it.accountId == removed.activeAccountId
+            }
+            vault.saveDirectHermesCredentials(updatedCreds)
+            vault.saveSnapshotCache(updatedSnap)
+            state.copy(snapshot = updatedSnap, directHermesCredentials = updatedCreds)
         }
     }
 
@@ -442,8 +515,9 @@ class BotArkViewModel(application: Application) : AndroidViewModel(application) 
     private fun handleWsEnvelope(env: MobileWsEnvelope) {
         when (env.type) {
             "snapshot" -> env.snapshot?.let { snap ->
-                vault.saveSnapshotCache(snap)
-                _uiState.update { it.copy(snapshot = snap) }
+                val mergedSnap = mergeWithLocalStandalone(_uiState.value.snapshot, snap)
+                vault.saveSnapshotCache(mergedSnap)
+                _uiState.update { it.copy(snapshot = mergedSnap) }
             }
             "message_delta" -> {
                 val botId = env.botId ?: return
@@ -494,6 +568,33 @@ class BotArkViewModel(application: Application) : AndroidViewModel(application) 
                 }
             }
         }
+    }
+
+    private fun mergeWithLocalStandalone(
+        current: WorkspaceSnapshot,
+        incoming: WorkspaceSnapshot
+    ): WorkspaceSnapshot {
+        val incomingIds = incoming.bots.mapTo(hashSetOf()) { it.id }
+        val localOnly = current.bots.filter {
+            (it.isStandaloneWeb || it.id.startsWith("bot_and_")) && it.id !in incomingIds
+        }
+        if (localOnly.isEmpty()) return incoming
+        val groups = if (incoming.groups.isNotEmpty()) incoming.groups else listOf(SyncedGroup("grp_standalone", "个人智能体"))
+        val fallbackGroupId = groups.first().id
+        val groupIds = groups.mapTo(hashSetOf()) { it.id }
+        val accounts = incoming.accounts.toMutableMap()
+        val messages = incoming.messages.toMutableMap()
+        val extraBots = localOnly.map { bot ->
+            current.accounts[bot.activeAccountId]?.let { accounts[bot.activeAccountId] = it }
+            current.messages[bot.id]?.let { messages[bot.id] = it }
+            if (bot.groupId in groupIds) bot else bot.copy(groupId = fallbackGroupId)
+        }
+        return incoming.copy(
+            groups = groups,
+            accounts = accounts,
+            bots = incoming.bots + extraBots,
+            messages = messages
+        )
     }
 
     private fun mergeDirectCreds(incoming: List<DirectHermesCredential>): List<DirectHermesCredential> {

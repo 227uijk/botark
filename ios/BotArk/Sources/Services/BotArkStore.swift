@@ -72,6 +72,7 @@ public final class BotArkStore {
     }
 
     public func status(for bot: SyncedBot) -> ConnectionStatus {
+        if bot.isStandaloneWeb { return .online }
         if let acc = snapshot.accounts[bot.activeAccountId] {
             if !connectionState.isBridgeConnected && bot.platformId == .hermes && directCredential(for: bot) != nil {
                 return .online
@@ -81,17 +82,25 @@ public final class BotArkStore {
         return directCredential(for: bot) != nil ? .online : .offline
     }
 
+    public var hasStandaloneBots: Bool {
+        !directHermesCredentials.isEmpty || snapshot.bots.contains(where: \.isStandaloneWeb)
+    }
+
     public func directCredential(for bot: SyncedBot) -> DirectHermesCredential? {
         guard bot.platformId == .hermes else { return nil }
         return directHermesCredentials.first { $0.accountId == bot.activeAccountId || $0.botId == bot.id }
     }
 
     public func canSend(to bot: SyncedBot) -> Bool {
+        if bot.isStandaloneWeb { return true }
         if connectionState.isBridgeConnected { return true }
         return directCredential(for: bot) != nil
     }
 
     public func transportSummary(for bot: SyncedBot) -> String {
+        if bot.isStandaloneWeb {
+            return "手机独立直连"
+        }
         if case .connected(let hostName, _) = connectionState {
             return "经 \(hostName) 实时桥接"
         }
@@ -247,6 +256,61 @@ public final class BotArkStore {
             at: 0
         )
         snapshot.messages[botId] = []
+        saveCacheToDisk()
+    }
+
+    @discardableResult
+    public func addStandaloneWebBot(platformId: PlatformId, name: String, customUrl: String? = nil) -> SyncedBot {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = trimmedName.isEmpty ? platformId.displayName : trimmedName
+        let rawUrl = (customUrl?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
+            ? customUrl!.trimmingCharacters(in: .whitespacesAndNewlines)
+            : platformId.defaultHomeUrl
+        let finalUrl = rawUrl.hasPrefix("http://") || rawUrl.hasPrefix("https://")
+            ? rawUrl
+            : "https://\(rawUrl)"
+        let host = URL(string: finalUrl)?.host ?? finalUrl
+
+        let suffix = UUID().uuidString.prefix(8).lowercased()
+        let accountId = "acc_ios_\(platformId.rawValue)_\(suffix)"
+        let botId = "bot_ios_\(platformId.rawValue)_\(suffix)"
+
+        let groupId: String
+        if let firstGroup = snapshot.groups.first {
+            groupId = firstGroup.id
+        } else {
+            groupId = "grp_standalone"
+            snapshot.groups.append(SyncedGroup(id: groupId, name: "个人智能体", collapsed: false))
+        }
+
+        snapshot.accounts[accountId] = SyncedAccount(
+            id: accountId,
+            platformId: platformId,
+            displayName: displayName,
+            handle: host,
+            status: .online
+        )
+        let bot = SyncedBot(
+            id: botId,
+            platformId: platformId,
+            name: displayName,
+            groupId: groupId,
+            activeAccountId: accountId,
+            standaloneUrl: finalUrl
+        )
+        snapshot.bots.insert(bot, at: 0)
+        snapshot.messages[botId] = []
+        saveCacheToDisk()
+        return bot
+    }
+
+    public func removeStandaloneBot(botId: String) {
+        guard let removed = snapshot.bots.first(where: { $0.id == botId }) else { return }
+        snapshot.bots.removeAll { $0.id == botId }
+        snapshot.accounts.removeValue(forKey: removed.activeAccountId)
+        snapshot.messages.removeValue(forKey: botId)
+        directHermesCredentials.removeAll { $0.botId == botId || $0.accountId == removed.activeAccountId }
+        KeychainStore.saveDirectHermesCredentials(directHermesCredentials)
         saveCacheToDisk()
     }
 
@@ -485,7 +549,30 @@ public final class BotArkStore {
     // MARK: - Local Cache & Notifications
 
     private func applySnapshot(_ incoming: WorkspaceSnapshot) {
-        self.snapshot = incoming
+        let localOnlyBots = snapshot.bots.filter { bot in
+            (bot.isStandaloneWeb || bot.id.hasPrefix("bot_ios_")) &&
+            !incoming.bots.contains(where: { $0.id == bot.id })
+        }
+        var merged = incoming
+        if !localOnlyBots.isEmpty {
+            let fallbackGroupId = merged.groups.first?.id ?? "grp_standalone"
+            if merged.groups.isEmpty {
+                merged.groups.append(SyncedGroup(id: fallbackGroupId, name: "个人智能体", collapsed: false))
+            }
+            for var bot in localOnlyBots {
+                if !merged.groups.contains(where: { $0.id == bot.groupId }) {
+                    bot.groupId = fallbackGroupId
+                }
+                merged.bots.append(bot)
+                if let acc = snapshot.accounts[bot.activeAccountId] {
+                    merged.accounts[bot.activeAccountId] = acc
+                }
+                if let msgs = snapshot.messages[bot.id] {
+                    merged.messages[bot.id] = msgs
+                }
+            }
+        }
+        self.snapshot = merged
         saveCacheToDisk()
     }
 

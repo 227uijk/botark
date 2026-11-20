@@ -46,6 +46,36 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
     public var supportsQuickNewSession: Bool {
         self == .metaMuse || self == .grok || self == .hermes || self == .antigravity
     }
+
+    public var defaultHomeUrl: String {
+        switch self {
+        case .antigravity: return "https://antigravity.google.com"
+        case .metaMuse: return "https://muse.ai"
+        case .grok: return "https://grok.com"
+        case .dot: return "https://chatgpt.com/dots"
+        case .hark: return "https://app.hark.com"
+        case .hermes: return ""
+        }
+    }
+
+    public var standaloneSubtitle: String {
+        switch self {
+        case .antigravity: return "Google 云端 Agent"
+        case .metaMuse: return "Meta 个人智能体"
+        case .grok: return "xAI Grok"
+        case .dot: return "OpenAI Dot"
+        case .hark: return "Hark 个人助手"
+        case .hermes: return "开源 SSE 网关"
+        }
+    }
+
+    public var standaloneTag: String {
+        self == .hermes ? "原生直连" : "独立登录"
+    }
+
+    public static let pickerOrder: [PlatformId] = [
+        .antigravity, .metaMuse, .grok, .dot, .hark, .hermes
+    ]
 }
 
 public enum ConnectionStatus: String, Codable, Sendable {
@@ -119,7 +149,13 @@ public struct SyncedBot: Codable, Identifiable, Equatable, Sendable {
     public var pinned: Bool?
     public var activeAccountId: String
     public var activeSessionId: String?
+    public var standaloneUrl: String?
     public var lastActivityAt: Double
+
+    public var isStandaloneWeb: Bool {
+        guard let url = standaloneUrl?.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
+        return !url.isEmpty
+    }
 
     public init(
         id: String,
@@ -133,6 +169,7 @@ public struct SyncedBot: Codable, Identifiable, Equatable, Sendable {
         pinned: Bool? = nil,
         activeAccountId: String,
         activeSessionId: String? = nil,
+        standaloneUrl: String? = nil,
         lastActivityAt: Double = Date().timeIntervalSince1970 * 1000
     ) {
         self.id = id
@@ -146,6 +183,7 @@ public struct SyncedBot: Codable, Identifiable, Equatable, Sendable {
         self.pinned = pinned
         self.activeAccountId = activeAccountId
         self.activeSessionId = activeSessionId
+        self.standaloneUrl = standaloneUrl
         self.lastActivityAt = lastActivityAt
     }
 }

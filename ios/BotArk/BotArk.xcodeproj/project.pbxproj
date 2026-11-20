@@ -16,6 +16,7 @@
 		73BC6352995A317FB2376AB8 /* PlusJakartaSans-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DAB5B52AC0D3EC596FEDB941 /* PlusJakartaSans-Medium.ttf */; };
 		75572630A7938AE162D6C923 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2C91A7CE05653D5CFEF103 /* RootTabView.swift */; };
 		7DEFDEAA5AECC8E3BD6651E3 /* BotArkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C4071142A7324A7DE5D74F1 /* BotArkStore.swift */; };
+		83F7B36E9B9818C35287CD3C /* StandaloneBotWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25BD4034BCAC8D4410013E12 /* StandaloneBotWebView.swift */; };
 		84082B8424F641D2DB2EDAF2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7FAC39B77E6E821846094A99 /* Assets.xcassets */; };
 		AC99A0A9940C8F36BC566BF0 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D421E4D33505238D2C84C35 /* ChatView.swift */; };
 		B7BC15E33A735EB76595849E /* PlusJakartaSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 402DAC420EF39516D2B0DFEB /* PlusJakartaSans-Bold.ttf */; };
@@ -23,6 +24,7 @@
 		CFA622F17392323B37B617B9 /* BotArkApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F6463B8194B75E651BD4DE /* BotArkApp.swift */; };
 		D04F5894C92A08315C0D6FD7 /* PlatformBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C9998F25E8CAF5F0B3DE9C /* PlatformBadgeView.swift */; };
 		D580144BE2170423305A6792 /* PlusJakartaSans-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CAA085B835C0F97F70897B15 /* PlusJakartaSans-SemiBold.ttf */; };
+		E537510C0AE7C91BA0C6B302 /* AddStandaloneBotSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DB46D0A99C6C89AE86D5B70 /* AddStandaloneBotSheet.swift */; };
 		EEACECD7D25DF2FEDFD26B71 /* DesktopBridgeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FCC5FEFFD1300EDAA07E /* DesktopBridgeClient.swift */; };
 		F1D490E1C00490A4738BE63B /* PlusJakartaSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 386CD26FC435D937A6AF569C /* PlusJakartaSans-Regular.ttf */; };
 		F1EB6DA6B413A0414D6E7B39 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DAD3586F316948194631689 /* KeychainStore.swift */; };
@@ -46,6 +48,7 @@
 		11B3C531B4746FC539D17EC1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		164A36EA8BBC5C07274FF168 /* BotArkTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BotArkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D58FAF1BF12C3BADE6AF0C5 /* ApprovalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalsView.swift; sourceTree = "<group>"; };
+		25BD4034BCAC8D4410013E12 /* StandaloneBotWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandaloneBotWebView.swift; sourceTree = "<group>"; };
 		31DD84DD44207E40AB73D880 /* BotArk.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BotArk.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3500FCC5FEFFD1300EDAA07E /* DesktopBridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopBridgeClient.swift; sourceTree = "<group>"; };
 		386CD26FC435D937A6AF569C /* PlusJakartaSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Regular.ttf"; sourceTree = "<group>"; };
@@ -57,6 +60,7 @@
 		6C926A7C489C17FB34A432FA /* BotListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotListView.swift; sourceTree = "<group>"; };
 		6DAD3586F316948194631689 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		7FAC39B77E6E821846094A99 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8DB46D0A99C6C89AE86D5B70 /* AddStandaloneBotSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddStandaloneBotSheet.swift; sourceTree = "<group>"; };
 		9BED8010708C71AD4DDBD184 /* SyncProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProtocol.swift; sourceTree = "<group>"; };
 		A1C9998F25E8CAF5F0B3DE9C /* PlatformBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformBadgeView.swift; sourceTree = "<group>"; };
 		CAA085B835C0F97F70897B15 /* PlusJakartaSans-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-SemiBold.ttf"; sourceTree = "<group>"; };
@@ -103,6 +107,7 @@
 		90A88A213BB9629CCE480687 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				8DB46D0A99C6C89AE86D5B70 /* AddStandaloneBotSheet.swift */,
 				1D58FAF1BF12C3BADE6AF0C5 /* ApprovalsView.swift */,
 				F6F6463B8194B75E651BD4DE /* BotArkApp.swift */,
 				6C926A7C489C17FB34A432FA /* BotListView.swift */,
@@ -110,6 +115,7 @@
 				A1C9998F25E8CAF5F0B3DE9C /* PlatformBadgeView.swift */,
 				46B91B7B4B2C0786F1752C45 /* QRScannerView.swift */,
 				DD2C91A7CE05653D5CFEF103 /* RootTabView.swift */,
+				25BD4034BCAC8D4410013E12 /* StandaloneBotWebView.swift */,
 				53CE6D2458F68E63E53D7FB4 /* SyncSettingsView.swift */,
 			);
 			path = Views;
@@ -253,6 +259,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E537510C0AE7C91BA0C6B302 /* AddStandaloneBotSheet.swift in Sources */,
 				F899D10530639F1FA1B3DD73 /* ApprovalsView.swift in Sources */,
 				CFA622F17392323B37B617B9 /* BotArkApp.swift in Sources */,
 				7DEFDEAA5AECC8E3BD6651E3 /* BotArkStore.swift in Sources */,
@@ -264,6 +271,7 @@
 				D04F5894C92A08315C0D6FD7 /* PlatformBadgeView.swift in Sources */,
 				F8C40DA2C27CE2B9F0E55FE5 /* QRScannerView.swift in Sources */,
 				75572630A7938AE162D6C923 /* RootTabView.swift in Sources */,
+				83F7B36E9B9818C35287CD3C /* StandaloneBotWebView.swift in Sources */,
 				19A641BF12E3005FD8CC3291 /* SyncCrypto.swift in Sources */,
 				31836BB72159C6351E402046 /* SyncProtocol.swift in Sources */,
 				66503001C65F11F6E60CA420 /* SyncSettingsView.swift in Sources */,

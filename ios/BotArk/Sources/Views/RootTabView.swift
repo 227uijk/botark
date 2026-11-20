@@ -29,7 +29,17 @@ struct RootTabView: View {
     @State private var activeChatBotId: String? = nil
     @State private var showQRScanner = false
     @State private var showAddHermes = false
+    @State private var showAddPicker = false
+    @State private var pendingWebPlatform: PlatformId? = nil
     @Namespace private var dockNamespace
+
+    private func handlePickPlatform(_ platform: PlatformId) {
+        if platform == .hermes {
+            showAddHermes = true
+        } else {
+            pendingWebPlatform = platform
+        }
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -38,23 +48,38 @@ struct RootTabView: View {
             // Main screen content
             Group {
                 if let chatBotId = activeChatBotId, selectedTab == .chats {
-                    ChatView(
-                        store: store,
-                        botId: chatBotId,
-                        onBack: {
-                            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
-                                activeChatBotId = nil
+                    let activeBot = store.snapshot.bots.first { $0.id == chatBotId }
+                    if activeBot?.isStandaloneWeb == true {
+                        StandaloneBotWebView(
+                            store: store,
+                            botId: chatBotId,
+                            onBack: {
+                                withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                                    activeChatBotId = nil
+                                }
                             }
-                        }
-                    )
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                        )
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                    } else {
+                        ChatView(
+                            store: store,
+                            botId: chatBotId,
+                            onBack: {
+                                withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                                    activeChatBotId = nil
+                                }
+                            }
+                        )
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
                 } else {
                     switch selectedTab {
                     case .chats:
                         BotListView(
                             store: store,
                             showQRScanner: $showQRScanner,
-                            showAddHermes: $showAddHermes,
+                            showAddPicker: $showAddPicker,
+                            onPickPlatform: handlePickPlatform,
                             onSelectBot: { botId in
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
@@ -75,7 +100,7 @@ struct RootTabView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // Signature Floating Obsidian Capsule Dock (auto-hides smoothly in Chat for pure immersion!)
+            // Signature Floating Obsidian Capsule Dock (auto-hides smoothly in Chat/Web for pure immersion!)
             if activeChatBotId == nil {
                 floatingDock
                     .padding(.bottom, 10)
@@ -87,6 +112,26 @@ struct RootTabView: View {
         }
         .sheet(isPresented: $showAddHermes) {
             AddStandaloneHermesSheet(store: store)
+        }
+        .sheet(isPresented: $showAddPicker) {
+            AddBotPickerSheet(
+                store: store,
+                onPickPlatform: handlePickPlatform,
+                onOpenScanner: { showQRScanner = true }
+            )
+        }
+        .sheet(item: $pendingWebPlatform) { platform in
+            AddStandaloneWebBotSheet(
+                store: store,
+                platform: platform,
+                onCreated: { created in
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                        selectedTab = .chats
+                        activeChatBotId = created.id
+                    }
+                },
+                onSwitchToQR: { showQRScanner = true }
+            )
         }
         #if DEBUG
         .task {

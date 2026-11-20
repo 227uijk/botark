@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -74,7 +75,8 @@ fun BotListScreen(
     state: BotArkUiState,
     onOpenBot: (String) -> Unit,
     onOpenScanner: () -> Unit,
-    onOpenAddHermes: () -> Unit,
+    onOpenAddPicker: () -> Unit,
+    onPickPlatform: (PlatformId) -> Unit,
     onReconnect: () -> Unit
 ) {
     val palette = ArkColors.current
@@ -142,11 +144,11 @@ fun BotListScreen(
                         .clip(CircleShape)
                         .background(palette.surface)
                         .border(0.8.dp, palette.hairline, CircleShape)
-                        .clickable(onClick = onOpenAddHermes)
+                        .clickable(onClick = onOpenAddPicker)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Add,
-                        contentDescription = "添加 Hermes",
+                        contentDescription = "添加独立智能体",
                         tint = palette.textPrimary,
                         modifier = Modifier.size(16.dp)
                     )
@@ -172,8 +174,8 @@ fun BotListScreen(
 
             if (state.snapshot.bots.isEmpty()) {
                 SignatureOnboarding(
-                    onOpenScanner = onOpenScanner,
-                    onOpenAddHermes = onOpenAddHermes
+                    onPickPlatform = onPickPlatform,
+                    onOpenScanner = onOpenScanner
                 )
             } else {
                 val filtered = state.snapshot.bots.filter { bot ->
@@ -279,13 +281,13 @@ private fun InlineConnectionChip(
     val dotColor = when (state.connectionState) {
         is BridgeConnectionState.Connected -> palette.emerald
         is BridgeConnectionState.Connecting -> palette.amber
-        else -> if (state.directHermesCredentials.isEmpty()) palette.textTertiary else palette.accent
+        else -> if (state.hasStandaloneBots) palette.emerald else palette.textTertiary
     }
     val label = when (val cs = state.connectionState) {
         is BridgeConnectionState.Connected -> cs.hostName
         is BridgeConnectionState.Connecting -> "连接中"
-        is BridgeConnectionState.Offline -> "${cs.hostName} 离线"
-        is BridgeConnectionState.Unpaired -> if (state.directHermesCredentials.isEmpty()) "未配对" else "直连"
+        is BridgeConnectionState.Offline -> if (state.hasStandaloneBots) "独立运行" else "${cs.hostName} 离线"
+        is BridgeConnectionState.Unpaired -> if (state.hasStandaloneBots) "独立运行" else "未配对"
     }
 
     Row(
@@ -322,76 +324,76 @@ private fun InlineConnectionChip(
 
 @Composable
 private fun SignatureOnboarding(
-    onOpenScanner: () -> Unit,
-    onOpenAddHermes: () -> Unit
+    onPickPlatform: (PlatformId) -> Unit,
+    onOpenScanner: () -> Unit
 ) {
     val palette = ArkColors.current
+    val scrollState = rememberScrollState()
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 22.dp)
+            .verticalScroll(scrollState)
+            .padding(horizontal = 18.dp)
     ) {
-        Spacer(Modifier.weight(0.55f))
-
-        // Living 4-color prismatic orbital emblem (circular feathering, zero hard edges)
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(196.dp)) {
+        // Compact living 4-color prismatic orbital emblem
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(130.dp)) {
             Box(
                 modifier = Modifier
-                    .size(196.dp)
+                    .size(130.dp)
                     .clip(CircleShape)
                     .background(
                         Brush.radialGradient(
                             colors = listOf(palette.prismBlue.copy(alpha = 0.22f), Color.Transparent),
-                            center = Offset(190f, 180f),
-                            radius = 220f
+                            center = Offset(120f, 120f),
+                            radius = 160f
                         )
                     )
             )
             Box(
                 modifier = Modifier
-                    .size(196.dp)
+                    .size(130.dp)
                     .clip(CircleShape)
                     .background(
                         Brush.radialGradient(
                             colors = listOf(palette.prismViolet.copy(alpha = 0.18f), Color.Transparent),
-                            center = Offset(340f, 200f),
-                            radius = 210f
+                            center = Offset(230f, 130f),
+                            radius = 150f
                         )
                     )
             )
             Box(
                 modifier = Modifier
-                    .size(196.dp)
+                    .size(130.dp)
                     .clip(CircleShape)
                     .background(
                         Brush.radialGradient(
                             colors = listOf(palette.prismAmber.copy(alpha = 0.16f), Color.Transparent),
-                            center = Offset(200f, 340f),
-                            radius = 200f
+                            center = Offset(130f, 230f),
+                            radius = 145f
                         )
                     )
             )
             Box(
                 modifier = Modifier
-                    .size(196.dp)
+                    .size(130.dp)
                     .clip(CircleShape)
                     .background(
                         Brush.radialGradient(
                             colors = listOf(palette.prismTeal.copy(alpha = 0.16f), Color.Transparent),
-                            center = Offset(340f, 330f),
-                            radius = 200f
+                            center = Offset(230f, 220f),
+                            radius = 145f
                         )
                     )
             )
 
-            Canvas(modifier = Modifier.size(132.dp)) {
+            Canvas(modifier = Modifier.size(98.dp)) {
                 drawCircle(
                     color = palette.hairline,
                     style = Stroke(
-                        width = 2.4f,
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 14f))
+                        width = 2.2f,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(9f, 13f))
                     )
                 )
             }
@@ -400,54 +402,40 @@ private fun SignatureOnboarding(
                 painter = painterResource(R.drawable.ic_botark_logo),
                 contentDescription = "BotArk",
                 modifier = Modifier
-                    .size(76.dp)
-                    .shadow(16.dp, RoundedCornerShape(21.dp), ambientColor = Color.Black.copy(alpha = 0.25f))
-                    .clip(RoundedCornerShape(21.dp))
+                    .size(58.dp)
+                    .shadow(14.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = 0.25f))
+                    .clip(RoundedCornerShape(16.dp))
             )
         }
 
-        Spacer(Modifier.height(4.dp))
         Text(
             text = "你的随身 AI 方舟",
-            fontSize = 22.sp,
+            fontSize = 21.sp,
             fontFamily = ArkSansFamily,
             fontWeight = FontWeight.Bold,
             letterSpacing = (-0.5).sp,
             color = palette.textPrimary
         )
-        Spacer(Modifier.height(5.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
-            text = "零服务器 · 扫一扫直连电脑端",
-            fontSize = 13.sp,
+            text = "选一个平台直接开用 · 无需电脑",
+            fontSize = 12.5.sp,
             color = palette.textSecondary
         )
 
-        // Graceful 2-row staggered platform pill constellation
-        Spacer(Modifier.height(24.dp))
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ConstellationPill(PlatformId.GROK)
-                ConstellationPill(PlatformId.META_MUSE)
-                ConstellationPill(PlatformId.DOT)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ConstellationPill(PlatformId.HARK)
-                ConstellationPill(PlatformId.HERMES)
-            }
-        }
+        // Instant 2x3 Interactive Platform Picker Grid right on Launch!
+        Spacer(Modifier.height(18.dp))
+        PlatformPickerGrid(onPickPlatform = onPickPlatform)
 
-        Spacer(Modifier.height(26.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // Tactile Obsidian primary capsule button
+        // Tactile Obsidian capsule button for Zero-Server Desktop QR Sync
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .height(46.dp)
                 .shadow(12.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.2f))
                 .clip(CircleShape)
                 .background(palette.ink)
@@ -457,79 +445,26 @@ private fun SignatureOnboarding(
                 imageVector = Icons.Rounded.QrCodeScanner,
                 contentDescription = null,
                 tint = palette.onInk,
-                modifier = Modifier.size(17.dp)
+                modifier = Modifier.size(16.dp)
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                text = "扫码配对电脑端",
-                fontSize = 14.5.sp,
+                text = "扫码同步电脑端（零服务器）",
+                fontSize = 13.5.sp,
                 fontFamily = ArkSansFamily,
                 fontWeight = FontWeight.SemiBold,
                 color = palette.onInk
             )
         }
 
-        Spacer(Modifier.height(10.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp)
-                .clip(CircleShape)
-                .background(palette.surface)
-                .border(0.9.dp, palette.hairline, CircleShape)
-                .clickable(onClick = onOpenAddHermes)
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Dns,
-                contentDescription = null,
-                tint = palette.textPrimary,
-                modifier = Modifier.size(15.dp)
-            )
-            Spacer(Modifier.width(7.dp))
-            Text(
-                text = "直连 Hermes 服务器",
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = palette.textPrimary
-            )
-        }
-
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(14.dp))
 
         Text(
-            text = "LAN · Tailscale · AES-256-GCM",
-            fontSize = 10.5.sp,
+            text = "独立直连 · 隔离会话 · 零服务器",
+            fontSize = 10.sp,
             fontFamily = ArkMonoFamily,
             color = palette.textTertiary,
-            modifier = Modifier.padding(bottom = 78.dp)
-        )
-    }
-}
-
-@Composable
-private fun ConstellationPill(platform: PlatformId) {
-    val palette = ArkColors.current
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier
-            .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.06f))
-            .clip(CircleShape)
-            .background(palette.surface)
-            .border(0.8.dp, palette.hairline, CircleShape)
-            .padding(horizontal = 11.dp, vertical = 7.dp)
-    ) {
-        PlatformIcon(platform = platform, size = 16.dp)
-        Text(
-            text = platform.displayName,
-            fontSize = 11.5.sp,
-            fontFamily = ArkSansFamily,
-            fontWeight = FontWeight.Medium,
-            color = palette.textPrimary,
-            maxLines = 1
+            modifier = Modifier.padding(bottom = 92.dp)
         )
     }
 }
@@ -773,6 +708,10 @@ private fun EditorialBotRow(
                 Text(
                     text = when {
                         isTyping -> "正在生成..."
+                        bot.isStandaloneWeb -> {
+                            val host = runCatching { java.net.URI(bot.standaloneUrl ?: "").host }.getOrNull()
+                            "手机独立直连 · ${host ?: bot.platformId.displayName}"
+                        }
                         else -> cleanPreview(lastMsg?.text) ?: bot.platformId.displayName
                     },
                     fontSize = 12.5.sp,

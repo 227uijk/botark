@@ -31,6 +31,35 @@ enum class PlatformId(
 
     val supportsQuickNewSession: Boolean
         get() = this == META_MUSE || this == GROK || this == HERMES || this == ANTIGRAVITY
+
+    val defaultHomeUrl: String
+        get() = when (this) {
+            ANTIGRAVITY -> "https://antigravity.google.com"
+            META_MUSE -> "https://muse.ai"
+            GROK -> "https://grok.com"
+            DOT -> "https://chatgpt.com/dots"
+            HARK -> "https://app.hark.com"
+            HERMES -> ""
+        }
+
+    val standaloneSubtitle: String
+        get() = when (this) {
+            ANTIGRAVITY -> "Google 云端 Agent"
+            META_MUSE -> "Meta 个人智能体"
+            GROK -> "xAI Grok"
+            DOT -> "OpenAI Dot"
+            HARK -> "Hark 个人助手"
+            HERMES -> "开源 SSE 网关"
+        }
+
+    val standaloneTag: String
+        get() = if (this == HERMES) "原生直连" else "独立登录"
+
+    companion object {
+        val pickerOrder: List<PlatformId> = listOf(
+            ANTIGRAVITY, META_MUSE, GROK, DOT, HARK, HERMES
+        )
+    }
 }
 
 @Serializable
@@ -72,8 +101,12 @@ data class SyncedBot(
     val pinned: Boolean? = null,
     val activeAccountId: String,
     val activeSessionId: String? = null,
+    val standaloneUrl: String? = null,
     val lastActivityAt: Double = 0.0
-)
+) {
+    val isStandaloneWeb: Boolean
+        get() = !standaloneUrl.isNullOrBlank()
+}
 
 @Serializable
 data class SyncedToolCall(

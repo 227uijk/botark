@@ -49,11 +49,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.qybaihe.botark.model.PlatformId
+import com.qybaihe.botark.ui.screens.AddBotPickerSheet
 import com.qybaihe.botark.ui.screens.AddHermesDialog
+import com.qybaihe.botark.ui.screens.AddStandaloneWebBotSheet
 import com.qybaihe.botark.ui.screens.ApprovalsScreen
 import com.qybaihe.botark.ui.screens.BotListScreen
 import com.qybaihe.botark.ui.screens.ChatScreen
 import com.qybaihe.botark.ui.screens.QRScannerSheet
+import com.qybaihe.botark.ui.screens.StandaloneWebScreen
 import com.qybaihe.botark.ui.screens.SyncSettingsScreen
 import com.qybaihe.botark.ui.theme.ArkColors
 import com.qybaihe.botark.ui.theme.ArkMonoFamily
@@ -142,6 +146,16 @@ private fun BotArkRoot(
     var activeBotId by remember { mutableStateOf(initialOpenBotId) }
     var showScanner by remember { mutableStateOf(false) }
     var showAddHermes by remember { mutableStateOf(false) }
+    var showAddPicker by remember { mutableStateOf(false) }
+    var pendingWebPlatform by remember { mutableStateOf<PlatformId?>(null) }
+
+    val handlePickPlatform: (PlatformId) -> Unit = { platform ->
+        if (platform == PlatformId.HERMES) {
+            showAddHermes = true
+        } else {
+            pendingWebPlatform = platform
+        }
+    }
 
     LaunchedEffect(initialTab) { currentTab = initialTab }
     LaunchedEffect(initialOpenBotId) { activeBotId = initialOpenBotId }
@@ -154,22 +168,33 @@ private fun BotArkRoot(
             .navigationBarsPadding()
     ) {
         if (activeBotId != null && currentTab == MainTab.CHATS) {
-            ChatScreen(
-                state = state,
-                botId = activeBotId!!,
-                onBack = { activeBotId = null },
-                onSend = { bot, text -> viewModel.sendMessage(bot, text) },
-                onStop = { bot -> viewModel.stopGeneration(bot) },
-                onNewSession = { bot -> viewModel.startNewSession(bot) },
-                onDecideApproval = { item, dec -> viewModel.decideApproval(item, dec) }
-            )
+            val activeBot = state.snapshot.bots.firstOrNull { it.id == activeBotId }
+            if (activeBot?.isStandaloneWeb == true) {
+                StandaloneWebScreen(
+                    state = state,
+                    botId = activeBotId!!,
+                    onBack = { activeBotId = null },
+                    onRemoveBot = { viewModel.removeStandaloneBot(it) }
+                )
+            } else {
+                ChatScreen(
+                    state = state,
+                    botId = activeBotId!!,
+                    onBack = { activeBotId = null },
+                    onSend = { bot, text -> viewModel.sendMessage(bot, text) },
+                    onStop = { bot -> viewModel.stopGeneration(bot) },
+                    onNewSession = { bot -> viewModel.startNewSession(bot) },
+                    onDecideApproval = { item, dec -> viewModel.decideApproval(item, dec) }
+                )
+            }
         } else {
             when (currentTab) {
                 MainTab.CHATS -> BotListScreen(
                     state = state,
                     onOpenBot = { activeBotId = it },
                     onOpenScanner = { showScanner = true },
-                    onOpenAddHermes = { showAddHermes = true },
+                    onOpenAddPicker = { showAddPicker = true },
+                    onPickPlatform = handlePickPlatform,
                     onReconnect = { viewModel.reconnectDesktop() }
                 )
                 MainTab.APPROVALS -> ApprovalsScreen(
@@ -188,7 +213,7 @@ private fun BotArkRoot(
             }
         }
 
-        // Signature Floating Obsidian Capsule Dock (smoothly hides inside Chat for edge-to-edge immersion!)
+        // Signature Floating Obsidian Capsule Dock (smoothly hides inside Chat/Web for edge-to-edge immersion!)
         AnimatedVisibility(
             visible = activeBotId == null,
             enter = fadeIn() + slideInVertically { it / 2 },
@@ -225,6 +250,27 @@ private fun BotArkRoot(
                 viewModel.addStandaloneHermes(name, url, key, model)
             },
             onDismiss = { showAddHermes = false }
+        )
+    }
+
+    if (showAddPicker) {
+        AddBotPickerSheet(
+            onPickPlatform = handlePickPlatform,
+            onOpenScanner = { showScanner = true },
+            onDismiss = { showAddPicker = false }
+        )
+    }
+
+    pendingWebPlatform?.let { platform ->
+        AddStandaloneWebBotSheet(
+            platform = platform,
+            onCreate = { name ->
+                val created = viewModel.addStandaloneWebBot(platformId = platform, name = name)
+                currentTab = MainTab.CHATS
+                activeBotId = created.id
+            },
+            onSwitchToQR = { showScanner = true },
+            onDismiss = { pendingWebPlatform = null }
         )
     }
 }
