@@ -83,6 +83,9 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
     } else if (initialPlatform === 'hermes') {
       autoStartedRef.current = true
       setHermesConnectOpen(true)
+    } else if (initialPlatform === 'antigravity') {
+      autoStartedRef.current = true
+      login.start('antigravity')
     }
   }, [open, initialPlatform, liveGrokAccounts.length])
 

@@ -40,6 +40,12 @@ import {
   HermesSkillsSection,
   HermesToolsetsSection
 } from '@/components/hermes/HermesInfoSections'
+import {
+  AntigravityAccountAndModelSection,
+  AntigravityAgentsSection,
+  AntigravityConversationsSection,
+  AntigravityEnvironmentsSection
+} from '@/components/antigravity/AntigravityInfoSections'
 import { MemorySection } from '@/components/muse/MemorySection'
 import { PermissionsSection } from '@/components/muse/PermissionsSection'
 import { SkillsSection } from '@/components/muse/SkillsSection'
@@ -348,6 +354,16 @@ export function InfoPanel() {
                     <HermesJobsSection accountId={bot.activeAccountId} />
                   </>
                 )}
+                {bot.platformId === 'antigravity' && bot.activeAccountId && (
+                  <>
+                    <AntigravityAccountAndModelSection accountId={bot.activeAccountId} />
+                    <AntigravityConversationsSection
+                      botId={bot.id}
+                      accountId={bot.activeAccountId}
+                      activeSessionId={bot.activeSessionId}
+                    />
+                  </>
+                )}
 
                 <Section title={t('Accounts')} flush>
                   <AccountList bot={bot} accounts={accounts} />
@@ -421,11 +437,13 @@ export function InfoPanel() {
                   <HermesSkillsSection accountId={bot.activeAccountId} />
                   <HermesToolsetsSection accountId={bot.activeAccountId} />
                 </>
+              ) : bot.platformId === 'antigravity' ? (
+                <AntigravityEnvironmentsSection accountId={bot.activeAccountId} />
               ) : (
                 <HarkComputerSection accountId={bot.activeAccountId} botId={bot.id} />
               )
             ) : (
-              /* activeTab === 'members' — Muse Sharing / Grok Agents & Rooms / Hark Devices */
+              /* activeTab === 'members' — Muse Sharing / Grok Agents & Rooms / Hark Devices / Antigravity Agents */
               <>
                 {bot.platformId === 'meta-muse' ? (
                   <>
@@ -447,6 +465,8 @@ export function InfoPanel() {
                       agentId={bot.selectedAgentId}
                     />
                   </>
+                ) : bot.platformId === 'antigravity' ? (
+                  <AntigravityAgentsSection accountId={bot.activeAccountId} />
                 ) : (
                   <HarkInviteAndSessionsSection accountId={bot.activeAccountId} />
                 )}

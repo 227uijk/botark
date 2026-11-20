@@ -197,6 +197,7 @@ export function startMobileSyncBridge(): () => void {
       if (!bot) return
       if (bot.platformId === 'meta-muse') void store.startNewMuseSession(bot.id)
       else if (bot.platformId === 'hermes') void store.startNewHermesSession(bot.id)
+      else if (bot.platformId === 'antigravity') store.startNewAntigravitySession(bot.id)
       else if (bot.platformId === 'grok' && bot.activeAccountId && bot.selectedAgentId) {
         void getBridge()
           ?.grok?.rpc({

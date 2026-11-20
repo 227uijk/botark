@@ -31,7 +31,8 @@ const LOGIN_CTA_LABEL: Record<PlatformId, string> = {
   grok: '使用 Grok Bot 登录',
   hark: '使用 Hark 登录',
   dot: '使用 ChatGPT Dot 登录',
-  hermes: '配置 Hermes 连接'
+  hermes: '配置 Hermes 连接',
+  antigravity: '使用 Antigravity 登录'
 }
 
 /**
@@ -49,6 +50,7 @@ export function AccountList({ bot, accounts }: AccountListProps) {
   const openGrokLogin = useBotStore((s) => s.openGrokLogin)
   const openHarkLogin = useBotStore((s) => s.openHarkLogin)
   const openDotLogin = useBotStore((s) => s.openDotLogin)
+  const openAntigravityLogin = useBotStore((s) => s.openAntigravityLogin)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const several = accounts.length > 1
@@ -66,6 +68,8 @@ export function AccountList({ bot, accounts }: AccountListProps) {
       case 'hermes':
         useBotStore.getState().setSettingsOpen(true, 'hermes-accounts')
         return
+      case 'antigravity':
+        return void openAntigravityLogin(account.id)
     }
   }
 

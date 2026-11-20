@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { BotHubBridge } from '@shared/bridge'
 import {
+  ANTIGRAVITY_CHANNELS,
   DOT_CHANNELS,
   GROK_CHANNELS,
   HARK_CHANNELS,
@@ -9,6 +10,7 @@ import {
   UPDATE_CHANNELS,
   VAULT_CHANNELS,
   WEB_VIEW_CHANNELS,
+  type AntigravityMainEvent,
   type DotMainEvent,
   type GrokMainEvent,
   type HarkMainEvent,
@@ -153,6 +155,20 @@ const bridge: BotHubBridge = {
       const handler = (_event: unknown, payload: HermesMainEvent) => listener(payload)
       ipcRenderer.on(HERMES_CHANNELS.event, handler)
       return () => ipcRenderer.removeListener(HERMES_CHANNELS.event, handler)
+    }
+  },
+  antigravity: {
+    openLogin: (request) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.openLogin, request),
+    cancelLogin: (accountId) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.cancelLogin, accountId),
+    clearAuth: (accountId) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.clearAuth, accountId),
+    authStatus: (accountId) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.authStatus, accountId),
+    sendMessage: (request) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.sendMessage, request),
+    cancelRun: (accountId) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.cancelRun, accountId),
+    rpc: (request) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.rpc, request),
+    onEvent: (listener) => {
+      const handler = (_event: unknown, payload: AntigravityMainEvent) => listener(payload)
+      ipcRenderer.on(ANTIGRAVITY_CHANNELS.event, handler)
+      return () => ipcRenderer.removeListener(ANTIGRAVITY_CHANNELS.event, handler)
     }
   },
   mobileSync: {

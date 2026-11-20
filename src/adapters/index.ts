@@ -4,6 +4,7 @@ import { createGrokBotAdapter } from "./grokbot/GrokBotAdapter"
 import { createHarkAdapter } from "./hark/HarkAdapter"
 import { createDotAdapter } from "./dot/DotAdapter"
 import { createHermesAdapter } from "./hermes/HermesAdapter"
+import { createAntigravityAdapter } from "./antigravity/AntigravityAdapter"
 import { adapterRegistry, type AdapterRegistry } from "./registry"
 
 export { adapterRegistry, AdapterRegistry } from "./registry"
@@ -36,4 +37,5 @@ export function registerBuiltInAdapters(registry: AdapterRegistry = adapterRegis
   if (!registry.has("hark")) registry.register(createHarkAdapter())
   if (!registry.has("dot")) registry.register(createDotAdapter())
   if (!registry.has("hermes")) registry.register(createHermesAdapter())
+  if (!registry.has("antigravity")) registry.register(createAntigravityAdapter())
 }

@@ -58,7 +58,13 @@ const STEPS: Array<{ id: StepId; indexLabel: string; title: string }> = [
 interface PlatformGuideItem {
   id: PlatformId
   title: string
-  settingsTab: 'grok-accounts' | 'muse-accounts' | 'hark-accounts' | 'dot-accounts' | 'hermes-accounts'
+  settingsTab:
+    | 'grok-accounts'
+    | 'muse-accounts'
+    | 'hark-accounts'
+    | 'dot-accounts'
+    | 'hermes-accounts'
+    | 'antigravity-accounts'
   accountRule: string
   importMethods: string
   workbenchCards: Array<{ title: string; summary: string }>
@@ -145,6 +151,21 @@ const PLATFORM_GUIDE_ITEMS: PlatformGuideItem[] = [
     shape: 'clover',
     color: 'green',
     grokState: 'working'
+  },
+  {
+    id: 'antigravity',
+    title: 'Antigravity',
+    settingsTab: 'antigravity-accounts',
+    accountRule: '每个 Google 账号独立隔离分区，支持多账号并行调度云端 Antigravity Agent',
+    importMethods: '内置安全浏览器直接 Google 登录 antigravity.google.com，无需手动抓包或粘贴 Cookie',
+    workbenchCards: [
+      { title: '实时 Cascade 流式对话', summary: '直连 Google gRPC-Web 流式接口，实时展示推理、工具调用与云端执行进度' },
+      { title: '模型与配额实时切换', summary: '查看账号订阅套餐与可用 Gemini 模型配额，一键切换目标模型' },
+      { title: '云端会话、沙盒与 Agents', summary: '同步管理所有云端 Cascades 会话、Capsules 沙盒工作区与自定义云端 Agents' }
+    ],
+    shape: 'crystal',
+    color: 'blue',
+    grokState: 'streaming'
   }
 ]
 
@@ -206,6 +227,7 @@ function FullScreenGuideBody({
       | 'hark-accounts'
       | 'dot-accounts'
       | 'hermes-accounts'
+      | 'antigravity-accounts'
   ) => {
     markOnboardingSeen()
     setOnboardingOpen(false)

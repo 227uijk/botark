@@ -34,7 +34,8 @@ export default function App() {
         account.platformId === 'grok' ||
         account.platformId === 'hark' ||
         account.platformId === 'dot' ||
-        account.platformId === 'hermes'
+        account.platformId === 'hermes' ||
+        account.platformId === 'antigravity'
       ) {
         void connectAccount(account.id)
       }

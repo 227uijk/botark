@@ -199,6 +199,32 @@ export function InspectorProtocolCard({
           </button>
         </>
       )}
+
+      {bot.platformId === 'antigravity' && (
+        <>
+          <button
+            type="button"
+            onClick={() => useBotStore.getState().startNewAntigravitySession(bot.id)}
+            className="press inline-flex h-7 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-[12px] font-medium text-ink hover:bg-hover"
+          >
+            <MessageSquarePlus className="size-3.5 text-ink-secondary" aria-hidden />
+            {t('New session')}
+          </button>
+          <button
+            type="button"
+            onClick={toggleWebSession}
+            className={cn(
+              'press inline-flex h-7 flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-[12px] font-medium',
+              webSessionOpen
+                ? 'border-accent bg-accent-50 text-accent-600'
+                : 'border-line bg-surface text-ink hover:bg-hover'
+            )}
+          >
+            <Globe className="size-3.5 text-ink-secondary" aria-hidden />
+            {webSessionOpen ? t('Chat view') : t('Web view')}
+          </button>
+        </>
+      )}
     </div>
   )
 }

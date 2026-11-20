@@ -29,7 +29,8 @@ const PLATFORM_LOGIN_LABELS: Record<PlatformId, string> = {
   grok: '使用 Grok Bot 登录',
   hark: '使用 Hark 登录',
   dot: '使用 ChatGPT Dot 登录',
-  hermes: '配置 Hermes 连接'
+  hermes: '配置 Hermes 连接',
+  antigravity: '使用 Antigravity 登录'
 }
 
 function ConversationIntro({
@@ -100,6 +101,7 @@ export function ChatArea() {
   const openGrokLogin = useBotStore((s) => s.openGrokLogin)
   const openHarkLogin = useBotStore((s) => s.openHarkLogin)
   const openDotLogin = useBotStore((s) => s.openDotLogin)
+  const openAntigravityLogin = useBotStore((s) => s.openAntigravityLogin)
   const webSessionOpen = useBotStore((s) => s.webSessionOpen)
   const hasBots = useBotStore((s) => s.bots.length > 0)
   const infoPanelOpen = useBotStore((s) => s.infoPanelOpen)
@@ -131,6 +133,10 @@ export function ChatArea() {
   const onGrokLogin = useCallback((accountId: string) => void openGrokLogin(accountId), [openGrokLogin])
   const onHarkLogin = useCallback((accountId: string) => void openHarkLogin(accountId), [openHarkLogin])
   const onDotLogin = useCallback((accountId: string) => void openDotLogin(accountId), [openDotLogin])
+  const onAntigravityLogin = useCallback(
+    (accountId: string) => void openAntigravityLogin(accountId),
+    [openAntigravityLogin]
+  )
 
   if (!bot) {
     return (
@@ -164,6 +170,8 @@ export function ChatArea() {
       case 'hermes':
         useBotStore.getState().setSettingsOpen(true, 'hermes-accounts')
         return
+      case 'antigravity':
+        return onAntigravityLogin(activeAccount.id)
     }
   }
 
@@ -215,6 +223,7 @@ export function ChatArea() {
               onGrokLogin={onGrokLogin}
               onHarkLogin={onHarkLogin}
               onDotLogin={onDotLogin}
+              onAntigravityLogin={onAntigravityLogin}
               hideNotice={needsPlatformLogin && messages.length === 0 && !typing}
             />
           </>

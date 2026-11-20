@@ -83,6 +83,18 @@ export const PLATFORM_INSPECTORS: Record<PlatformId, PlatformInspectorSpec> = {
       { id: 'overview', label: 'Overview' },
       { id: 'computer', label: 'Tools' }
     ]
+  },
+  antigravity: {
+    platformId: 'antigravity',
+    displayName: 'Antigravity',
+    protocolLabel: 'gRPC-Web · Cloud Agent',
+    supportsWebSession: true,
+    supportsQuickNewConversation: true,
+    tabs: [
+      { id: 'overview', label: 'Overview' },
+      { id: 'computer', label: 'Environments' },
+      { id: 'members', label: 'Agents' }
+    ]
   }
 }
 

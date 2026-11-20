@@ -4,18 +4,21 @@ import museIcon from "@/assets/platforms/muse.svg"
 import harkIcon from "@/assets/platforms/hark.svg"
 import dotIcon from "@/assets/platforms/dot.svg"
 import hermesIcon from "@/assets/platforms/hermes.png"
+import antigravityIcon from "@/assets/platforms/antigravity.png"
 
 /**
  * Official brand marks, keyed by platform. Muse uses the white app icon from
  * muse.ai/images/landing/brand/muse-app-icon.svg; Grok uses grok.com's
- * apple-touch-icon; Hermes uses NousResearch/hermes-agent's official emblem.
+ * apple-touch-icon; Hermes uses NousResearch/hermes-agent's official emblem;
+ * Antigravity uses Google Antigravity's official emblem.
  */
 const ICONS: Partial<Record<PlatformId, string>> = {
   "meta-muse": museIcon,
   grok: grokIcon,
   hark: harkIcon,
   dot: dotIcon,
-  hermes: hermesIcon
+  hermes: hermesIcon,
+  antigravity: antigravityIcon
 }
 
 export function platformIcon(id: PlatformId | undefined): string | undefined {

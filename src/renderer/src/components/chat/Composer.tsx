@@ -21,6 +21,7 @@ interface ComposerProps {
   onGrokLogin?: (accountId: string) => void
   onHarkLogin?: (accountId: string) => void
   onDotLogin?: (accountId: string) => void
+  onAntigravityLogin?: (accountId: string) => void
   /** The empty conversation already shows its own sign-in action. */
   hideNotice?: boolean
 }
@@ -64,7 +65,8 @@ function ConnectionNotice({
   onMuseLogin,
   onGrokLogin,
   onHarkLogin,
-  onDotLogin
+  onDotLogin,
+  onAntigravityLogin
 }: {
   account: BotAccount
   onConnect: () => void
@@ -72,6 +74,7 @@ function ConnectionNotice({
   onGrokLogin?: () => void
   onHarkLogin?: () => void
   onDotLogin?: () => void
+  onAntigravityLogin?: () => void
 }) {
   const isError = account.status === 'error'
   const isMuse = account.platformId === 'meta-muse'
@@ -79,6 +82,7 @@ function ConnectionNotice({
   const isHark = account.platformId === 'hark'
   const isDot = account.platformId === 'dot'
   const isHermes = account.platformId === 'hermes'
+  const isAntigravity = account.platformId === 'antigravity'
   return (
     <div
       className={cn(
@@ -87,7 +91,7 @@ function ConnectionNotice({
       )}
       role="status"
     >
-      {isMuse || isHark || isDot ? (
+      {isMuse || isHark || isDot || isAntigravity ? (
         <LogIn className="size-4 shrink-0 text-accent-600" aria-hidden />
       ) : (
         <PlugZap className="size-4 shrink-0 text-ink-muted" aria-hidden />
@@ -105,7 +109,9 @@ function ConnectionNotice({
                   ? '登录 ChatGPT Dot 或在右侧导入 AT / RT 后即可发消息'
                   : isHermes
                     ? '连接 Hermes API Server（hermes gateway）后即可发消息'
-                    : '账号未连接'}
+                    : isAntigravity
+                      ? '登录 Google Antigravity（antigravity.google.com）后即可发消息'
+                      : '账号未连接'}
       </span>
       {isMuse && onMuseLogin && !isError ? (
         <>
@@ -137,6 +143,16 @@ function ConnectionNotice({
             刷新连接
           </Button>
         </>
+      ) : isAntigravity && onAntigravityLogin && !isError ? (
+        <>
+          <Button size="sm" variant="primary" onClick={onAntigravityLogin} disabled={account.pending}>
+            {account.pending && <Loader2 className="animate-spin" aria-hidden />}
+            {account.pending ? '登录中…' : '使用 Antigravity 登录'}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onConnect} disabled={account.pending}>
+            刷新会话
+          </Button>
+        </>
       ) : isGrok && onGrokLogin ? (
         <>
           <Button size="sm" variant="primary" onClick={onGrokLogin} disabled={account.pending}>
@@ -157,7 +173,7 @@ function ConnectionNotice({
   )
 }
 
-export function Composer({ bot, account, typing = false, onSend, onCancel, onConnect, onMuseLogin, onGrokLogin, onHarkLogin, onDotLogin, hideNotice = false }: ComposerProps) {
+export function Composer({ bot, account, typing = false, onSend, onCancel, onConnect, onMuseLogin, onGrokLogin, onHarkLogin, onDotLogin, onAntigravityLogin, hideNotice = false }: ComposerProps) {
   const [text, setText] = useState('')
   const [attachments, setAttachments] = useState<AttachmentMeta[]>([])
   const [dragging, setDragging] = useState(false)
@@ -234,6 +250,7 @@ export function Composer({ bot, account, typing = false, onSend, onCancel, onCon
             onGrokLogin={onGrokLogin ? () => onGrokLogin(account.id) : undefined}
             onHarkLogin={onHarkLogin ? () => onHarkLogin(account.id) : undefined}
             onDotLogin={onDotLogin ? () => onDotLogin(account.id) : undefined}
+            onAntigravityLogin={onAntigravityLogin ? () => onAntigravityLogin(account.id) : undefined}
           />
         )}
 

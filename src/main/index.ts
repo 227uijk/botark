@@ -12,6 +12,8 @@ import { registerDotIpc } from './dot/dotIpc'
 import { closeCelsiusWatcher } from './dot/dotClient'
 import { registerHermesIpc } from './hermes/hermesIpc'
 import { cancelAllHermesRuns } from './hermes/hermesClient'
+import { registerAntigravityIpc } from './antigravity/antigravityIpc'
+import { cancelAllAntigravityRuns } from './antigravity/antigravityClient'
 import { registerMobileSyncIpc, stopMobileSyncServer } from './mobileSync/mobileSyncIpc'
 import { applyAllStoredProxies } from './muse/accountProxy'
 import { hardenVaultFilePermissions, registerVaultIpc } from './securityVault'
@@ -137,6 +139,7 @@ app.on('before-quit', () => {
   closeCelsiusWatcher('*')
   cancelHarkWatch('*')
   cancelAllHermesRuns('*')
+  cancelAllAntigravityRuns('*')
   void stopMobileSyncServer()
   disposeAllMuseManagers()
 })
@@ -153,6 +156,7 @@ app.whenReady().then(async () => {
   registerHarkIpc()
   registerDotIpc()
   registerHermesIpc()
+  registerAntigravityIpc()
   registerMobileSyncIpc()
   registerVaultIpc()
   mainWindow = createMainWindow()

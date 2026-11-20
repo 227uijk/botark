@@ -67,6 +67,7 @@ export interface BotHubState {
     | 'grok-accounts'
     | 'hark-accounts'
     | 'hermes-accounts'
+    | 'antigravity-accounts'
     | 'mobile-sync'
     | 'proxy-pool'
   /** Active document/article opened in the right-side Split-Pane Document Canvas. */
@@ -107,6 +108,7 @@ export interface BotHubState {
       | 'grok-accounts'
       | 'hark-accounts'
       | 'hermes-accounts'
+      | 'antigravity-accounts'
       | 'mobile-sync'
       | 'proxy-pool'
   ) => void
@@ -140,6 +142,8 @@ export interface BotHubState {
   startNewMuseSession: (botId: string) => Promise<void>
   switchHermesSession: (botId: string, sessionId: string) => Promise<void>
   startNewHermesSession: (botId: string) => Promise<void>
+  switchAntigravitySession: (botId: string, sessionId: string) => Promise<void>
+  startNewAntigravitySession: (botId: string) => void
 
   // Bot details
   updateNotes: (botId: string, notes: string) => void
@@ -170,6 +174,8 @@ export interface BotHubState {
   openHarkLogin: (accountId: string) => Promise<void>
   /** Dot: open ChatGPT Dot login window (chatgpt.com/dots). */
   openDotLogin: (accountId: string) => Promise<void>
+  /** Antigravity: open Google Antigravity login window (antigravity.google.com). */
+  openAntigravityLogin: (accountId: string) => Promise<void>
   /** Inject Grok accessToken (or mark main-captured PKCE session active) in adapter. */
   setGrokAccessToken: (
     accountId: string,
@@ -1118,6 +1124,8 @@ export const useBotStore = create<BotHubState>()(
             op: 'stopRun'
           })
           .catch(() => undefined)
+      } else if (bot.platformId === 'antigravity' && bridge?.antigravity?.cancelRun) {
+        await bridge.antigravity.cancelRun(bot.activeAccountId).catch(() => undefined)
       }
     },
 
@@ -1222,6 +1230,54 @@ export const useBotStore = create<BotHubState>()(
         }
       }
       patchBot(botId, () => ({ activeSessionId: newSessionId }))
+      set((s) => ({
+        messages: { ...s.messages, [botId]: [] }
+      }))
+    },
+
+    switchAntigravitySession: async (botId, sessionId) => {
+      const bot = get().bots.find((b) => b.id === botId)
+      if (!bot || bot.platformId !== 'antigravity') return
+      patchBot(botId, () => ({ activeSessionId: sessionId }))
+      const bridge = electronBridge()
+      if (!bridge?.antigravity?.rpc) return
+      const res = await bridge.antigravity.rpc({
+        accountId: bot.activeAccountId,
+        action: 'getConversation',
+        conversationId: sessionId
+      })
+      if (!res.ok || !res.data || typeof res.data !== 'object') return
+      const rows = (
+        res.data as {
+          messages?: Array<{
+            id: string
+            role: 'user' | 'assistant'
+            text: string
+            createdAt: number
+            tools?: import('@/types').ChatToolCall[]
+          }>
+        }
+      ).messages
+      if (!Array.isArray(rows)) return
+      const hydrated: ChatMessage[] = rows.map((r) => ({
+        id: r.id,
+        botId,
+        accountId: bot.activeAccountId,
+        role: r.role === 'user' ? 'user' : 'bot',
+        text: r.text,
+        createdAt: r.createdAt,
+        delivery: r.role === 'user' ? 'sent' : undefined,
+        ...(r.tools?.length ? { tools: r.tools } : {})
+      }))
+      set((s) => ({
+        messages: { ...s.messages, [botId]: hydrated }
+      }))
+    },
+
+    startNewAntigravitySession: (botId) => {
+      const bot = get().bots.find((b) => b.id === botId)
+      if (!bot || bot.platformId !== 'antigravity') return
+      patchBot(botId, () => ({ activeSessionId: undefined }))
       set((s) => ({
         messages: { ...s.messages, [botId]: [] }
       }))
@@ -1400,6 +1456,9 @@ export const useBotStore = create<BotHubState>()(
           await bridge.webViews?.clearPartition?.(accountId)
         } else if (account.platformId === 'hermes' && bridge?.hermes?.clearAuth) {
           await bridge.hermes.clearAuth(accountId)
+        } else if (account.platformId === 'antigravity' && bridge?.antigravity?.clearAuth) {
+          await bridge.antigravity.clearAuth(accountId)
+          await bridge.webViews?.clearPartition?.(accountId)
         } else if (bridge?.webViews?.clearPartition) {
           await bridge.webViews.clearPartition(accountId)
         }
@@ -1948,6 +2007,29 @@ export const useBotStore = create<BotHubState>()(
         patchAccount(accountId, {
           status,
           statusDetail: status === 'offline' ? '在弹出的窗口完成 ChatGPT 登录或导入凭据' : undefined
+        })
+      } catch (error) {
+        patchAccount(accountId, { status: 'error', statusDetail: errorMessage(error) })
+      } finally {
+        patchAccount(accountId, { pending: false })
+      }
+    },
+
+    openAntigravityLogin: async (accountId) => {
+      const account = get().accounts[accountId]
+      const adapter = account && adapterRegistry.get(account.platformId)
+      if (!account || !adapter || account.pending) return
+      if (account.platformId !== 'antigravity' || !adapter.openLogin) {
+        await get().connectAccount(accountId)
+        return
+      }
+      const bot = get().bots.find((b) => b.accountIds.includes(accountId))
+      patchAccount(accountId, { pending: true, statusDetail: '在弹出的窗口完成 Google Antigravity 登录…' })
+      try {
+        const status = await adapter.openLogin(accountId, bot?.id)
+        patchAccount(accountId, {
+          status,
+          statusDetail: status === 'offline' ? '在弹出的窗口完成 Google Antigravity 登录' : undefined
         })
       } catch (error) {
         patchAccount(accountId, { status: 'error', statusDetail: errorMessage(error) })

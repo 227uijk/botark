@@ -51,6 +51,7 @@ type SettingsTab =
   | 'grok-accounts'
   | 'hark-accounts'
   | 'hermes-accounts'
+  | 'antigravity-accounts'
   | 'mobile-sync'
   | 'proxy-pool'
   | 'general'
@@ -83,7 +84,8 @@ const PLATFORM_LABELS: Record<PlatformId, string> = {
   dot: 'ChatGPT Dot',
   grok: 'Grok Bot',
   hark: 'Hark Pro',
-  hermes: 'Hermes'
+  hermes: 'Hermes',
+  antigravity: 'Antigravity'
 }
 
 export function SettingsView() {
@@ -133,7 +135,9 @@ export function SettingsView() {
 
   // Overview filters & inline editing
   const [searchQuery, setSearchQuery] = useState('')
-  const [platformFilter, setPlatformFilter] = useState<'all' | 'meta-muse' | 'dot' | 'grok' | 'hark'>('all')
+  const [platformFilter, setPlatformFilter] = useState<
+    'all' | 'meta-muse' | 'dot' | 'grok' | 'hark' | 'hermes' | 'antigravity'
+  >('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all')
   const [editingBotId, setEditingBotId] = useState<string | null>(null)
   const [editingBotName, setEditingBotName] = useState('')
@@ -174,7 +178,13 @@ export function SettingsView() {
   const grokAccounts = useMemo(() => allAccounts.filter((a) => a.platformId === 'grok'), [allAccounts])
   const harkBots = useMemo(() => bots.filter((b) => b.platformId === 'hark'), [bots])
   const harkAccounts = useMemo(() => allAccounts.filter((a) => a.platformId === 'hark'), [allAccounts])
+  const hermesBots = useMemo(() => bots.filter((b) => b.platformId === 'hermes'), [bots])
   const hermesAccounts = useMemo(() => allAccounts.filter((a) => a.platformId === 'hermes'), [allAccounts])
+  const antigravityBots = useMemo(() => bots.filter((b) => b.platformId === 'antigravity'), [bots])
+  const antigravityAccounts = useMemo(
+    () => allAccounts.filter((a) => a.platformId === 'antigravity'),
+    [allAccounts]
+  )
 
   const onlineAccountsCount = useMemo(
     () => allAccounts.filter((a) => a.status === 'online' || a.status === 'busy' || a.status === 'attention').length,
@@ -681,6 +691,13 @@ export function SettingsView() {
     { id: 'grok-accounts', label: 'Grok Bot 账号管理', icon: Users, platformId: 'grok', count: grokAccounts.length },
     { id: 'hark-accounts', label: 'Hark 账号管理', icon: Users, platformId: 'hark', count: harkAccounts.length },
     { id: 'hermes-accounts', label: 'Hermes 实例管理', icon: Server, platformId: 'hermes', count: hermesAccounts.length },
+    {
+      id: 'antigravity-accounts',
+      label: 'Antigravity 账号管理',
+      icon: Users,
+      platformId: 'antigravity',
+      count: antigravityAccounts.length
+    },
     { id: 'mobile-sync', label: '手机扫码同步', icon: Smartphone },
     { id: 'proxy-pool', label: '代理池与自动分配', icon: Server, count: pool.length },
     { id: 'general', label: '常规、分组与安全', icon: Settings }
@@ -832,14 +849,21 @@ export function SettingsView() {
                 </div>
 
                 {/* Platform Breakdown Cards */}
-                <div className="grid grid-cols-5 gap-2.5">
+                <div className="grid grid-cols-3 gap-2.5 lg:grid-cols-6">
                   {(
                     [
                       { id: 'meta-muse', tab: 'muse-accounts', name: 'Meta Muse', list: museAccounts, desc: 'Noise WSS 隧道' },
                       { id: 'dot', tab: 'dot-accounts', name: 'ChatGPT Dot', list: dotAccounts, desc: 'Calpico + OAuth RT' },
                       { id: 'grok', tab: 'grok-accounts', name: 'Grok Bot', list: grokAccounts, desc: 'Sand PKCE OAuth' },
                       { id: 'hark', tab: 'hark-accounts', name: 'Hark Pro', list: harkAccounts, desc: 'Sync SSE + Session' },
-                      { id: 'hermes', tab: 'hermes-accounts', name: 'Hermes', list: hermesAccounts, desc: 'Open-Source Gateway' }
+                      { id: 'hermes', tab: 'hermes-accounts', name: 'Hermes', list: hermesAccounts, desc: 'Open-Source Gateway' },
+                      {
+                        id: 'antigravity',
+                        tab: 'antigravity-accounts',
+                        name: 'Antigravity',
+                        list: antigravityAccounts,
+                        desc: 'Google Cloud Agent'
+                      }
                     ] as const
                   ).map((p) => {
                     const onCount = p.list.filter(
@@ -898,6 +922,8 @@ export function SettingsView() {
                         <option value="dot">ChatGPT Dot ({dotBots.length})</option>
                         <option value="grok">Grok Bot ({grokBots.length})</option>
                         <option value="hark">Hark Pro ({harkBots.length})</option>
+                        <option value="hermes">Hermes ({hermesBots.length})</option>
+                        <option value="antigravity">Antigravity ({antigravityBots.length})</option>
                       </select>
                       <select
                         value={statusFilter}
@@ -1860,6 +1886,96 @@ export function SettingsView() {
             )}
 
             {settingsTab === 'hermes-accounts' && <HermesAccountsSettingsPanel />}
+
+            {settingsTab === 'antigravity-accounts' && (
+              <div className="flex flex-col gap-5 animate-veil-in">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">
+                      Google Antigravity 账号管理
+                    </h2>
+                    <p className="mt-1 text-[13px] text-ink-secondary">
+                      通过独立隔离分区登录 antigravity.google.com，主进程使用 Google First-Party SAPISIDHASH 直连云端
+                      JetskiRemoteAgentProxyService（支持多账号并发、模型切换与流式 Cascade 对话）。
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => useBotStore.getState().setAddBotOpen(true, 'antigravity')}
+                  >
+                    添加 Antigravity 账号
+                  </Button>
+                </div>
+
+                {antigravityAccounts.length === 0 ? (
+                  <div className="rounded-2xl border border-line bg-surface p-8 text-center">
+                    <p className="text-[13.5px] font-medium text-ink">尚未添加 Google Antigravity 账号</p>
+                    <p className="mt-1 text-[12px] text-ink-muted">
+                      点击右上角「添加 Antigravity 账号」，在弹出的安全登录窗口完成 Google 登录即可。
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-soft">
+                    <ul className="divide-y divide-line">
+                      {antigravityAccounts.map((acc) => {
+                        const bot = antigravityBots.find((b) => b.accountIds.includes(acc.id))
+                        const online =
+                          acc.status === 'online' || acc.status === 'busy' || acc.status === 'attention'
+                        return (
+                          <li
+                            key={acc.id}
+                            className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate text-[13.5px] font-medium text-ink">
+                                  {bot?.name || acc.displayName}
+                                </span>
+                                <span
+                                  className={cn(
+                                    'rounded-full px-2 py-0.5 text-[11px] font-medium',
+                                    online
+                                      ? 'bg-status-online/15 text-status-online-ink'
+                                      : 'bg-sunken text-ink-muted'
+                                  )}
+                                >
+                                  {online ? '在线' : '离线'}
+                                </span>
+                              </div>
+                              <div className="mt-0.5 truncate font-mono text-[11.5px] text-ink-muted">
+                                {acc.handle || acc.id}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => void useBotStore.getState().openAntigravityLogin(acc.id)}
+                              >
+                                {online ? '重新登录' : '登录'}
+                              </Button>
+                              {bot && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    useBotStore.getState().selectBot(bot.id)
+                                    setSettingsOpen(false)
+                                  }}
+                                >
+                                  打开对话
+                                </Button>
+                              )}
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
 
             {settingsTab === 'mobile-sync' && <MobileSyncSettingsPanel />}
 

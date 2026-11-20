@@ -11,7 +11,7 @@
  */
 
 /** Platforms BotArk knows about. Add an id here and to `platforms.ts`. */
-export type PlatformId = 'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes'
+export type PlatformId = 'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes' | 'antigravity'
 
 /** Connection state of a single platform account. */
 export type ConnectionStatus = 'online' | 'busy' | 'attention' | 'offline' | 'error'

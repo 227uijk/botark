@@ -66,6 +66,7 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
   const togglePinBot = useBotStore((s) => s.togglePinBot)
   const startNewMuseSession = useBotStore((s) => s.startNewMuseSession)
   const startNewHermesSession = useBotStore((s) => s.startNewHermesSession)
+  const startNewAntigravitySession = useBotStore((s) => s.startNewAntigravitySession)
   const setSelectedAgent = useBotStore((s) => s.setSelectedAgent)
   const connectAccount = useBotStore((s) => s.connectAccount)
   const typing = useBotStore((s) => s.typing[bot.id] === true)
@@ -85,6 +86,10 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
       } finally {
         setStartingFresh(false)
       }
+      return
+    }
+    if (bot.platformId === 'antigravity') {
+      startNewAntigravitySession(bot.id)
       return
     }
     if (bot.platformId === 'grok' && bot.activeAccountId && bot.selectedAgentId) {

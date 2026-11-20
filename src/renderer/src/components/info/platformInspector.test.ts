@@ -39,6 +39,7 @@ describe('platformInspector', () => {
   it('disables web session pane for Grok Bot & Hermes API server while keeping it on web-backed platforms', () => {
     expect(getPlatformInspector('grok').supportsWebSession).toBe(false)
     expect(getPlatformInspector('hermes').supportsWebSession).toBe(false)
+    expect(getPlatformInspector('antigravity').supportsWebSession).toBe(true)
     expect(getPlatformInspector('meta-muse').supportsWebSession).toBe(true)
     expect(getPlatformInspector('hark').supportsWebSession).toBe(true)
     expect(getPlatformInspector('dot').supportsWebSession).toBe(true)

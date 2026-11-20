@@ -46,6 +46,13 @@ import type {
   HermesMainEvent,
   HermesRpcRequest,
   HermesRpcResponse,
+  AntigravityAuthStatus,
+  AntigravityMainEvent,
+  AntigravityOpenLoginRequest,
+  AntigravityRpcRequest,
+  AntigravityRpcResponse,
+  AntigravitySendRequest,
+  AntigravitySendResponse,
   SecurityVaultStatus,
   VaultStatusRequest
 } from './ipc'
@@ -199,6 +206,17 @@ export interface HermesBridge {
   onEvent(listener: (event: HermesMainEvent) => void): () => void
 }
 
+export interface AntigravityBridge {
+  openLogin(request: AntigravityOpenLoginRequest): Promise<AntigravityAuthStatus>
+  cancelLogin(accountId: string): Promise<void>
+  clearAuth(accountId: string): Promise<void>
+  authStatus(accountId: string): Promise<AntigravityAuthStatus>
+  sendMessage(request: AntigravitySendRequest): Promise<AntigravitySendResponse>
+  cancelRun(accountId: string): Promise<void>
+  rpc(request: AntigravityRpcRequest): Promise<AntigravityRpcResponse>
+  onEvent(listener: (event: AntigravityMainEvent) => void): () => void
+}
+
 export interface MobileSyncBridge {
   getState(): Promise<MobileSyncStateView>
   start(): Promise<MobileSyncStateView>
@@ -240,6 +258,7 @@ export interface BotHubBridge {
   readonly hark: HarkBridge
   readonly dot: DotBridge
   readonly hermes: HermesBridge
+  readonly antigravity: AntigravityBridge
   readonly mobileSync?: MobileSyncBridge
   readonly vault?: VaultBridge
 }

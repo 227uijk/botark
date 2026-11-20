@@ -1336,7 +1336,7 @@ export interface SecurityStoreAudit {
 
 export interface SecurityAccountAudit {
   accountId: string
-  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes'
+  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes' | 'antigravity'
   partition: string
   transportProtocol: string
   credentialIsolation: string
@@ -1363,7 +1363,105 @@ export interface SecurityVaultStatus {
 
 export interface VaultStatusRequest {
   accountId?: string
-  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes'
+  platformId?: 'meta-muse' | 'grok' | 'hark' | 'dot' | 'hermes' | 'antigravity'
 }
+
+export const ANTIGRAVITY_CHANNELS = {
+  openLogin: 'bothub:antigravity:open-login',
+  cancelLogin: 'bothub:antigravity:cancel-login',
+  clearAuth: 'bothub:antigravity:clear-auth',
+  authStatus: 'bothub:antigravity:auth-status',
+  sendMessage: 'bothub:antigravity:send-message',
+  cancelRun: 'bothub:antigravity:cancel-run',
+  rpc: 'bothub:antigravity:rpc',
+  event: 'bothub:antigravity:event'
+} as const
+
+export interface AntigravityOpenLoginRequest {
+  accountId: string
+}
+
+export interface AntigravityAuthStatus {
+  accountId: string
+  signedIn: boolean
+  handle?: string
+  displayName?: string
+  planDisplayName?: string
+  selectedModelEnum?: number
+  selectedModelName?: string
+  sessionCookieNames: string[]
+  error?: string
+}
+
+export interface AntigravitySendRequest {
+  accountId: string
+  conversationId: string
+  sessionId?: string
+  text: string
+  clientMessageId?: string
+}
+
+export type AntigravitySendResponse =
+  | { ok: true; cascadeId: string; messageId: string }
+  | { ok: false; status: number; message: string }
+
+export interface AntigravityRpcRequest {
+  accountId: string
+  action:
+    | 'profile'
+    | 'models'
+    | 'agents'
+    | 'environments'
+    | 'workspaces'
+    | 'listConversations'
+    | 'getConversation'
+    | 'deleteConversation'
+    | 'setPrefs'
+  pageSize?: number
+  conversationId?: string
+  modelEnum?: number
+  modelDisplayName?: string
+  capsuleId?: string
+  agentPath?: string
+}
+
+export type AntigravityRpcResponse =
+  | { ok: true; status: number; data: unknown }
+  | { ok: false; status: number; message: string }
+
+export type AntigravityMainEvent =
+  | {
+      type: 'login'
+      accountId: string
+      signedIn: true
+      handle?: string
+      displayName?: string
+      planDisplayName?: string
+    }
+  | {
+      type: 'login'
+      accountId: string
+      signedIn: false
+      windowClosed?: boolean
+    }
+  | {
+      type: 'stream'
+      accountId: string
+      conversationId?: string
+      sessionId?: string
+      messageId: string
+      text: string
+      done: boolean
+      tools?: MuseToolCallView[]
+    }
+  | {
+      type: 'activity'
+      accountId: string
+      activityCode: string
+      activityText?: string | null
+      activityEmoji?: string | null
+      busy: boolean
+    }
+
 
 

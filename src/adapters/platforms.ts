@@ -49,6 +49,16 @@ export const PLATFORMS: readonly PlatformDescriptor[] = [
     availability: 'available',
     monogram: 'He',
     homeUrl: 'http://127.0.0.1:8642'
+  },
+  {
+    id: 'antigravity',
+    name: 'Antigravity',
+    description:
+      'Google Antigravity Cloud Agents (antigravity.google.com) — Google login, live Cascade streaming, models & cloud sandboxes.',
+    availability: 'available',
+    monogram: 'Ag',
+    homeUrl: 'https://antigravity.google.com',
+    loginUrl: 'https://antigravity.google.com'
   }
 ]
 
