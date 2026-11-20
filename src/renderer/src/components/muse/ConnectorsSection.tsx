@@ -6,6 +6,7 @@ import { ConnectorIcon } from "@/components/ui/ConnectorIcon"
 import { TextInput } from "@/components/ui/Field"
 import { RefreshButton } from "@/components/muse/RefreshButton"
 import { getBridge } from "@/lib/bridge"
+import { cleanSidebarError, isOnlineAccountStatus } from "@/lib/sidebarCompat"
 import { useBotStore } from "@/store/botStore"
 
 export function ConnectorsSection({ accountId }: { accountId: string }) {
@@ -27,14 +28,14 @@ export function ConnectorsSection({ accountId }: { accountId: string }) {
     try {
       setItems(await muse.listConnectors(accountId))
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
   }, [accountId])
 
   useEffect(() => {
-    if (status === "online" || status === "busy" || status === "attention") void refresh()
+    if (isOnlineAccountStatus(status)) void refresh()
   }, [refresh, status])
 
   useEffect(() => {

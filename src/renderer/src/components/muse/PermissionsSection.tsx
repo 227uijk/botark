@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/Field'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -173,7 +174,7 @@ export function PermissionsSection({ accountId }: { accountId: string }) {
       setCanWrite(Boolean(n || c || settingsRaw || permsRaw))
     } catch (err) {
       setState({ activeGrants: [], raw: {}, rows: [] })
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
       setUnavailable(true)
       setCanWrite(false)
     } finally {

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
+import { cleanSidebarError, isOnlineAccountStatus } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -231,14 +232,14 @@ export function FilesSection({ accountId }: { accountId: string }) {
     try {
       setItems(await muse.listFiles(accountId))
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
   }, [accountId])
 
   useEffect(() => {
-    void refresh()
+    if (isOnlineAccountStatus(status)) void refresh()
   }, [refresh, status])
 
   useEffect(() => {

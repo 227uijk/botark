@@ -85,6 +85,8 @@ interface AccountSession {
   /** Cancel handles for fs.subscribe / artifacts.subscribe. */
   filesSubCancel?: (reason?: string) => void
   artifactsSubCancel?: (reason?: string) => void
+  /** Currently selected/active chat session_id for spontaneous watch filtering. */
+  activeSessionId?: string
   schedules?: MuseSchedule[]
   invite?: MuseInviteSnapshot
   chatSessions?: MuseChatSessionView[]
@@ -504,6 +506,10 @@ export class MuseSessionManager {
     if (this.activeStreams.has(accountId)) return
     const conversationId = session.botId
     if (!conversationId) return
+    const eventSessionId = typeof p['session_id'] === 'string' ? (p['session_id'] as string) : ''
+    if (session.activeSessionId && eventSessionId && eventSessionId !== session.activeSessionId) {
+      return
+    }
     const id = typeof p['message_id'] === 'string' ? (p['message_id'] as string) : ''
     if (!id) return
     const watched =
@@ -677,6 +683,8 @@ export class MuseSessionManager {
     const text = extractChatText(params)
     const p = params && typeof params === 'object' ? (params as Record<string, unknown>) : {}
     const sessionId = typeof p['session_id'] === 'string' ? (p['session_id'] as string) : undefined
+    const accountSession = this.sessions.get(accountId)
+    if (accountSession && sessionId) accountSession.activeSessionId = sessionId
     const messageOrigin =
       p['message_origin'] && typeof p['message_origin'] === 'object'
         ? (p['message_origin'] as Record<string, unknown>)
@@ -729,10 +737,13 @@ export class MuseSessionManager {
         },
         { timeoutMs: 600_000, settleMs: 1500, signal: ctrl.signal }
       )
+      const resolvedSessionId =
+        result.sessionId ?? (typeof result.ack['session_id'] === 'string' ? (result.ack['session_id'] as string) : undefined)
+      if (accountSession && resolvedSessionId) accountSession.activeSessionId = resolvedSessionId
       const reply = result.text || last
       return {
         ...result.ack,
-        session_id: result.sessionId ?? result.ack['session_id'],
+        session_id: resolvedSessionId,
         text: reply,
         display_text: reply,
         reply,
@@ -1375,11 +1386,15 @@ export class MuseSessionManager {
         : typeof nested['id'] === 'string'
           ? (nested['id'] as string)
           : null
+    const session = this.sessions.get(accountId)
+    if (session && sessionId) session.activeSessionId = sessionId
     void this.listSessions(accountId)
     return { sessionId }
   }
 
   async loadSessionHistory(accountId: string, sessionId: string): Promise<MuseHistoryMessageView[]> {
+    const session = this.sessions.get(accountId)
+    if (session && sessionId) session.activeSessionId = sessionId
     const params = { session_id: sessionId, limit: 100 }
     const native = await this.rpcNative(accountId, 'chat.history', params)
     const raw = native ? native.value : await this.rpc(accountId, 'chat.history', params)
@@ -1407,6 +1422,15 @@ export class MuseSessionManager {
       out.push(...libraryFromResult(raw))
     } catch (error) {
       console.warn('[muse] fs.library', error instanceof Error ? error.message : error)
+    }
+    if (out.length === 0) {
+      try {
+        const native = await this.rpcNative(accountId, 'fs.list', { path: 'workspace' })
+        const raw = native ? native.value : await this.rpc(accountId, 'fs.list', { path: 'workspace' })
+        out.push(...libraryFromResult(raw))
+      } catch {
+        /* best effort fallback */
+      }
     }
     // Dedupe by id
     const seen = new Set<string>()
@@ -1468,8 +1492,19 @@ export class MuseSessionManager {
   }
 
   async listConnectors(accountId: string): Promise<MuseConnectorView[]> {
-    const native = await this.rpcNative(accountId, 'connectors.list', {})
-    const raw = native ? native.value : await this.rpc(accountId, 'connectors.list', {})
+    let raw: unknown
+    try {
+      const native = await this.rpcNative(accountId, 'connectors.list', {})
+      raw = native ? native.value : await this.rpc(accountId, 'connectors.list', {})
+    } catch (err) {
+      // Fallback to connectors.homepage if connectors.list was retired/renamed
+      try {
+        const native = await this.rpcNative(accountId, 'connectors.homepage', {})
+        raw = native ? native.value : await this.rpc(accountId, 'connectors.homepage', {})
+      } catch {
+        throw err
+      }
+    }
     const list = mapConnectors(raw)
     const session = this.sessions.get(accountId)
     if (session) session.connectors = list

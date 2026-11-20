@@ -1180,6 +1180,9 @@ export const useBotStore = create<BotHubState>()(
       const bridge = electronBridge()
       if (!bridge?.muse?.loadSessionHistory) return
       const rows = await bridge.muse.loadSessionHistory(bot.activeAccountId, sessionId)
+      // Guard against stale async response if user switched sessions again
+      const latestBot = get().bots.find((b) => b.id === botId)
+      if (!latestBot || latestBot.activeSessionId !== sessionId) return
       const hydrated: ChatMessage[] = rows.map((r) => ({
         id: r.id,
         botId,

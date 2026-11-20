@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/Field'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -99,7 +100,7 @@ export function AgentDiagnosticSection({ accountId }: { accountId: string }) {
       }
       setActivities(actRaw ? parseActivityList(actRaw) : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }

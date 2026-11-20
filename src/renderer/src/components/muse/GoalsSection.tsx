@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/Field'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError, isIncompatibleApiError } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -61,11 +62,10 @@ export function GoalsSection({ accountId }: { accountId: string }) {
       const next = parseGoals(raw)
       setItems(next)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      if (/404|not.?found|unsupported|unknown.?method/i.test(msg)) {
+      if (isIncompatibleApiError(err)) {
         setUnavailable(true)
       } else {
-        setError(msg)
+        setError(cleanSidebarError(err))
       }
       setItems([])
     } finally {

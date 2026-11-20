@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { historyAssistants, parseHistoryTranscript, parseMediaParts } from './chat'
+import {
+  historyAssistants,
+  historyAssistantsAfterTurn,
+  parseHistoryTranscript,
+  parseMediaParts,
+  parseMuseTimestampMs
+} from './chat'
 import { normalizeMuseFsPath, sniffImageMimeFromBytes } from './fs'
+import { cleanSidebarError, isIncompatibleApiError } from '../../renderer/src/lib/sidebarCompat'
 
 describe('normalizeMuseFsPath', () => {
   it('normalizes raw, prefixed, URL, and VM home paths', () => {
@@ -143,5 +150,61 @@ describe('history media stitching', () => {
       'workspace/generated/sichuan_tea.png',
       'workspace/generated/sichuan_tea_v2.png'
     ])
+  })
+
+  it('historyAssistantsAfterTurn never leaks old history bubbles below new chat replies', () => {
+    const rawHistory = {
+      ok: true,
+      result: {
+        chat_events: [
+          { event_name: 'message.user', message_id: 'old_u1', occurred_at_ms: 1_700_000_000_000, payload: { display_text: 'old q1' } },
+          { event_name: 'message.assistant', message_id: 'old_a1', occurred_at_ms: 1_700_000_005_000, payload: { display_text: 'old reply 1' } },
+          { event_name: 'message.user', message_id: 'old_u2', occurred_at_ms: 1_700_000_010_000, payload: { display_text: 'old q2' } },
+          { event_name: 'message.assistant', message_id: 'old_a2', occurred_at_ms: 1_700_000_015_000, payload: { display_text: 'old reply 2' } },
+          { event_name: 'message.user', message_id: 'new_u3', occurred_at_ms: 1_800_000_000_000, payload: { display_text: 'new question' } },
+          { event_name: 'message.assistant', message_id: 'new_a3', occurred_at_ms: 1_800_000_002_000, payload: { display_text: 'new answer' } }
+        ]
+      }
+    }
+
+    // With ackUserMessageId present: ONLY new_a3 is returned
+    const filteredByAck = historyAssistantsAfterTurn(rawHistory, {
+      ackUserMessageId: 'new_u3',
+      knownAssistantIds: new Set(['new_a3']),
+      turnStartedAtMs: 1_800_000_000_000
+    })
+    expect(filteredByAck.map((r) => r.id)).toEqual(['new_a3'])
+
+    // Without ackUserMessageId: timestamp cutoff still excludes old_a1 & old_a2
+    const filteredByTime = historyAssistantsAfterTurn(rawHistory, {
+      knownAssistantIds: new Set(),
+      turnStartedAtMs: 1_800_000_000_000
+    })
+    expect(filteredByTime.map((r) => r.id)).toEqual(['new_a3'])
+  })
+
+  it('parses ISO/seconds timestamps and keeps undated history strictly older than Date.now()', () => {
+    expect(parseMuseTimestampMs({ created_at: '2026-11-20T10:00:00Z' })).toBe(Date.parse('2026-11-20T10:00:00Z'))
+    expect(parseMuseTimestampMs({ occurred_at_ms: 1_700_000_000 })).toBe(1_700_000_000_000)
+
+    const now = Date.now()
+    const transcript = parseHistoryTranscript([
+      { event_name: 'message.user', message_id: 'u1', payload: { display_text: 'first' } },
+      { event_name: 'message.assistant', message_id: 'a1', payload: { display_text: 'second' } }
+    ])
+    expect(transcript).toHaveLength(2)
+    expect(transcript[0]!.createdAt).toBeLessThan(now)
+    expect(transcript[1]!.createdAt).toBeGreaterThan(transcript[0]!.createdAt)
+    expect(transcript[1]!.createdAt).toBeLessThan(now)
+  })
+})
+
+describe('sidebarCompat', () => {
+  it('quiets incompatible/retired API errors while preserving genuine network errors', () => {
+    expect(isIncompatibleApiError('skills.list: HTTP 404 Not Found')).toBe(true)
+    expect(isIncompatibleApiError('quota: fetchSubscriptionAction unavailable (HTTP 404)')).toBe(true)
+    expect(isIncompatibleApiError('[unimplemented] method ListGrokBotFoo')).toBe(true)
+    expect(cleanSidebarError('invite: HTTP 405')).toBeUndefined()
+    expect(cleanSidebarError('ECONNRESET while connecting')).toBe('ECONNRESET while connecting')
   })
 })

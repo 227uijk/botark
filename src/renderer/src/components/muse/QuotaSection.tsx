@@ -3,6 +3,7 @@ import type { MuseQuotaSnapshot } from '@shared/ipc'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError, isOnlineAccountStatus } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -35,16 +36,16 @@ export function QuotaSection({ accountId }: { accountId: string }) {
     try {
       const next = await muse.refreshQuota(accountId)
       setSnap(next)
-      if (next.error) setError(next.error)
+      if (next.error) setError(cleanSidebarError(next.error))
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
   }, [accountId])
 
   useEffect(() => {
-    void refresh()
+    if (isOnlineAccountStatus(status)) void refresh()
   }, [refresh, status])
 
   useEffect(() => {

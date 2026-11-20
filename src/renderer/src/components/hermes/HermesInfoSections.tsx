@@ -24,6 +24,7 @@ import { RefreshButton } from '@/components/muse/RefreshButton'
 import { Button } from '@/components/ui/Button'
 import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
+import { cleanSidebarError } from '@/lib/sidebarCompat'
 import { t } from '@/lib/i18n'
 import { useBotStore } from '@/store/botStore'
 
@@ -51,7 +52,7 @@ export function HermesServerSection({ accountId }: { accountId: string }) {
         setModels(modelsRes.data as Array<{ id: string; root?: string }>)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
@@ -172,7 +173,7 @@ export function HermesSessionsSection({
       }
       setSessions(Array.isArray(res.data) ? (res.data as HermesSessionSummary[]) : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
@@ -373,7 +374,7 @@ export function HermesSkillsSection({ accountId }: { accountId: string }) {
       if (!res.ok) throw new Error(res.message)
       setSkills(Array.isArray(res.data) ? (res.data as HermesSkillItem[]) : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
@@ -435,7 +436,7 @@ export function HermesToolsetsSection({ accountId }: { accountId: string }) {
       if (!res.ok) throw new Error(res.message)
       setToolsets(Array.isArray(res.data) ? (res.data as HermesToolsetItem[]) : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }

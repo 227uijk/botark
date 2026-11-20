@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError, isIncompatibleApiError } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -99,8 +100,7 @@ export function SharedAgentsSection({ accountId }: { accountId: string }) {
       try {
         capsRaw = await muse.rpc({ accountId, method: 'shared_agents.capabilities', params: {} })
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        if (/404|not.?found|unsupported|unknown.?method|class|retired/i.test(msg)) {
+        if (isIncompatibleApiError(err)) {
           setUnavailable(true)
           setAgents([])
           return
@@ -121,7 +121,7 @@ export function SharedAgentsSection({ accountId }: { accountId: string }) {
         setAgents([])
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
       setUnavailable(true)
     } finally {
       setLoading(false)

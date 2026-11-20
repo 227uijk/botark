@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/Field'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError, isIncompatibleApiError } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -322,8 +323,7 @@ export function PeersSection({ accountId }: { accountId: string }) {
       try {
         stRaw = await muse.rpc({ accountId, method: 'peers.status', params: {} })
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        if (/404|not.?found|unsupported|unknown.?method|class/i.test(msg)) {
+        if (isIncompatibleApiError(err)) {
           setUnavailable(true)
           setPeersStatus(null)
           setContacts([])
@@ -365,7 +365,7 @@ export function PeersSection({ accountId }: { accountId: string }) {
       setActivities(actRaw ? parseActivities(actRaw) : [])
       setGrants(grRaw ? parseGrants(grRaw) : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
       setUnavailable(true)
     } finally {
       setLoading(false)

@@ -1074,6 +1074,8 @@ export async function streamChat(
   const order: string[] = []
   const doneIds = new Set<string>()
   let sessionId = input.sessionId ?? ''
+  let ackUserMessageId = ''
+  const turnStartedAtMs = Date.now()
   let started = false
   let lastActivity = ''
   let settle!: () => void
@@ -1351,13 +1353,8 @@ export async function streamChat(
   let backfilling = false
   let closed = false
 
-  const applyHistoryRows = (rows: HistoryRow[], afterUser = false): void => {
-    let take = rows
-    if (afterUser) {
-      // Prefer rows not already completed in this turn; still accept brand-new ids.
-      take = rows
-    }
-    for (const row of take) {
+  const applyHistoryRows = (rows: HistoryRow[]): void => {
+    for (const row of rows) {
       if (!row.id) continue
       ensureBubble(row.id)
       const merged = mergeMonotonic(texts.get(row.id) ?? '', row.text)
@@ -1399,7 +1396,11 @@ export async function streamChat(
         } catch {
           continue
         }
-        const rows = historyAssistants(hist)
+        const rows = historyAssistantsAfterTurn(hist, {
+          ackUserMessageId,
+          knownAssistantIds: new Set(order),
+          turnStartedAtMs
+        })
         if (gapTimer) {
           clearTimeout(gapTimer)
           gapTimer = null
@@ -1416,10 +1417,15 @@ export async function streamChat(
   }
 
   const reconcileFinal = async (): Promise<void> => {
-    if (!sessionId || !gw.isReady()) return
+    if (!sessionId || !gw.isReady() || opts.signal?.aborted) return
     try {
       const hist = await gw.request('chat.history', { session_id: sessionId, limit: 50 })
-      applyHistoryRows(historyAssistants(hist), true)
+      const rows = historyAssistantsAfterTurn(hist, {
+        ackUserMessageId,
+        knownAssistantIds: new Set(order),
+        turnStartedAtMs
+      })
+      applyHistoryRows(rows)
     } catch {
       /* best-effort */
     }
@@ -1458,6 +1464,7 @@ export async function streamChat(
     const r = obj(ack['result'])
     const ackSession = str(ack['session_id']) || str(r['session_id'])
     if (!sessionId && ackSession) sessionId = ackSession
+    ackUserMessageId = str(ack['message_id']) || str(r['message_id']) || str(ack['user_message_id']) || str(r['user_message_id'])
     started = true
     await h.done.catch(() => undefined)
     await finished
@@ -1550,6 +1557,44 @@ export function mergeMonotonic(prev: string, next: string): string {
   return next
 }
 
+export function parseMuseTimestampMs(
+  e: Record<string, unknown>,
+  p?: Record<string, unknown>
+): number {
+  const candidates: unknown[] = [
+    e['occurred_at_ms'],
+    e['created_at_ms'],
+    e['ts_ms'],
+    e['timestamp_ms'],
+    e['sent_at_ms'],
+    p?.['occurred_at_ms'],
+    p?.['created_at_ms'],
+    p?.['ts_ms'],
+    p?.['timestamp_ms'],
+    e['occurred_at'],
+    e['created_at'],
+    e['timestamp'],
+    p?.['occurred_at'],
+    p?.['created_at'],
+    p?.['timestamp']
+  ]
+  for (const v of candidates) {
+    if (typeof v === 'number' && Number.isFinite(v) && v > 0) {
+      return v < 1e12 ? Math.round(v * 1000) : Math.round(v)
+    }
+    if (typeof v === 'string' && v.trim()) {
+      const trimmed = v.trim()
+      const asNum = Number(trimmed)
+      if (Number.isFinite(asNum) && asNum > 0) {
+        return asNum < 1e12 ? Math.round(asNum * 1000) : Math.round(asNum)
+      }
+      const parsed = Date.parse(trimmed)
+      if (Number.isFinite(parsed) && parsed > 0) return parsed
+    }
+  }
+  return 0
+}
+
 interface HistoryRow {
   id: string
   text: string
@@ -1557,18 +1602,46 @@ interface HistoryRow {
   widgets?: MuseOptionWidget[]
   richWidgets?: MuseRichWidget[]
   media?: MuseMediaPart[]
+  at?: number
 }
 
-/** Assistant rows from chat.history (`{ok,result:{events|chat_events|messages}}`), oldest first. */
-export function historyAssistants(raw: unknown): HistoryRow[] {
+function extractRawHistoryEvents(raw: unknown): Array<Record<string, unknown>> {
   let r = obj(raw)
   if (r['ok'] !== undefined && r['result'] !== undefined) r = obj(r['result'])
   const list = (r['chat_events'] ?? r['events'] ?? r['messages'] ?? r['items'] ?? (Array.isArray(raw) ? raw : [])) as unknown
   if (!Array.isArray(list)) return []
+  const indexed = list.map((item, index) => {
+    const e = obj(item)
+    const p = obj(e['payload'])
+    return {
+      e,
+      at: parseMuseTimestampMs(e, p),
+      seq: Number(e['seq'] ?? 0) || 0,
+      index
+    }
+  })
+  // Preserve chronological order if the server returned newest-first
+  const firstKnown = indexed.find((x) => x.at > 0)
+  const lastKnown = [...indexed].reverse().find((x) => x.at > 0)
+  if (firstKnown && lastKnown && firstKnown.at > lastKnown.at) {
+    indexed.reverse()
+  } else if (indexed.some((x) => x.at > 0)) {
+    indexed.sort((a, b) => {
+      if (a.at > 0 && b.at > 0 && a.at !== b.at) return a.at - b.at
+      if (a.seq > 0 && b.seq > 0 && a.seq !== b.seq) return a.seq - b.seq
+      return a.index - b.index
+    })
+  }
+  return indexed.map((x) => x.e)
+}
+
+/** Assistant rows from chat.history (`{ok,result:{events|chat_events|messages}}`), oldest first. */
+export function historyAssistants(raw: unknown): HistoryRow[] {
+  const list = extractRawHistoryEvents(raw)
+  if (!list.length) return []
   const rows: Array<HistoryRow & { at: number }> = []
   let pendingToolMedia: MuseMediaPart[] = []
-  for (const item of list) {
-    const e = obj(item)
+  for (const e of list) {
     const p = obj(e['payload'])
     const name = str(e['event_name']) || str(e['event']) || str(e['type'])
     const role = str(e['role']) || str(p['role'])
@@ -1616,11 +1689,66 @@ export function historyAssistants(raw: unknown): HistoryRow[] {
       widgets: w.length ? w : undefined,
       richWidgets: rw.length ? rw : undefined,
       media: dedupMedia.length ? dedupMedia : undefined,
-      at: Number(e['occurred_at_ms'] ?? e['created_at_ms'] ?? e['ts_ms'] ?? 0) || 0
+      at: parseMuseTimestampMs(e, p)
     })
   }
   rows.sort((a, b) => a.at - b.at)
   return rows
+}
+
+/**
+ * Filter `chat.history` strictly to assistant rows belonging to the active turn so
+ * `reconcileFinal()` and reconnect `backfill()` NEVER dump historical messages below
+ * the user's newest chat bubble.
+ */
+export function historyAssistantsAfterTurn(
+  raw: unknown,
+  opts: {
+    ackUserMessageId?: string
+    knownAssistantIds?: ReadonlySet<string>
+    turnStartedAtMs: number
+  }
+): HistoryRow[] {
+  const list = extractRawHistoryEvents(raw)
+  if (!list.length) return []
+  const known = opts.knownAssistantIds ?? new Set<string>()
+  const ackId = (opts.ackUserMessageId || '').trim()
+
+  // Locate the user message that kicked off this turn, if present in chat.history.
+  let userEventIndex = -1
+  if (ackId) {
+    for (let i = 0; i < list.length; i += 1) {
+      const e = list[i]!
+      const p = obj(e['payload'])
+      const id = str(e['message_id']) || str(p['message_id']) || str(e['id'])
+      if (id === ackId) {
+        userEventIndex = i
+        break
+      }
+    }
+  }
+
+  // If the turn's user message is in history, only consider events strictly after it
+  // (plus any assistant id already observed streaming in this turn).
+  if (userEventIndex >= 0) {
+    const afterRows = historyAssistants(list.slice(userEventIndex + 1))
+    const byId = new Map(afterRows.map((r) => [r.id, r]))
+    if (known.size > 0) {
+      for (const r of historyAssistants(list)) {
+        if (known.has(r.id) && !byId.has(r.id)) byId.set(r.id, r)
+      }
+    }
+    return [...byId.values()]
+  }
+
+  // Fallback when ackUserMessageId isn't echoed in history:
+  // ONLY accept assistant rows already seen in this turn, OR timestamped after turnStartedAtMs.
+  const cutoff = opts.turnStartedAtMs - 15_000
+  return historyAssistants(list).filter((row) => {
+    if (!row.id) return false
+    if (known.has(row.id)) return true
+    return typeof row.at === 'number' && row.at >= cutoff
+  })
 }
 
 export interface MuseHistoryMessage {
@@ -1694,17 +1822,16 @@ function mergeMediaPartsDedup(
 
 /** Full conversation transcript from chat.history (both user and assistant turns), oldest first. */
 export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
-  let r = obj(raw)
-  if (r['ok'] !== undefined && r['result'] !== undefined) r = obj(r['result'])
-  const list = (r['chat_events'] ?? r['events'] ?? r['messages'] ?? r['items'] ?? (Array.isArray(raw) ? raw : [])) as unknown
-  if (!Array.isArray(list)) return []
-  const byId = new Map<string, MuseHistoryMessage & { seq: number }>()
+  const list = extractRawHistoryEvents(raw)
+  if (!list.length) return []
+  const byId = new Map<string, MuseHistoryMessage & { seq: number; hasRealTs: boolean }>()
   let pendingToolMedia: MuseMediaPart[] = []
   let lastBotId: string | null = null
+  const baseFallbackTs = Date.now() - (list.length + 60) * 1000
+  let lastKnownTs = 0
   let idx = 0
-  for (const item of list) {
+  for (const e of list) {
     idx += 1
-    const e = obj(item)
     const p = obj(e['payload'])
     const name = str(e['event_name']) || str(e['event']) || str(e['type'])
     const roleRaw = str(e['role']) || str(p['role'])
@@ -1730,7 +1857,12 @@ export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
     }
     const rawId = str(e['message_id']) || str(p['message_id']) || str(e['id']) || `hist_${idx}`
     const id = isUser ? `muse_user_${rawId}` : `muse_native_${rawId}`
-    const at = Number(e['occurred_at_ms'] ?? e['created_at_ms'] ?? e['ts_ms'] ?? p['created_at_ms'] ?? Date.now()) || Date.now()
+    const parsedTs = parseMuseTimestampMs(e, p)
+    const hasRealTs = parsedTs > 0
+    if (hasRealTs) {
+      lastKnownTs = parsedTs
+    }
+    const at = hasRealTs ? parsedTs : lastKnownTs > 0 ? lastKnownTs + idx : baseFallbackTs + idx
     const seq = Number(e['seq'] ?? idx) || idx
     if (isUser) {
       // Flush any dangling media from the previous assistant turn before resetting for the next turn
@@ -1746,7 +1878,8 @@ export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
         id,
         role: 'user',
         text: prev ? mergeMonotonic(prev.text, text) : text,
-        createdAt: prev?.createdAt ?? at,
+        createdAt: prev?.hasRealTs ? prev.createdAt : hasRealTs ? at : prev?.createdAt ?? at,
+        hasRealTs: Boolean(prev?.hasRealTs || hasRealTs),
         seq: prev?.seq ?? seq
       })
     } else {
@@ -1769,7 +1902,8 @@ export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
         id,
         role: 'bot',
         text: prev ? mergeMonotonic(prev.text, text) : text,
-        createdAt: prev?.createdAt ?? at,
+        createdAt: prev?.hasRealTs ? prev.createdAt : hasRealTs ? at : prev?.createdAt ?? at,
+        hasRealTs: Boolean(prev?.hasRealTs || hasRealTs),
         widgets: w.length ? w : prev?.widgets,
         richWidgets: rw.length ? rw : prev?.richWidgets,
         media: mergeMediaPartsDedup(prev?.media, combinedMedia),
@@ -1784,5 +1918,5 @@ export function parseHistoryTranscript(raw: unknown): MuseHistoryMessage[] {
   }
   const rows = [...byId.values()]
   rows.sort((a, b) => (a.createdAt !== b.createdAt ? a.createdAt - b.createdAt : a.seq - b.seq))
-  return rows.map(({ seq: _seq, ...rest }) => rest)
+  return rows.map(({ seq: _seq, hasRealTs: _hasRealTs, ...rest }) => rest)
 }

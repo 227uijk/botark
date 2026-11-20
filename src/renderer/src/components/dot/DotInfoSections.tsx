@@ -6,6 +6,7 @@ import { TextInput } from '@/components/ui/Field'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { NativeDocumentDialog, type NativeDocumentTarget } from '@/components/chat/NativeDocumentDialog'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError } from '@/lib/sidebarCompat'
 import { loadDotMemoryDraft, saveDotMemoryDraft } from '@/lib/vaultClient'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
@@ -72,8 +73,8 @@ export function DotCredentialsAndQuotaSection({
       const st = await dot.authStatus(accountId)
       setAuthInfo(st)
       if (st.signedIn) {
-        const rlRes = await dot.rpc({ accountId, op: 'rateLimits' })
-        if (rlRes.ok && rlRes.data && typeof rlRes.data === 'object') {
+        const rlRes = await dot.rpc({ accountId, op: 'rateLimits' }).catch(() => null)
+        if (rlRes && rlRes.ok && rlRes.data && typeof rlRes.data === 'object') {
           const root = asObj(rlRes.data) || {}
           const rl = asObj(root['rateLimits']) || root
           const primary = asObj(rl['primary'])
@@ -92,7 +93,7 @@ export function DotCredentialsAndQuotaSection({
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
@@ -322,7 +323,7 @@ export function DotOrbitProfilesSection({
         if (d.activeDot?.id) setActiveDotId(d.activeDot.id)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
@@ -867,7 +868,7 @@ export function DotLibrarySection({ accountId }: { accountId: string }) {
         )
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }

@@ -145,35 +145,69 @@ const LOOSE_NEAR =
 
 /** Best-effort: scrape muse.ai bundles for the current Server Action id. */
 export async function discoverSubscriptionActionId(fetchFn: FetchFn): Promise<string | null> {
-  try {
-    const home = await fetchFn(ORIGIN + '/', {
-      method: 'GET',
-      headers: { Accept: 'text/html', 'Accept-Language': 'en-US' }
-    })
-    if (!home.ok) return null
-    const html = await home.text()
-    const fromHtml = html.match(ACTION_RE)?.[1] || html.match(ACTION_RE_REV)?.[1] || html.match(LOOSE_NEAR)?.[1] || html.match(LOOSE_NEAR)?.[2]
-    if (fromHtml) return fromHtml
-
-    const scriptSrcs = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)]
-      .map((m) => m[1]!)
-      .filter((u) => /\.js(\?|$)/.test(u))
-      .slice(0, 12)
-    for (const src of scriptSrcs) {
-      const url = src.startsWith('http') ? src : new URL(src, ORIGIN).href
-      if (!url.includes('muse.ai') && !url.startsWith('/')) continue
-      try {
-        const r = await fetchFn(url, { headers: { Accept: '*/*' } })
-        if (!r.ok) continue
-        const js = await r.text()
-        const id = js.match(ACTION_RE)?.[1] || js.match(ACTION_RE_REV)?.[1] || js.match(LOOSE_NEAR)?.[1] || js.match(LOOSE_NEAR)?.[2]
-        if (id) return id
-      } catch {
-        /* try next chunk */
+  const seenScripts = new Set<string>()
+  const scriptQueue: string[] = []
+  for (const pagePath of ['/', '/chat', '/settings']) {
+    try {
+      const res = await fetchFn(ORIGIN + pagePath, {
+        method: 'GET',
+        headers: { Accept: 'text/html', 'Accept-Language': 'en-US' }
+      })
+      if (!res.ok) continue
+      const html = await res.text()
+      const fromHtml =
+        html.match(ACTION_RE)?.[1] ||
+        html.match(ACTION_RE_REV)?.[1] ||
+        html.match(LOOSE_NEAR)?.[1] ||
+        html.match(LOOSE_NEAR)?.[2]
+      if (fromHtml) return fromHtml
+      for (const m of html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)) {
+        const src = m[1]!
+        if (!/\.js(\?|$)/.test(src)) continue
+        const url = src.startsWith('http') ? src : new URL(src, ORIGIN).href
+        if ((!url.includes('muse.ai') && !src.startsWith('/')) || seenScripts.has(url)) continue
+        seenScripts.add(url)
+        scriptQueue.push(url)
       }
+    } catch {
+      /* try next page */
     }
-  } catch {
-    /* degrade to fallback */
+  }
+  for (const url of scriptQueue.slice(0, 36)) {
+    try {
+      const r = await fetchFn(url, { headers: { Accept: '*/*' } })
+      if (!r.ok) continue
+      const js = await r.text()
+      const id =
+        js.match(ACTION_RE)?.[1] ||
+        js.match(ACTION_RE_REV)?.[1] ||
+        js.match(LOOSE_NEAR)?.[1] ||
+        js.match(LOOSE_NEAR)?.[2]
+      if (id) return id
+    } catch {
+      /* try next chunk */
+    }
+  }
+  return null
+}
+
+async function tryRestSubscriptionEndpoints(fetchFn: FetchFn, fetchedAt: number): Promise<MuseQuotaSnapshot | null> {
+  for (const endpoint of ['/api/subscription', '/api/hatch/subscription', '/api/billing/subscription']) {
+    try {
+      const res = await fetchFn(ORIGIN + endpoint, {
+        method: 'GET',
+        headers: { Accept: 'application/json', Origin: ORIGIN, Referer: ORIGIN + '/' }
+      })
+      if (!res.ok) continue
+      const json = (await res.json()) as unknown
+      const root = obj(json)
+      const sub = normalizeSubscription(root['subscription'] ?? root['result'] ?? root)
+      if (sub && (sub.tier.tierId || sub.tier.tierCode || sub.usage.state !== 'UNKNOWN')) {
+        return { fetchedAt, stale: false, success: true, subscription: sub }
+      }
+    } catch {
+      /* try next */
+    }
   }
   return null
 }
@@ -261,6 +295,10 @@ export async function fetchSubscription(
       }
     }
   }
+
+  // Try direct REST subscription endpoints if Next.js Server Action hash rotated away
+  const viaRest = await tryRestSubscriptionEndpoints(fetchFn, fetchedAt)
+  if (viaRest) return viaRest
 
   if (lastStatus === 404 || lastStatus === 400 || !looksLikeSubscription(lastText)) {
     throw new MuseQuotaError(

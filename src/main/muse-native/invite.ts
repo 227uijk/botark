@@ -94,23 +94,31 @@ export function normalizeInvite(raw: unknown, fetchedAt = Date.now()): MuseInvit
 /** Full invite payload for the Invite panel. */
 export async function fetchInvite(fetchFn: FetchFn): Promise<MuseInviteSnapshot> {
   const fetchedAt = Date.now()
-  const res = await fetchFn(ORIGIN + "/api/hatch/invite", {
-    method: "GET",
-    headers: { Accept: "application/json", Origin: ORIGIN, Referer: ORIGIN + "/" }
-  })
-  if (res.status === 401 || res.status === 403) {
-    throw new MuseInviteError(`invite: not signed in (${res.status})`, "signed_out")
+  let lastStatus = 0
+  for (const endpoint of ['/api/hatch/invite', '/api/invite']) {
+    const res = await fetchFn(ORIGIN + endpoint, {
+      method: "GET",
+      headers: { Accept: "application/json", Origin: ORIGIN, Referer: ORIGIN + "/" }
+    })
+    lastStatus = res.status
+    if (res.status === 401 || res.status === 403) {
+      throw new MuseInviteError(`invite: not signed in (${res.status})`, "signed_out")
+    }
+    if (res.status === 404 || res.status === 405 || res.status === 410 || res.status === 501) {
+      continue
+    }
+    if (!res.ok) {
+      throw new MuseInviteError(`invite: HTTP ${res.status}`, "http")
+    }
+    let json: unknown
+    try {
+      json = await res.json()
+    } catch {
+      continue
+    }
+    return normalizeInvite(json, fetchedAt)
   }
-  if (!res.ok) {
-    throw new MuseInviteError(`invite: HTTP ${res.status}`, "http")
-  }
-  let json: unknown
-  try {
-    json = await res.json()
-  } catch {
-    throw new MuseInviteError("invite: invalid JSON", "parse")
-  }
-  return normalizeInvite(json, fetchedAt)
+  throw new MuseInviteError(`invite: unavailable (HTTP ${lastStatus || 404})`, "unavailable")
 }
 
 /**

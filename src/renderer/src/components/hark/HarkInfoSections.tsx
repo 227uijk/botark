@@ -6,6 +6,7 @@ import { ConnectorIcon } from '@/components/ui/ConnectorIcon'
 import { TextInput } from '@/components/ui/Field'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -67,7 +68,7 @@ export function HarkBillingSection({ accountId }: { accountId: string }) {
       if (sumRaw && typeof sumRaw === 'object') setSummary(sumRaw as Record<string, unknown>)
       if (profRaw && typeof profRaw === 'object') setProfile(profRaw as Record<string, unknown>)
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
@@ -603,7 +604,7 @@ export function HarkConnectorsSection({ accountId }: { accountId: string }) {
           .filter((x) => x.domain)
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
@@ -964,7 +965,7 @@ export function HarkComputerSection({ accountId, botId: _botId }: { accountId: s
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
@@ -1190,7 +1191,7 @@ export function HarkLibrarySection({ accountId }: { accountId: string }) {
       const d = res.data as { artifacts?: typeof artifacts }
       setArtifacts(Array.isArray(d.artifacts) ? d.artifacts : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
@@ -1211,24 +1212,38 @@ export function HarkLibrarySection({ accountId }: { accountId: string }) {
   }
 
   const openOrDownload = async (a: (typeof artifacts)[number]) => {
-    if (a.downloadUrl && /^https?:\/\//i.test(a.downloadUrl)) {
-      await getBridge()?.muse?.openHttps?.(a.downloadUrl)
-      return
-    }
-    if (a.s3Key) {
+    const hark = getBridge()?.hark
+    if (hark?.rpc) {
       try {
-        const raw = await callHark(accountId, '/images/presign', {
-          method: 'POST',
-          body: { keys: [a.s3Key] }
+        const res = await hark.rpc({
+          accountId,
+          op: 'downloadArtifact',
+          url: a.downloadUrl && /^https?:\/\//i.test(a.downloadUrl) ? a.downloadUrl : undefined,
+          fileId: a.s3Key || (!a.downloadUrl ? a.path : undefined),
+          name: a.name
         })
-        const urls = asObj(asObj(raw)?.['urls'])
-        const signed = urls ? str(urls[a.s3Key]) : ''
-        if (signed && /^https?:\/\//i.test(signed)) {
-          await getBridge()?.muse?.openHttps?.(signed)
+        if (res.ok && res.data && typeof res.data === 'object') {
+          const d = res.data as { dataBase64: string; mimeType: string; filename?: string }
+          if (d.dataBase64) {
+            const bin = atob(d.dataBase64)
+            const bytes = new Uint8Array(new ArrayBuffer(bin.length))
+            for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i)
+            const blob = new Blob([bytes], { type: d.mimeType || a.mimeType || 'application/octet-stream' })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = d.filename || a.name || 'artifact'
+            link.click()
+            setTimeout(() => URL.revokeObjectURL(url), 2000)
+            return
+          }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
+        setError(cleanSidebarError(err))
       }
+    }
+    if (a.downloadUrl && /^https?:\/\//i.test(a.downloadUrl)) {
+      await getBridge()?.muse?.openHttps?.(a.downloadUrl)
     }
   }
 
@@ -1316,7 +1331,7 @@ export function HarkInviteAndSessionsSection({ accountId }: { accountId: string 
         })
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }

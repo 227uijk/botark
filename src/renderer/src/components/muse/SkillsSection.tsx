@@ -3,6 +3,7 @@ import { EmptyLine, Section } from '@/components/info/Section'
 import { Button } from '@/components/ui/Button'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -63,7 +64,7 @@ export function SkillsSection({ accountId }: { accountId: string }) {
       }
     } catch (err) {
       setItems([])
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
       setUnavailable(true)
     } finally {
       setLoading(false)

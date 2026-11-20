@@ -22,6 +22,7 @@ import type {
 } from '../../../../main/antigravity/antigravityProtocol'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { cn } from '@/lib/cn'
+import { cleanSidebarError } from '@/lib/sidebarCompat'
 import { t } from '@/lib/i18n'
 import { useBotStore } from '@/store/botStore'
 
@@ -63,10 +64,10 @@ export function AntigravityAccountAndModelSection({ accountId }: { accountId: st
         setModels(Array.isArray(d.models) ? d.models : [])
         setSelectedModelEnum(d.selectedModelEnum)
       } else if (!profRes.ok) {
-        setError(profRes.message)
+        setError(cleanSidebarError(profRes.message) ?? null)
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(cleanSidebarError(e) ?? null)
     } finally {
       setLoading(false)
     }

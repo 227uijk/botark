@@ -4,6 +4,7 @@ import { EmptyLine, Section } from '@/components/info/Section'
 import { Button } from '@/components/ui/Button'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { cleanSidebarError, isOnlineAccountStatus } from '@/lib/sidebarCompat'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -88,14 +89,14 @@ export function SchedulesSection({ accountId }: { accountId: string }) {
     try {
       setItems(await muse.listSchedules(accountId))
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(cleanSidebarError(err))
     } finally {
       setLoading(false)
     }
   }, [accountId])
 
   useEffect(() => {
-    void refresh()
+    if (isOnlineAccountStatus(status)) void refresh()
   }, [refresh, status])
 
   useEffect(() => {
