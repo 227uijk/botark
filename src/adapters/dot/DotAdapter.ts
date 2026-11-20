@@ -102,7 +102,7 @@ export class DotAdapter implements PlatformAdapter {
           accountId: event.accountId,
           isTyping: true
         })
-        if (event.text || event.tools?.length || event.richWidgets?.length) {
+        if (event.text || event.tools?.length || event.richWidgets?.length || event.media?.length) {
           this.streamContentAt.set(event.accountId, Date.now())
           this.emit({
             type: 'message_delta',
@@ -111,7 +111,8 @@ export class DotAdapter implements PlatformAdapter {
             accountId: event.accountId,
             text: event.text,
             tools: event.tools,
-            richWidgets: event.richWidgets
+            richWidgets: event.richWidgets,
+            media: event.media
           })
         }
       } else {

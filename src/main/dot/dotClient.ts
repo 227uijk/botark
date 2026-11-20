@@ -4,6 +4,7 @@ import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import WebSocket from 'ws'
 import { proxyFetch, proxyWsAgent } from '../proxyTransport'
+import { guessMediaMimeFromName, inferMediaMime } from '../mediaMime'
 import { readJsonFile } from '../jsonFile'
 import { requireValidProxyUrl } from '../proxyUrl'
 import { applyProxyToPartition, loadAccountProxyUrl, ProxyConfigUnreadableError } from '../muse/accountProxy'
@@ -1156,23 +1157,15 @@ export async function listDotThreads(accountId: string, dotId?: string): Promise
 }
 
 export function inferDotFileMimeType(name?: string, rawMime?: string): string {
+  const guessed = guessMediaMimeFromName(name)
+  if (guessed) return guessed
   const lower = (name || '').toLowerCase()
-  if (lower.endsWith('.html') || lower.endsWith('.htm')) return 'text/html'
-  if (lower.endsWith('.md') || lower.endsWith('.markdown')) return 'text/markdown'
-  if (lower.endsWith('.svg')) return 'image/svg+xml'
-  if (lower.endsWith('.png')) return 'image/png'
-  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg'
-  if (lower.endsWith('.webp')) return 'image/webp'
-  if (lower.endsWith('.gif')) return 'image/gif'
-  if (lower.endsWith('.json')) return 'application/json'
-  if (lower.endsWith('.csv')) return 'text/csv'
   if (lower.endsWith('.py')) return 'text/x-python'
   if (lower.endsWith('.js') || lower.endsWith('.mjs') || lower.endsWith('.ts') || lower.endsWith('.tsx')) {
     return 'text/javascript'
   }
   if (lower.endsWith('.css')) return 'text/css'
   if (lower.endsWith('.txt') || lower.endsWith('.log')) return 'text/plain'
-  if (lower.endsWith('.pdf')) return 'application/pdf'
   if (rawMime && rawMime !== 'application/octet-stream') return rawMime
   return rawMime || 'application/octet-stream'
 }
@@ -1238,27 +1231,55 @@ export function normalizeRoomMessage(raw: Record<string, unknown>, fallbackRoomI
       ? (raw['content'] as Record<string, unknown>)
       : {}
   const text = String(contentObj['text'] ?? raw['text'] ?? '').trim()
-  const rawAtts = Array.isArray(contentObj['attachments']) ? contentObj['attachments'] : []
-  const attachments: DotRoomAttachment[] = rawAtts
-    .map((a) => {
-      if (!a || typeof a !== 'object') return null
-      const ao = a as Record<string, unknown>
-      const fileObj =
-        ao['file'] && typeof ao['file'] === 'object'
-          ? (ao['file'] as Record<string, unknown>)
-          : {}
-      const name = typeof fileObj['name'] === 'string' ? fileObj['name'] : undefined
-      const rawMime = typeof fileObj['mime_type'] === 'string' ? fileObj['mime_type'] : undefined
-      return {
-        attachmentId: String(ao['attachment_id'] ?? fileObj['id'] ?? ''),
-        type: String(ao['type'] ?? 'file'),
-        fileId: typeof ao['file_id'] === 'string' ? ao['file_id'] : undefined,
-        name,
-        mimeType: inferDotFileMimeType(name, rawMime),
-        downloadUrl: typeof fileObj['download_url'] === 'string' ? fileObj['download_url'] : undefined
-      }
+  const rawAtts: unknown[] = [
+    ...(Array.isArray(contentObj['attachments']) ? (contentObj['attachments'] as unknown[]) : []),
+    ...(Array.isArray(contentObj['images']) ? (contentObj['images'] as unknown[]) : []),
+    ...(Array.isArray(contentObj['videos']) ? (contentObj['videos'] as unknown[]) : []),
+    ...(Array.isArray(contentObj['media']) ? (contentObj['media'] as unknown[]) : []),
+    ...(Array.isArray(contentObj['files']) ? (contentObj['files'] as unknown[]) : [])
+  ]
+  const seenAtt = new Set<string>()
+  const attachments: DotRoomAttachment[] = []
+  for (const a of rawAtts) {
+    if (!a || typeof a !== 'object') continue
+    const ao = a as Record<string, unknown>
+    const fileObj =
+      ao['file'] && typeof ao['file'] === 'object'
+        ? (ao['file'] as Record<string, unknown>)
+        : {}
+    const name =
+      (typeof fileObj['name'] === 'string' && fileObj['name']) ||
+      (typeof ao['name'] === 'string' && ao['name']) ||
+      (typeof ao['file_name'] === 'string' && ao['file_name']) ||
+      undefined
+    const rawMime =
+      (typeof fileObj['mime_type'] === 'string' && fileObj['mime_type']) ||
+      (typeof ao['mime_type'] === 'string' && ao['mime_type']) ||
+      (typeof ao['content_type'] === 'string' && ao['content_type']) ||
+      undefined
+    const fileId =
+      (typeof ao['file_id'] === 'string' && ao['file_id']) ||
+      (typeof fileObj['id'] === 'string' && fileObj['id']) ||
+      undefined
+    const downloadUrl =
+      (typeof fileObj['download_url'] === 'string' && fileObj['download_url']) ||
+      (typeof fileObj['url'] === 'string' && fileObj['url']) ||
+      (typeof ao['download_url'] === 'string' && ao['download_url']) ||
+      (typeof ao['url'] === 'string' && ao['url']) ||
+      undefined
+    const attachmentId = String(ao['attachment_id'] ?? fileObj['id'] ?? fileId ?? '')
+    const dedupKey = downloadUrl || fileId || attachmentId || name || ''
+    if (!dedupKey || seenAtt.has(dedupKey)) continue
+    seenAtt.add(dedupKey)
+    attachments.push({
+      attachmentId,
+      type: String(ao['type'] ?? 'file'),
+      fileId,
+      name,
+      mimeType: inferDotFileMimeType(name, rawMime),
+      downloadUrl
     })
-    .filter((x): x is NonNullable<typeof x> => x !== null)
+  }
 
   const metadata =
     raw['message_metadata'] && typeof raw['message_metadata'] === 'object'
@@ -1468,10 +1489,12 @@ export async function downloadDotFile(
   const ab = await res.arrayBuffer()
   const buf = Buffer.from(ab)
   const finalName = fileName || 'document'
-  const mimeType = inferDotFileMimeType(
-    finalName,
-    res.headers.get('content-type')?.split(';')[0]?.trim()
-  )
+  const mimeType = inferMediaMime({
+    headerMime: res.headers.get('content-type') ?? undefined,
+    nameOrPath: finalName,
+    bytes: buf,
+    fallback: inferDotFileMimeType(finalName)
+  })
   const isTextLike =
     mimeType.startsWith('text/') ||
     mimeType === 'application/json' ||
@@ -1572,9 +1595,86 @@ export async function triggerRoomLivePush(accountId: string, roomId: string): Pr
 const NO_TOOLS_PROMPT_RE =
   /(do not (call|use) (or use )?any tools|without invoking any tools|いかなるツールも(呼び出したり使用したりしないで|使用しないで)|n'utilisez aucun outil|不要(调用|使用)任何工具)/i
 
+export interface DotUploadAttachmentInput {
+  name: string
+  mimeType: string
+  dataBase64: string
+}
+
+/**
+ * Upload a user image / video / file to ChatGPT `/backend-api/files` so Dot can
+ * inspect it inside a Calpico room message (`content.attachments`).
+ */
+export async function uploadDotRoomAttachment(
+  accountId: string,
+  file: DotUploadAttachmentInput
+): Promise<Record<string, unknown>> {
+  const acc = await ensureValidDotAccount(accountId)
+  const bytes = Buffer.from(file.dataBase64, 'base64')
+  const fileName = file.name || 'attachment'
+  const mimeType = inferMediaMime({
+    headerMime: file.mimeType,
+    nameOrPath: fileName,
+    bytes
+  })
+  const isImage = mimeType.startsWith('image/')
+  const init = await callDotApi<{
+    file_id?: string
+    upload_url?: string
+    status?: string
+  }>(accountId, {
+    method: 'POST',
+    path: '/files',
+    body: {
+      file_name: fileName,
+      file_size: bytes.byteLength,
+      use_case: isImage ? 'multimodal' : 'my_files',
+      timezone_offset_min: new Date().getTimezoneOffset()
+    }
+  })
+
+  const fileId = init?.file_id
+  const uploadUrl = init?.upload_url
+  if (!fileId || !uploadUrl) {
+    throw new DotApiError(502, 'Dot 文件上传初始化失败（缺少 upload_url）')
+  }
+
+  const effectiveProxy = await resolveDotProxyUrl(accountId, acc.proxyUrl)
+  const isAzureBlob = /blob\.core\.windows\.net/i.test(uploadUrl)
+  const putRes = await proxyFetch(effectiveProxy, uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': mimeType,
+      ...(isAzureBlob ? { 'x-ms-blob-type': 'BlockBlob' } : {})
+    },
+    body: new Uint8Array(bytes)
+  })
+  if (!putRes.ok) {
+    throw new DotApiError(putRes.status, `Dot 文件上传失败 (${putRes.status})`)
+  }
+
+  await callDotApi(accountId, {
+    method: 'POST',
+    path: `/files/${encodeURIComponent(fileId)}/uploaded`,
+    body: {}
+  }).catch(() => undefined)
+
+  return {
+    attachment_id: randomUUID(),
+    type: 'file',
+    file_id: fileId,
+    file: {
+      id: fileId,
+      name: fileName,
+      mime_type: mimeType,
+      size: bytes.byteLength
+    }
+  }
+}
+
 export async function sendRoomMessage(
   accountId: string,
-  opts: { roomId?: string; dotId?: string; text: string }
+  opts: { roomId?: string; dotId?: string; text: string; attachments?: DotUploadAttachmentInput[] }
 ): Promise<{ roomId: string; dotId?: string; message: DotRoomMessage }> {
   const acc = getStoredDotAccount(accountId)
   let roomId = opts.roomId || acc?.roomId
@@ -1590,6 +1690,14 @@ export async function sendRoomMessage(
   void ensureCelsiusWatcher(accountId, roomId)
   void triggerRoomLivePush(accountId, roomId)
 
+  const uploadedAttachments: Record<string, unknown>[] = []
+  if (opts.attachments && opts.attachments.length > 0) {
+    for (const att of opts.attachments) {
+      if (!att.dataBase64) continue
+      uploadedAttachments.push(await uploadDotRoomAttachment(accountId, att))
+    }
+  }
+
   // In Calpico rooms (`aeon`), posting a reply into the user's chat room is itself an internal
   // messaging tool action. Prompts that strictly forbid *all* tools can cause the model to write
   // only to its internal thread stdout without posting the reply to the room.
@@ -1603,7 +1711,7 @@ export async function sendRoomMessage(
     body: {
       content: {
         text: wireText,
-        attachments: []
+        attachments: uploadedAttachments
       },
       request_id: randomUUID(),
       idempotency_token: randomUUID()
@@ -2033,6 +2141,7 @@ export async function sendAndWatchDotRoomReply(
     dotId?: string
     roomId?: string
     text: string
+    attachments?: DotUploadAttachmentInput[]
     timeoutMs?: number
     onMessage?: (msg: DotRoomMessage, done: boolean, stillBusy?: boolean) => void
     onActivity?: (code: string, text: string | undefined, busy: boolean) => void
@@ -2062,7 +2171,8 @@ export async function sendAndWatchDotRoomReply(
   const sent = await sendRoomMessage(accountId, {
     roomId: opts.roomId || beforeSnap.roomId || undefined,
     dotId: opts.dotId,
-    text: opts.text
+    text: opts.text,
+    attachments: opts.attachments
   })
   opts.onSent?.()
   const roomId = sent.roomId

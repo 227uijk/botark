@@ -258,30 +258,66 @@ export function mapHermesChoicesToDecisions(
 }
 
 /**
- * Extract inline markdown images with `data:image/...` URLs (produced by Hermes
- * `_resolve_media_to_data_urls`) into BotArk `MuseMediaPartView[]` while leaving clean prose.
+ * Extract inline markdown/HTML media (`data:image/...`, `data:video/...`, `data:audio/...`,
+ * plus `<video src="...">` / `<audio src="...">` tags) into BotArk `MuseMediaPartView[]`
+ * while leaving clean prose.
  */
 export function extractInlineDataUrlImages(markdown: string): {
   text: string
   media: MuseMediaPartView[]
 } {
-  if (!markdown || !markdown.includes('data:image/')) {
+  if (
+    !markdown ||
+    (!markdown.includes('data:image/') &&
+      !markdown.includes('data:video/') &&
+      !markdown.includes('data:audio/') &&
+      !/<(?:video|audio)\b/i.test(markdown))
+  ) {
     return { text: markdown, media: [] }
   }
   const media: MuseMediaPartView[] = []
-  const re = /!\[([^\]]*)\]\((data:(image\/[a-zA-Z0-9.+-]+);base64,[A-Za-z0-9+/=]+)\)/g
+  const seen = new Set<string>()
   let idx = 0
-  const cleaned = markdown.replace(re, (_match, alt: string, dataUrl: string, mime: string) => {
+  const dataUrlRe =
+    /!\[([^\]]*)\]\((data:((?:image|video|audio)\/[a-zA-Z0-9.+-]+);base64,[A-Za-z0-9+/=]+)\)/g
+  let cleaned = markdown.replace(dataUrlRe, (_match, alt: string, dataUrl: string, mime: string) => {
+    if (seen.has(dataUrl)) return ''
+    seen.add(dataUrl)
     idx += 1
-    const ext = mime.split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'png'
+    const isImg = mime.toLowerCase().startsWith('image/')
+    const ext = mime.split('/')[1]?.replace(/[^a-z0-9]/gi, '') || (isImg ? 'png' : 'mp4')
     media.push({
-      kind: 'image',
+      kind: isImg ? 'image' : 'file',
       path: dataUrl,
-      name: alt?.trim() || `hermes-image-${idx}.${ext}`,
+      name: alt?.trim() || `${isImg ? 'hermes-image' : 'hermes-media'}-${idx}.${ext}`,
       mimeType: mime
     })
     return ''
   })
+
+  // Also extract inline HTML <video src="..."> / <audio src="..."> tags
+  const htmlAvRe = /<(video|audio)\b[^>]*\bsrc=["']([^"']+)["'][^>]*>(?:[\s\S]*?<\/\1>)?/gi
+  cleaned = cleaned.replace(htmlAvRe, (_match, tag: string, src: string) => {
+    const cleanSrc = src.trim()
+    if (!cleanSrc || seen.has(cleanSrc)) return ''
+    seen.add(cleanSrc)
+    idx += 1
+    const isVideo = tag.toLowerCase() === 'video'
+    const mimeMatch = /^data:([^;]+);/i.exec(cleanSrc)
+    const mime = mimeMatch?.[1] || (isVideo ? 'video/mp4' : 'audio/mpeg')
+    const ext = isVideo ? 'mp4' : 'mp3'
+    const name = cleanSrc.startsWith('data:')
+      ? `hermes-${tag.toLowerCase()}-${idx}.${ext}`
+      : cleanSrc.split(/[?#]/, 1)[0]?.split('/').pop() || `hermes-${tag.toLowerCase()}-${idx}.${ext}`
+    media.push({
+      kind: 'file',
+      path: cleanSrc,
+      name,
+      mimeType: mime
+    })
+    return ''
+  })
+
   return { text: cleaned.replace(/\n{3,}/g, '\n\n').trim(), media }
 }
 

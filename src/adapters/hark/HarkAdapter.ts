@@ -338,6 +338,7 @@ export class HarkAdapter implements PlatformAdapter {
           content: string
           role: string
           tools?: import('../types').MuseToolCall[]
+          media?: import('../types').MuseMediaPart[]
           richWidgets?: import('../types').MuseRichWidget[]
         } | null
       }
@@ -363,8 +364,9 @@ export class HarkAdapter implements PlatformAdapter {
 
       const replyText = polled?.reply?.content?.trim() ?? ''
       const replyTools = polled?.reply?.tools
+      const replyMedia = polled?.reply?.media
       const replyRich = polled?.reply?.richWidgets
-      if (replyText || replyTools?.length || replyRich?.length) {
+      if (replyText || replyTools?.length || replyMedia?.length || replyRich?.length) {
         const rawReplyId = polled?.reply?.id
         const normalizedReplyId = rawReplyId
           ? rawReplyId.startsWith('hark_')
@@ -373,6 +375,7 @@ export class HarkAdapter implements PlatformAdapter {
           : createId('msg')
         const incoming: IncomingMessage & {
           tools?: import('../types').MuseToolCall[]
+          media?: import('../types').MuseMediaPart[]
           richWidgets?: import('../types').MuseRichWidget[]
         } = {
           id: normalizedReplyId,
@@ -381,6 +384,7 @@ export class HarkAdapter implements PlatformAdapter {
           text: replyText,
           createdAt: Date.now(),
           ...(replyTools?.length ? { tools: replyTools } : {}),
+          ...(replyMedia?.length ? { media: replyMedia } : {}),
           ...(replyRich?.length ? { richWidgets: replyRich } : {})
         }
         this.emit({ type: 'message', message: incoming })
@@ -391,7 +395,7 @@ export class HarkAdapter implements PlatformAdapter {
         messageId: createId('msg'),
         acceptedAt: Date.now(),
         sessionId: conversationId,
-        ...(replyText || replyTools?.length || replyRich?.length ? {} : { noReply: true })
+        ...(replyText || replyTools?.length || replyMedia?.length || replyRich?.length ? {} : { noReply: true })
       }
     } catch (error) {
       this.emit({

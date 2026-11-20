@@ -7,6 +7,7 @@
  * BotHub uses the same daemon Noise connection).
  */
 import { randomUUID } from 'node:crypto'
+import { inferMediaMime } from '../mediaMime'
 import type { MuseNativeGateway } from './gateway'
 
 const CHUNK = 524_288 // 512 KiB — official HatchGatewayFs
@@ -157,38 +158,39 @@ export async function uploadWorkspaceFile(
 }
 
 const PREVIEW_MAX = 8 * 1024 * 1024
+const VIDEO_PREVIEW_MAX = 32 * 1024 * 1024
 
 export async function fetchFsRawPreview(
   gw: MuseNativeGateway,
   path: string
 ): Promise<{ path: string; mimeType: string; dataBase64: string; byteLength: number }> {
   const p = normalizeFsPath(path)
+  const maxBytes = /\.(mp4|m4v|webm|mov|mkv|avi|mp3|wav|m4a|ogg|flac)(?:[?#].*)?$/i.test(p)
+    ? VIDEO_PREVIEW_MAX
+    : PREVIEW_MAX
   let res: { body: Uint8Array; contentType?: string }
   let resolvedPath = p
   try {
-    res = await gw.requestBinary('fs.raw', { path: p, _range: { start: 0, end: PREVIEW_MAX - 1 } }, 120_000)
+    res = await gw.requestBinary('fs.raw', { path: p, _range: { start: 0, end: maxBytes - 1 } }, 120_000)
   } catch (err) {
     // If a relative path like `images/out.png` 404s, retry under `workspace/`.
     if (!p.startsWith('workspace/')) {
       const alt = `workspace/${p}`
-      res = await gw.requestBinary('fs.raw', { path: alt, _range: { start: 0, end: PREVIEW_MAX - 1 } }, 120_000)
+      res = await gw.requestBinary('fs.raw', { path: alt, _range: { start: 0, end: maxBytes - 1 } }, 120_000)
       resolvedPath = alt
     } else {
       throw err
     }
   }
   const { body, contentType } = res
-  const rawCt = contentType?.split(';')[0]?.trim().toLowerCase()
-  const sniffed = sniffImageMimeFromBytes(body)
-  const guessed = guessMime(resolvedPath)
-  const mime =
-    (rawCt && rawCt !== 'application/octet-stream' && rawCt !== 'binary/octet-stream' ? rawCt : undefined) ||
-    sniffed ||
-    guessed ||
-    rawCt ||
-    'application/octet-stream'
+  const mime = inferMediaMime({
+    headerMime: contentType,
+    nameOrPath: resolvedPath,
+    bytes: body,
+    fallback: guessMime(resolvedPath) || 'application/octet-stream'
+  })
   // If server ignored Range and returned a huge body, truncate for UI.
-  const clipped = body.byteLength > PREVIEW_MAX ? body.subarray(0, PREVIEW_MAX) : body
+  const clipped = body.byteLength > maxBytes ? body.subarray(0, maxBytes) : body
   return {
     path: resolvedPath,
     mimeType: mime,

@@ -21,10 +21,10 @@ import {
 } from '../muse-native'
 import {
   fetchFsRawPreview,
-  sniffImageMimeFromBytes,
   uploadWorkspaceFile,
   buildWorkspaceUploadPath
 } from '../muse-native/fs'
+import { inferMediaMime } from '../mediaMime'
 import { applyProxyToPartition, createProxyAgent, releaseProxyPoolAccount } from './accountProxy'
 import {
   cleanMuseChromeUserAgent,
@@ -813,14 +813,15 @@ export class MuseSessionManager {
       const res = await ses.fetch(url, { method: 'GET' })
       if (!res.ok) throw new Error(`HTTP ${res.status} fetching Muse media`)
       const buf = new Uint8Array(await res.arrayBuffer())
-      const clipped = buf.byteLength > 8 * 1024 * 1024 ? buf.subarray(0, 8 * 1024 * 1024) : buf
-      const rawCt = res.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase()
-      const sniffed = sniffImageMimeFromBytes(clipped)
-      const mimeType =
-        (rawCt && rawCt !== 'application/octet-stream' && rawCt !== 'binary/octet-stream' ? rawCt : undefined) ||
-        sniffed ||
-        rawCt ||
-        'application/octet-stream'
+      const maxBytes = /\.(mp4|m4v|webm|mov|mkv|avi|mp3|wav|m4a|ogg|flac)(?:[?#].*)?$/i.test(url)
+        ? 32 * 1024 * 1024
+        : 8 * 1024 * 1024
+      const clipped = buf.byteLength > maxBytes ? buf.subarray(0, maxBytes) : buf
+      const mimeType = inferMediaMime({
+        headerMime: res.headers.get('content-type') ?? undefined,
+        nameOrPath: url,
+        bytes: clipped
+      })
       return {
         path: url,
         mimeType,

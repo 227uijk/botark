@@ -10,6 +10,7 @@ import {
   type MuseToolCallView
 } from '@shared/ipc'
 import { getGrokMainAuth, setGrokMainAuth } from './grokAuthStore'
+import { inferMediaMime } from '../mediaMime'
 import { GrokConnectClient, GrokConnectError } from './connectClient'
 import { getOrCreateGrokMachineId } from './grokMachineId'
 import {
@@ -399,10 +400,11 @@ async function downloadGrokArtifact(
   }
   const ab = await res.arrayBuffer()
   const buf = Buffer.from(ab)
-  const mimeType =
-    res.headers.get('content-type')?.split(';')[0]?.trim() ||
-    hintedMime ||
-    'application/octet-stream'
+  const mimeType = inferMediaMime({
+    headerMime: res.headers.get('content-type') ?? hintedMime,
+    nameOrPath: req.name || rawPath || targetUrl,
+    bytes: buf
+  })
   const isText =
     mimeType.startsWith('text/') ||
     mimeType.includes('json') ||

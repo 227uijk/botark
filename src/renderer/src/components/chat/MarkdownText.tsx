@@ -70,7 +70,28 @@ function renderInline(
       const m = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(token)
       const alt = m?.[1] ?? ''
       const url = m?.[2]?.trim() ?? ''
-      if (/^https?:\/\/|^data:image\//i.test(url)) {
+      if (/^data:video\//i.test(url) || (/^https?:\/\//i.test(url) && /\.(mp4|m4v|webm|mov|mkv)(?:[?#].*)?$/i.test(url))) {
+        nodes.push(
+          <video
+            key={`${keyPrefix}-vid-${i}`}
+            controls
+            playsInline
+            preload="metadata"
+            src={url}
+            className="my-1.5 max-h-72 w-full max-w-md rounded-lg border border-line bg-black"
+          />
+        )
+      } else if (/^data:audio\//i.test(url) || (/^https?:\/\//i.test(url) && /\.(mp3|m4a|aac|wav|ogg|oga|flac)(?:[?#].*)?$/i.test(url))) {
+        nodes.push(
+          <audio
+            key={`${keyPrefix}-aud-${i}`}
+            controls
+            preload="metadata"
+            src={url}
+            className="my-1.5 w-full max-w-md"
+          />
+        )
+      } else if (/^https?:\/\/|^data:image\//i.test(url)) {
         nodes.push(
           <img
             key={`${keyPrefix}-img-${i}`}

@@ -10,6 +10,7 @@
 import { randomUUID } from 'node:crypto'
 import { session as electronSession, type Session } from 'electron'
 import { applyProxyToPartition } from '../muse/accountProxy'
+import { guessMediaMimeFromName, inferMediaMime } from '../mediaMime'
 import { partitionForAccount } from '../webContentsViewManager'
 import { HarkWatchRegistry } from './watchRegistry'
 
@@ -469,6 +470,29 @@ export async function uploadHarkAttachment(
   }
 }
 
+function extractPresignedUrl(presigned: unknown, key: string): string {
+  if (!presigned || typeof presigned !== 'object') return ''
+  const rec = presigned as Record<string, unknown>
+  for (const direct of ['url', 'download_url', 'downloadUrl', 'signedUrl', 'signed_url']) {
+    if (typeof rec[direct] === 'string' && /^https?:\/\//i.test(rec[direct] as string)) {
+      return rec[direct] as string
+    }
+  }
+  const container = (rec['urls'] ?? rec['data'] ?? rec) as unknown
+  if (Array.isArray(container)) {
+    const first = container.find((u) => typeof u === 'string' && /^https?:\/\//i.test(u))
+    if (typeof first === 'string') return first
+  } else if (container && typeof container === 'object') {
+    const map = container as Record<string, unknown>
+    if (typeof map[key] === 'string' && /^https?:\/\//i.test(map[key] as string)) {
+      return map[key] as string
+    }
+    const firstVal = Object.values(map).find((v) => typeof v === 'string' && /^https?:\/\//i.test(v))
+    if (typeof firstVal === 'string') return firstVal
+  }
+  return ''
+}
+
 export async function downloadHarkArtifact(
   accountId: string,
   opts: { url?: string; fileId?: string; name?: string }
@@ -486,16 +510,30 @@ export async function downloadHarkArtifact(
   if (!targetUrl && opts.fileId) {
     const key = opts.fileId.replace(/^(harkatt|harkfile):\/\//i, '').trim()
     if (!/^https?:\/\//i.test(key)) {
-      try {
-        const presigned = (await harkFetch(ses, '/images/presign', {
-          method: 'POST',
-          body: { keys: [key] }
-        })) as Record<string, unknown>
-        const urls = (presigned?.['urls'] ?? presigned?.['data'] ?? presigned) as Record<string, unknown> | undefined
-        const resolved = urls && typeof urls[key] === 'string' ? (urls[key] as string) : ''
-        if (resolved) targetUrl = resolved
-      } catch {
-        /* fall through */
+      for (const endpoint of ['/images/presign', '/files/presign']) {
+        if (targetUrl) break
+        try {
+          const presigned = await harkFetch(ses, endpoint, {
+            method: 'POST',
+            body: { keys: [key] }
+          })
+          const resolved = extractPresignedUrl(presigned, key)
+          if (resolved) targetUrl = resolved
+        } catch {
+          /* try next presign endpoint */
+        }
+      }
+      if (!targetUrl) {
+        try {
+          const presigned = await harkFetch(ses, '/files/download', {
+            method: 'GET',
+            query: { key }
+          })
+          const resolved = extractPresignedUrl(presigned, key)
+          if (resolved) targetUrl = resolved
+        } catch {
+          /* fall through */
+        }
       }
     }
   }
@@ -510,8 +548,12 @@ export async function downloadHarkArtifact(
   }
   const ab = await res.arrayBuffer()
   const buf = Buffer.from(ab)
-  const contentType = res.headers.get('content-type')?.split(';')[0]?.trim() || 'application/octet-stream'
   const filename = opts.name || targetUrl.split('?')[0]?.split('/').pop() || 'artifact'
+  const contentType = inferMediaMime({
+    headerMime: res.headers.get('content-type') ?? undefined,
+    nameOrPath: filename,
+    bytes: buf
+  })
   const isText = /^(text\/|application\/(json|javascript|xml|x-yaml|csv|sql))/i.test(contentType) ||
     /\.(md|markdown|txt|json|csv|html|htm|py|ts|tsx|js|sh|yaml|yml|sql)$/i.test(filename)
 
@@ -828,9 +870,12 @@ export class HarkConversationSyncState {
           const input = (val['input'] ?? {}) as Record<string, unknown>
           const progressMeta = ((val['progress'] as Record<string, unknown> | undefined)?.['metadata'] ?? {}) as Record<string, unknown>
           const prevTools = existing.toolCalls ?? []
+          const extraArts = extractHarkArtifactsFromRaw(val)
+          const nextArts = mergeHarkArtifacts(existing.artifacts, extraArts)
           if (dispatchId && !prevTools.some((t) => t.dispatchId === dispatchId)) {
             this.messages.set(id, {
               ...existing,
+              ...(nextArts ? { artifacts: nextArts } : {}),
               toolCalls: [
                 ...prevTools,
                 {
@@ -845,6 +890,9 @@ export class HarkConversationSyncState {
               ]
             })
             changed = true
+          } else if (nextArts && nextArts !== existing.artifacts) {
+            this.messages.set(id, { ...existing, artifacts: nextArts })
+            changed = true
           }
         }
       } else if (op === 'tool_update') {
@@ -852,21 +900,31 @@ export class HarkConversationSyncState {
         const dispatchId = String(p['dispatchId'] ?? '')
         const fields = (p['fields'] ?? {}) as Record<string, unknown>
         const existing = this.messages.get(id)
-        if (existing?.toolCalls) {
-          this.messages.set(id, {
-            ...existing,
-            toolCalls: existing.toolCalls.map((tc) =>
-              tc.dispatchId === dispatchId
+        if (existing) {
+          const extraArts = extractHarkArtifactsFromRaw(fields)
+          const nextArts = mergeHarkArtifacts(existing.artifacts, extraArts)
+          const hasToolMatch = Boolean(existing.toolCalls?.some((tc) => tc.dispatchId === dispatchId))
+          if (hasToolMatch || (nextArts && nextArts !== existing.artifacts)) {
+            this.messages.set(id, {
+              ...existing,
+              ...(nextArts ? { artifacts: nextArts } : {}),
+              ...(existing.toolCalls
                 ? {
-                    ...tc,
-                    status: String(fields['status'] ?? tc.status),
-                    screenshotKey: String(fields['screenshotKey'] ?? tc.screenshotKey ?? '') || undefined,
-                    screenshotUrl: String(fields['screenshotUrl'] ?? tc.screenshotUrl ?? '') || undefined
+                    toolCalls: existing.toolCalls.map((tc) =>
+                      tc.dispatchId === dispatchId
+                        ? {
+                            ...tc,
+                            status: String(fields['status'] ?? tc.status),
+                            screenshotKey: String(fields['screenshotKey'] ?? tc.screenshotKey ?? '') || undefined,
+                            screenshotUrl: String(fields['screenshotUrl'] ?? tc.screenshotUrl ?? '') || undefined
+                          }
+                        : tc
+                    )
                   }
-                : tc
-            )
-          })
-          changed = true
+                : {})
+            })
+            changed = true
+          }
         }
       } else if (op === 'narration_update') {
         this.narration = typeof p['value'] === 'string' ? p['value'] : null
@@ -1046,6 +1104,179 @@ function formatPresentationMarkdown(presRaw: unknown): string {
   return ''
 }
 
+type HarkArtifactItem = NonNullable<HarkChatMessage['artifacts']>[number]
+
+function mergeHarkArtifacts(
+  existing: HarkArtifactItem[] | undefined,
+  incoming: HarkArtifactItem[]
+): HarkArtifactItem[] | undefined {
+  if (incoming.length === 0) return existing
+  const out = [...(existing ?? [])]
+  const seen = new Set(out.map((a) => a.s3Key || a.downloadUrl || a.path))
+  let changed = false
+  for (const item of incoming) {
+    const key = item.s3Key || item.downloadUrl || item.path
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push(item)
+    changed = true
+  }
+  return changed ? out : existing
+}
+
+function extractHarkArtifactsFromRaw(raw: Record<string, unknown>): HarkArtifactItem[] {
+  const out: HarkArtifactItem[] = []
+  const seen = new Set<string>()
+  const push = (item: HarkArtifactItem) => {
+    const key = item.s3Key || item.downloadUrl || item.path
+    if (!key || seen.has(key)) return
+    seen.add(key)
+    out.push(item)
+  }
+
+  const pushEntry = (entry: unknown, defaultKindMime?: string) => {
+    if (!entry) return
+    if (typeof entry === 'string') {
+      const s = entry.trim()
+      if (!s) return
+      const isHttp = /^https?:\/\//i.test(s)
+      const name = s.split(/[?#]/, 1)[0]?.split('/').pop() || s
+      push({
+        name,
+        path: s,
+        s3Key: isHttp ? undefined : s,
+        downloadUrl: isHttp ? s : undefined,
+        mimeType: guessMediaMimeFromName(name) || defaultKindMime
+      })
+      return
+    }
+    if (typeof entry !== 'object' || Array.isArray(entry)) return
+    const o = entry as Record<string, unknown>
+    const s3Key =
+      (typeof o['s3Key'] === 'string' && o['s3Key']) ||
+      (typeof o['s3_key'] === 'string' && o['s3_key']) ||
+      (typeof o['key'] === 'string' && o['key']) ||
+      (typeof o['imageKey'] === 'string' && o['imageKey']) ||
+      (typeof o['videoKey'] === 'string' && o['videoKey']) ||
+      undefined
+    const downloadUrl =
+      (typeof o['downloadUrl'] === 'string' && o['downloadUrl']) ||
+      (typeof o['download_url'] === 'string' && o['download_url']) ||
+      (typeof o['previewUrl'] === 'string' && o['previewUrl']) ||
+      (typeof o['preview_url'] === 'string' && o['preview_url']) ||
+      (typeof o['imageUrl'] === 'string' && o['imageUrl']) ||
+      (typeof o['image_url'] === 'string' && o['image_url']) ||
+      (typeof o['videoUrl'] === 'string' && o['videoUrl']) ||
+      (typeof o['video_url'] === 'string' && o['video_url']) ||
+      (typeof o['mediaUrl'] === 'string' && o['mediaUrl']) ||
+      (typeof o['media_url'] === 'string' && o['media_url']) ||
+      (typeof o['url'] === 'string' && /^https?:\/\//i.test(o['url']) ? o['url'] : undefined) ||
+      undefined
+    const rawPath =
+      (typeof o['path'] === 'string' && o['path']) ||
+      (typeof o['filePath'] === 'string' && o['filePath']) ||
+      (typeof o['file_path'] === 'string' && o['file_path']) ||
+      (typeof o['name'] === 'string' && o['name']) ||
+      downloadUrl ||
+      s3Key ||
+      ''
+    if (!rawPath && !s3Key && !downloadUrl) return
+    const name =
+      (typeof o['name'] === 'string' && o['name']) ||
+      (typeof o['filename'] === 'string' && o['filename']) ||
+      (typeof o['title'] === 'string' && o['title']) ||
+      rawPath.split(/[?#]/, 1)[0]?.split('/').pop() ||
+      'artifact'
+    const rawMime =
+      (typeof o['mediaType'] === 'string' && o['mediaType']) ||
+      (typeof o['media_type'] === 'string' && o['media_type']) ||
+      (typeof o['mimeType'] === 'string' && o['mimeType']) ||
+      (typeof o['mime_type'] === 'string' && o['mime_type']) ||
+      (typeof o['contentType'] === 'string' && o['contentType']) ||
+      (typeof o['content_type'] === 'string' && o['content_type']) ||
+      undefined
+    const mimeType = rawMime || guessMediaMimeFromName(name || rawPath) || defaultKindMime
+    const sizeBytes =
+      typeof o['size'] === 'number'
+        ? o['size']
+        : typeof o['sizeBytes'] === 'number'
+          ? o['sizeBytes']
+          : typeof o['size_bytes'] === 'number'
+            ? o['size_bytes']
+            : undefined
+    push({
+      name,
+      path: rawPath || s3Key || downloadUrl!,
+      s3Key,
+      downloadUrl,
+      mimeType,
+      sizeBytes
+    })
+  }
+
+  const listKeys: Array<[string, string | undefined]> = [
+    ['artifactKeys', undefined],
+    ['artifact_keys', undefined],
+    ['artifacts', undefined],
+    ['attachments', undefined],
+    ['files', undefined],
+    ['media', undefined],
+    ['imageStack', 'image/png'],
+    ['image_stack', 'image/png'],
+    ['images', 'image/png'],
+    ['videos', 'video/mp4']
+  ]
+  for (const [k, defMime] of listKeys) {
+    const val = raw[k]
+    if (Array.isArray(val)) {
+      for (const item of val) pushEntry(item, defMime)
+    } else if (val && typeof val === 'object') {
+      const objVal = val as Record<string, unknown>
+      if (Array.isArray(objVal['items'])) {
+        for (const item of objVal['items']) pushEntry(item, defMime)
+      } else if (Array.isArray(objVal['images'])) {
+        for (const item of objVal['images']) pushEntry(item, 'image/png')
+      } else {
+        pushEntry(objVal, defMime)
+      }
+    }
+  }
+
+  // Presentation media payloads (image / gallery / image_stack / video / audio / file / artifact)
+  const pres = raw['presentation']
+  if (pres && typeof pres === 'object' && !Array.isArray(pres)) {
+    const p = pres as Record<string, unknown>
+    const kind = String(p['kind'] ?? '').toLowerCase()
+    const isMediaKind = /^(image|images|image_stack|gallery|video|audio|media|file|artifact)$/i.test(kind)
+    const nested = p[kind] ?? (isMediaKind ? p : undefined)
+    if (nested && typeof nested === 'object') {
+      const defMime =
+        kind.includes('image') || kind === 'gallery'
+          ? 'image/png'
+          : kind === 'video'
+            ? 'video/mp4'
+            : kind === 'audio'
+              ? 'audio/mpeg'
+              : undefined
+      if (Array.isArray(nested)) {
+        for (const item of nested) pushEntry(item, defMime)
+      } else {
+        const no = nested as Record<string, unknown>
+        for (const sub of ['items', 'images', 'videos', 'files', 'media', 'artifacts']) {
+          if (Array.isArray(no[sub])) {
+            for (const item of no[sub] as unknown[]) {
+              pushEntry(item, sub === 'videos' ? 'video/mp4' : sub === 'images' ? 'image/png' : defMime)
+            }
+          }
+        }
+        pushEntry(no, defMime)
+      }
+    }
+  }
+
+  return out
+}
+
 function normalizeSyncMessage(id: string, raw: Record<string, unknown>): HarkChatMessage {
   const rawContent =
     (typeof raw['content'] === 'string' && raw['content']) ||
@@ -1067,7 +1298,7 @@ function normalizeSyncMessage(id: string, raw: Record<string, unknown>): HarkCha
 
   const toolCallsRaw = Array.isArray(raw['toolCalls']) ? (raw['toolCalls'] as Record<string, unknown>[]) : []
   const toolCalls: NonNullable<HarkChatMessage['toolCalls']> = []
-  const artifacts: NonNullable<HarkChatMessage['artifacts']> = []
+  let artifacts: HarkArtifactItem[] = []
 
   for (const tc of toolCallsRaw) {
     if (!tc || typeof tc !== 'object') continue
@@ -1090,36 +1321,11 @@ function normalizeSyncMessage(id: string, raw: Record<string, unknown>): HarkCha
       result: typeof tc['result'] === 'string' ? tc['result'].slice(0, 500) : undefined
     })
 
-    const artKeys = Array.isArray(tc['artifactKeys']) ? (tc['artifactKeys'] as Record<string, unknown>[]) : []
-    for (const ak of artKeys) {
-      if (!ak || typeof ak !== 'object') continue
-      const path = String(ak['path'] ?? '')
-      if (!path) continue
-      artifacts.push({
-        name: path.split('/').pop() || path,
-        path,
-        s3Key: typeof ak['s3_key'] === 'string' ? ak['s3_key'] : undefined,
-        downloadUrl: typeof ak['download_url'] === 'string' ? ak['download_url'] : undefined
-      })
-    }
+    artifacts = mergeHarkArtifacts(artifacts, extractHarkArtifactsFromRaw(tc)) ?? artifacts
   }
 
-  // Also include message-level attachments / imageStack
-  const attsRaw = Array.isArray(raw['attachments']) ? (raw['attachments'] as Record<string, unknown>[]) : []
-  for (const att of attsRaw) {
-    if (!att || typeof att !== 'object') continue
-    const path = String(att['path'] ?? att['name'] ?? '')
-    const s3Key = typeof att['s3Key'] === 'string' ? att['s3Key'] : typeof att['s3_key'] === 'string' ? att['s3_key'] : undefined
-    if (!path && !s3Key) continue
-    artifacts.push({
-      name: String(att['name'] ?? path.split('/').pop() ?? 'file'),
-      path: path || s3Key!,
-      s3Key,
-      downloadUrl: typeof att['downloadUrl'] === 'string' ? att['downloadUrl'] : typeof att['previewUrl'] === 'string' ? att['previewUrl'] : undefined,
-      mimeType: typeof att['mediaType'] === 'string' ? att['mediaType'] : typeof att['media_type'] === 'string' ? att['media_type'] : undefined,
-      sizeBytes: typeof att['size'] === 'number' ? att['size'] : undefined
-    })
-  }
+  // Message-level attachments, imageStack, images, videos, files, artifacts, presentation media
+  artifacts = mergeHarkArtifacts(artifacts, extractHarkArtifactsFromRaw(raw)) ?? artifacts
 
   const aawRaw = Array.isArray(raw['agentActivityWindow']) ? (raw['agentActivityWindow'] as Record<string, unknown>[]) : []
   for (const p of aawRaw) {
@@ -1429,21 +1635,8 @@ export function extractMessages(payload: unknown): HarkChatMessage[] {
   const out: HarkChatMessage[] = []
   for (const item of list) {
     const raw = (item ?? {}) as Record<string, unknown>
-    const content =
-      (typeof raw['content'] === 'string' && raw['content']) ||
-      (typeof raw['text'] === 'string' && raw['text']) ||
-      (typeof raw['message'] === 'string' && raw['message']) ||
-      ''
-    out.push({
-      id: String(raw['id'] ?? raw['messageId'] ?? raw['message_id'] ?? `${out.length}`),
-      role: String(raw['role'] ?? raw['author'] ?? ''),
-      content,
-      isStreaming: typeof raw['isStreaming'] === 'boolean' ? raw['isStreaming'] : undefined,
-      createdAt: (raw['timestamp'] ?? raw['createdAt'] ?? raw['created_at'] ?? raw['createdAtMs'] ?? null) as
-        | string
-        | number
-        | null
-    })
+    const id = String(raw['id'] ?? raw['messageId'] ?? raw['message_id'] ?? `${out.length}`)
+    out.push(normalizeSyncMessage(id, raw))
   }
   return out
 }

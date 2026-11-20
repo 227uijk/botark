@@ -10,6 +10,7 @@ import type {
   MuseRichWidgetView,
   MuseToolCallView
 } from '@shared/ipc'
+import { guessMediaMimeFromName } from '../mediaMime'
 
 export interface GrokPendingApprovalItem {
   /** Composite id: `<kind>:<agentId>:<requestId>:<entryId>` or `card:<cardId>:<version>` */
@@ -261,16 +262,43 @@ export function extractGrokRichWidgets(
 export function extractGrokMedia(e: Record<string, unknown>): MuseMediaPartView[] | undefined {
   const msg = asObj(e['message'])
   const out: MuseMediaPartView[] = []
+  const seen = new Set<string>()
 
-  const pushAtt = (att: Record<string, unknown>) => {
+  const pushAtt = (att: Record<string, unknown>, fallbackMime?: string) => {
     const path = str(
-      att['url'] ?? att['presignedUrl'] ?? att['path'] ?? att['alias'] ?? att['filePath']
+      att['url'] ??
+        att['presignedUrl'] ??
+        att['presigned_url'] ??
+        att['downloadUrl'] ??
+        att['download_url'] ??
+        att['imageUrl'] ??
+        att['image_url'] ??
+        att['videoUrl'] ??
+        att['video_url'] ??
+        att['mediaUrl'] ??
+        att['media_url'] ??
+        att['fileUrl'] ??
+        att['file_url'] ??
+        att['path'] ??
+        att['alias'] ??
+        att['filePath'] ??
+        att['file_path']
     ).trim()
-    if (!path) return
-    const mime = str(att['mimeType'] ?? att['contentType'] ?? att['content_type']).trim() || undefined
-    const name = str(att['name'] ?? att['fileName'] ?? att['file_name'] ?? path.split('/').pop() ?? 'attachment')
+    if (!path || seen.has(path)) return
+    seen.add(path)
+    const name = str(
+      att['name'] ??
+        att['fileName'] ??
+        att['file_name'] ??
+        att['title'] ??
+        path.split(/[?#]/, 1)[0]?.split('/').pop() ??
+        'attachment'
+    )
+    const rawMime = str(att['mimeType'] ?? att['mime_type'] ?? att['contentType'] ?? att['content_type']).trim()
+    const mime = rawMime || guessMediaMimeFromName(name || path) || fallbackMime || undefined
     const looksImg =
-      mime?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(path || name)
+      Boolean(mime?.startsWith('image/')) ||
+      /\.(png|jpe?g|gif|webp|svg|avif|bmp)(?:[?#].*)?$/i.test(path || name)
     out.push({
       kind: looksImg ? 'image' : 'file',
       path,
@@ -285,7 +313,14 @@ export function extractGrokMedia(e: Record<string, unknown>): MuseMediaPartView[
   } else if (
     msg &&
     (str(msg['type']).toLowerCase() === 'attachment' ||
-      Boolean(msg['path'] ?? msg['url'] ?? msg['alias'] ?? msg['presignedUrl']))
+      Boolean(
+        msg['path'] ??
+          msg['url'] ??
+          msg['alias'] ??
+          msg['presignedUrl'] ??
+          msg['videoUrl'] ??
+          msg['imageUrl']
+      ))
   ) {
     pushAtt(msg)
   } else if (
@@ -294,13 +329,27 @@ export function extractGrokMedia(e: Record<string, unknown>): MuseMediaPartView[
     pushAtt(e)
   }
 
-  const list =
-    (Array.isArray(msg?.['attachments']) && (msg!['attachments'] as unknown[])) ||
-    (Array.isArray(e['attachments']) && (e['attachments'] as unknown[])) ||
-    []
-  for (const item of list) {
-    const o = asObj(item)
-    if (o) pushAtt(o)
+  const containerKeys: Array<[string, string | undefined]> = [
+    ['attachments', undefined],
+    ['images', 'image/png'],
+    ['videos', 'video/mp4'],
+    ['media', undefined],
+    ['files', undefined],
+    ['artifacts', undefined]
+  ]
+  for (const [k, defMime] of containerKeys) {
+    for (const parent of [msg, e]) {
+      const list = parent?.[k]
+      if (!Array.isArray(list)) continue
+      for (const item of list) {
+        if (typeof item === 'string' && item.trim()) {
+          pushAtt({ url: item.trim() }, defMime)
+        } else {
+          const o = asObj(item)
+          if (o) pushAtt(o, defMime)
+        }
+      }
+    }
   }
 
   // User message `attachment_paths` + `attachment_names`
@@ -310,13 +359,16 @@ export function extractGrokMedia(e: Record<string, unknown>): MuseMediaPartView[
       ? ((e['attachmentNames'] ?? e['attachment_names']) as unknown[]).map(str)
       : []
     paths.forEach((p, idx) => {
-      if (!p) return
+      if (!p || seen.has(p)) return
+      seen.add(p)
       const n = names[idx] || p.split('/').pop() || 'attachment'
-      const looksImg = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(n || p)
+      const mime = guessMediaMimeFromName(n || p)
+      const looksImg = Boolean(mime?.startsWith('image/')) || /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(n || p)
       out.push({
         kind: looksImg ? 'image' : 'file',
         path: p,
-        name: n
+        name: n,
+        ...(mime ? { mimeType: mime } : {})
       })
     })
   }

@@ -36,6 +36,7 @@ import {
 } from './harkClient'
 import { cancelHarkLogin, onHarkLoginEvent, openHarkLoginWindow } from './harkLogin'
 import { loadAccountProxyUrl } from '../muse/accountProxy'
+import { guessMediaMimeFromName } from '../mediaMime'
 import { probeHarkSession } from './harkSession'
 
 function mapHarkTools(msg: HarkChatMessage): MuseToolCallView[] | undefined {
@@ -55,19 +56,25 @@ function mapHarkTools(msg: HarkChatMessage): MuseToolCallView[] | undefined {
 
 function mapHarkMedia(msg: HarkChatMessage): MuseMediaPartView[] | undefined {
   if (!msg.artifacts || msg.artifacts.length === 0) return undefined
-  return msg.artifacts.map((a) => {
+  const out: MuseMediaPartView[] = []
+  const seen = new Set<string>()
+  for (const a of msg.artifacts) {
     const path = a.downloadUrl || (a.s3Key ? `harkatt://${a.s3Key}` : a.path)
+    if (!path || seen.has(path)) continue
+    seen.add(path)
+    const name = a.name || a.path.split(/[?#]/, 1)[0]?.split('/').pop() || 'artifact'
+    const mimeType = a.mimeType || guessMediaMimeFromName(name || a.path)
     const isImg =
-      (a.mimeType && a.mimeType.startsWith('image/')) ||
-      /\.(png|jpe?g|gif|webp|svg)$/i.test(a.name || a.path || '')
-    return {
+      Boolean(mimeType && mimeType.toLowerCase().startsWith('image/')) ||
+      /\.(png|jpe?g|gif|webp|svg|avif|bmp)(?:[?#].*)?$/i.test(name || a.path || '')
+    out.push({
       kind: isImg ? 'image' : 'file',
       path,
-      name: a.name || a.path.split('/').pop() || 'artifact',
-      mimeType: a.mimeType,
-      sizeBytes: a.sizeBytes
-    }
-  })
+      name,
+      mimeType
+    })
+  }
+  return out.length > 0 ? out : undefined
 }
 
 function mapHarkRichWidgets(msg: HarkChatMessage): MuseRichWidgetView[] | undefined {

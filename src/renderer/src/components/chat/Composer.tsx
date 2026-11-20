@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react'
 import type { AttachmentMeta } from '@adapters/types'
 import { createId } from '@shared/id'
-import { ArrowUp, CornerDownRight, FileText, Loader2, LogIn, Plus, PlugZap, Square, X } from 'lucide-react'
+import { ArrowUp, CornerDownRight, FileText, Film, Loader2, LogIn, Music, Plus, PlugZap, Square, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { IconButton } from '@/components/ui/IconButton'
 import { cn } from '@/lib/cn'
@@ -28,19 +28,40 @@ interface ComposerProps {
 
 const MAX_HEIGHT_PX = 200
 
-const MAX_IMAGE_ATTACHMENT_BYTES = 12 * 1024 * 1024
-/** Non-image ≥10MiB uses file_ref (fs.write); allow up to 40MiB in BotHub. */
-const MAX_FILE_ATTACHMENT_BYTES = 40 * 1024 * 1024
+const MAX_IMAGE_ATTACHMENT_BYTES = 20 * 1024 * 1024
+/** Non-image / video attachments (Muse file_ref, Hark/Dot/Grok S3/Blob presign upload): allow up to 50 MiB. */
+const MAX_FILE_ATTACHMENT_BYTES = 50 * 1024 * 1024
+
+function inferBrowserFileMime(file: File): string {
+  if (file.type && file.type !== 'application/octet-stream') return file.type
+  const lower = (file.name || '').toLowerCase()
+  if (lower.endsWith('.png')) return 'image/png'
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg'
+  if (lower.endsWith('.gif')) return 'image/gif'
+  if (lower.endsWith('.webp')) return 'image/webp'
+  if (lower.endsWith('.svg')) return 'image/svg+xml'
+  if (lower.endsWith('.avif')) return 'image/avif'
+  if (lower.endsWith('.mp4') || lower.endsWith('.m4v')) return 'video/mp4'
+  if (lower.endsWith('.webm')) return 'video/webm'
+  if (lower.endsWith('.mov')) return 'video/quicktime'
+  if (lower.endsWith('.mkv')) return 'video/x-matroska'
+  if (lower.endsWith('.mp3')) return 'audio/mpeg'
+  if (lower.endsWith('.m4a') || lower.endsWith('.aac')) return 'audio/mp4'
+  if (lower.endsWith('.wav')) return 'audio/wav'
+  if (lower.endsWith('.ogg')) return 'audio/ogg'
+  if (lower.endsWith('.pdf')) return 'application/pdf'
+  return file.type || 'application/octet-stream'
+}
 
 async function fileToAttachment(file: File): Promise<AttachmentMeta> {
-  const mimeType = file.type || 'application/octet-stream'
+  const mimeType = inferBrowserFileMime(file)
   const base: AttachmentMeta = {
     id: createId('att'),
-    name: file.name,
+    name: file.name || `attachment.${mimeType.split('/')[1] || 'bin'}`,
     size: file.size,
     mimeType
   }
-  const isImage = mimeType.startsWith("image/")
+  const isImage = mimeType.startsWith('image/')
   const limit = isImage ? MAX_IMAGE_ATTACHMENT_BYTES : MAX_FILE_ATTACHMENT_BYTES
   if (file.size > limit) {
     return base // no dataBase64 → Composer shows oversized notice
@@ -291,29 +312,55 @@ export function Composer({ bot, account, typing = false, onSend, onCancel, onCon
           )}
           {attachments.some((f) => !f.dataBase64) && (
             <p className="px-1 pb-1 text-[12px] text-status-error">
-              {t('Some files are too large to send inline (max 12 MB).')}
+              部分文件超出大小限制（图片最大 20 MB，视频/文件最大 50 MB）
             </p>
           )}
           {attachments.length > 0 && (
             <ul className="flex flex-wrap gap-1.5 px-1 pt-0.5 pb-1.5" aria-label={t('Attachments')}>
-              {attachments.map((file) => (
-                <li
-                  key={file.id}
-                  className="flex animate-mark-pop items-center gap-2 rounded-lg bg-hover py-1 pr-1 pl-2 text-[12px]"
-                >
-                  <FileText className="size-3.5 text-ink-secondary" aria-hidden />
-                  <span className="max-w-40 truncate text-ink">{file.name}</span>
-                  <span className="text-ink-muted tabular-nums">{formatBytes(file.size)}</span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${file.name}`}
-                    onClick={() => setAttachments((current) => current.filter((f) => f.id !== file.id))}
-                    className="press-icon grid size-5 place-items-center rounded-md text-ink-muted hover:bg-active hover:text-ink"
+              {attachments.map((file) => {
+                const isImg = file.mimeType.startsWith('image/') && Boolean(file.dataBase64)
+                const isVideo = file.mimeType.startsWith('video/')
+                const isAudio = file.mimeType.startsWith('audio/')
+                return (
+                  <li
+                    key={file.id}
+                    className={cn(
+                      'flex animate-mark-pop items-center gap-2 rounded-xl border border-line/70 bg-hover/80 py-1 pr-1.5 pl-1.5 text-[12px]',
+                      !file.dataBase64 && 'border-status-error/40 bg-status-error/5'
+                    )}
                   >
-                    <X className="size-3" />
-                  </button>
-                </li>
-              ))}
+                    {isImg ? (
+                      <img
+                        src={`data:${file.mimeType};base64,${file.dataBase64}`}
+                        alt={file.name}
+                        className="size-8 shrink-0 rounded-lg object-cover ring-1 ring-line/60"
+                      />
+                    ) : (
+                      <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-surface text-accent-600">
+                        {isVideo ? (
+                          <Film className="size-3.5" aria-hidden />
+                        ) : isAudio ? (
+                          <Music className="size-3.5" aria-hidden />
+                        ) : (
+                          <FileText className="size-3.5 text-ink-secondary" aria-hidden />
+                        )}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <span className="block max-w-40 truncate font-medium text-ink">{file.name}</span>
+                      <span className="block text-[11px] text-ink-muted tabular-nums">{formatBytes(file.size)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${file.name}`}
+                      onClick={() => setAttachments((current) => current.filter((f) => f.id !== file.id))}
+                      className="press-icon grid size-5 shrink-0 place-items-center rounded-md text-ink-muted hover:bg-active hover:text-ink"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           )}
 
