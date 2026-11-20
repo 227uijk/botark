@@ -795,9 +795,9 @@ export function SettingsView() {
               <div className="flex flex-col gap-5 animate-veil-in">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">多平台 Bot 与账号全局总览</h2>
+                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">账号与 Bot 总览</h2>
                     <p className="mt-1 text-[13px] text-ink-secondary">
-                      集中巡检所有已接入的 AI 平台账号状态、分组归属、自动续期凭据与独立代理分配。
+                      统一查看在线状态、一键重连与切换对话。
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -1119,9 +1119,9 @@ export function SettingsView() {
               <div className="flex flex-col gap-5 animate-veil-in">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">Muse 多账号管理</h2>
+                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">Muse 账号</h2>
                     <p className="mt-1 text-[13px] text-ink-secondary">
-                      管理所有已添加的 Muse 账号与独立会话分区。当代理池中有可用代理时，新建或批量导入的每个账号会自动一对一绑定一个专属代理。
+                      独立隔离多账号会话，支持批量导入与自动分配代理。
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -1297,9 +1297,9 @@ export function SettingsView() {
               <div className="flex flex-col gap-5 animate-veil-in">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">ChatGPT Dot (chatgpt.com/dots) 账号管理</h2>
+                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">ChatGPT Dot 账号</h2>
                     <p className="mt-1 text-[13px] text-ink-secondary">
-                      管理所有已接入的 ChatGPT Dot 账号（一号一 Bot）。支持网页登录（`chatgpt.com/dots`）或单条/批量导入 ChatGPT `access_token (AT)`、`refresh_token (RT)` 与 `auth.json` 会话凭据，所有 Token 均使用系统 Keychain `safeStorage` 加密存储并支持 OAuth 自动续期。
+                      支持网页登录或导入凭据，自动加密保存与续期。
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -1741,9 +1741,9 @@ export function SettingsView() {
               <div className="flex flex-col gap-5 animate-veil-in">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">Hark Pro (app.hark.com) 账号管理</h2>
+                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">Hark 账号</h2>
                     <p className="mt-1 text-[13px] text-ink-secondary">
-                      支持打开独立会话分区完成 Google / Apple / 邮箱登录，或直接粘贴 Hark Session Cookie / Token 接入并同步对话历史。
+                      支持内置窗口登录或直接粘贴会话凭据接入。
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -1892,11 +1892,10 @@ export function SettingsView() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-[17px] font-semibold tracking-tight text-ink">
-                      Google Antigravity 账号管理
+                      Antigravity 账号
                     </h2>
                     <p className="mt-1 text-[13px] text-ink-secondary">
-                      通过独立隔离分区登录 antigravity.google.com，主进程使用 Google First-Party SAPISIDHASH 直连云端
-                      JetskiRemoteAgentProxyService（支持多账号并发、模型切换与流式 Cascade 对话）。
+                      独立隔离登录 Google Antigravity，支持多账号、模型切换与流式对话。
                     </p>
                   </div>
                   <Button
@@ -1983,9 +1982,9 @@ export function SettingsView() {
               <div className="flex flex-col gap-5 animate-veil-in">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">代理池与一号一代理自动匹配</h2>
+                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">代理池</h2>
                     <p className="mt-1 text-[13px] text-ink-secondary">
-                      批量导入代理列表（使用系统 Keychain `safeStorage` 加密存储）。导入后默认按照「一个账号匹配一个独立代理」自动绑定到会话分区与 WSS 隧道。
+                      批量导入代理并按「一号一代理」自动分配，本地钥匙串加密保存。
                     </p>
                   </div>
                   {pool.length > 0 && museAccounts.length > 0 && (

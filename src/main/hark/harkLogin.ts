@@ -102,6 +102,13 @@ export async function openHarkLoginWindow(accountId: string, parent?: BrowserWin
 
   const partition = partitionForAccount(accountId)
   const ses = electronSession.fromPartition(partition)
+  const cleanUa = ses
+    .getUserAgent()
+    .replace(/\s+Electron\/[\d.]+/gi, '')
+    .replace(/\s+(?:BotArk|BotHub)\/[\d.a-z-]+/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+  ses.setUserAgent(cleanUa)
 
   const win = new BrowserWindow({
     width: 1040,
@@ -120,6 +127,7 @@ export async function openHarkLoginWindow(accountId: string, parent?: BrowserWin
       backgroundThrottling: false
     }
   })
+  win.webContents.setUserAgent(cleanUa)
   loginWindows.set(accountId, win)
 
   win.webContents.setWindowOpenHandler(({ url }) => {

@@ -3,6 +3,7 @@ import './styles/globals.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { registerBuiltInAdapters } from '@adapters/index'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import App from './App'
 
 // Adapters must be registered before the store talks to them.
@@ -18,6 +19,8 @@ if (!container) throw new Error('Root element #root not found')
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>
 )

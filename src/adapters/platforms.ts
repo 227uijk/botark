@@ -7,9 +7,18 @@ import type { PlatformDescriptor, PlatformId } from './types'
  */
 export const PLATFORMS: readonly PlatformDescriptor[] = [
   {
+    id: 'antigravity',
+    name: 'Antigravity',
+    description: 'Google 云端智能体 · 模型切换、流式对话与云端沙盒',
+    availability: 'available',
+    monogram: 'Ag',
+    homeUrl: 'https://antigravity.google.com',
+    loginUrl: 'https://antigravity.google.com'
+  },
+  {
     id: 'meta-muse',
     name: 'Meta Muse',
-    description: 'Personal agent on muse.ai — chat, connectors, and Sentinel approvals.',
+    description: 'Meta 个人智能体 · 对话、连接器与安全审批',
     availability: 'available',
     monogram: 'M',
     homeUrl: 'https://muse.ai'
@@ -17,48 +26,37 @@ export const PLATFORMS: readonly PlatformDescriptor[] = [
   {
     id: 'grok',
     name: 'Grok Bot',
-    description: 'xAI / Cursor sand desktop bots via ConnectRPC (api2.cursor.sh).',
+    description: 'xAI 自主智能体 · 多 Agent 同步、定时任务与云沙盒',
     availability: 'available',
     monogram: 'G',
     homeUrl: 'https://x.ai/bot',
     loginUrl: 'https://authenticator.cursor.sh'
   },
   {
-    id: 'hark',
-    name: 'Hark',
-    description: 'Personal agent on hark.com — Google login + REST chat (preview; login flow still maturing).',
-    availability: 'available',
-    monogram: 'H',
-    homeUrl: 'https://app.hark.com',
-    loginUrl: 'https://app.hark.com/login'
-  },
-  {
     id: 'dot',
     name: 'Dot',
-    description: 'OpenAI autonomous personal AI (chatgpt.com/dots) — Calpico Room + Celsius WS + gpt-6-astra.',
+    description: 'OpenAI 个人 AI · 长期记忆、Orbit 角色与页面库',
     availability: 'available',
     monogram: 'Do',
     homeUrl: 'https://chatgpt.com/dots',
     loginUrl: 'https://chatgpt.com/dots'
   },
   {
+    id: 'hark',
+    name: 'Hark',
+    description: '个人 AI 助手 · Google 登录、实时对话与云端浏览器',
+    availability: 'available',
+    monogram: 'H',
+    homeUrl: 'https://app.hark.com',
+    loginUrl: 'https://app.hark.com/login'
+  },
+  {
     id: 'hermes',
     name: 'Hermes',
-    description:
-      'Open-source autonomous agent by Nous Research — connect local or remote API server (SSE streaming, sessions, skills & approvals).',
+    description: 'Nous 开源智能体 · 直连本机或远程网关，支持流式与审批',
     availability: 'available',
     monogram: 'He',
     homeUrl: 'http://127.0.0.1:8642'
-  },
-  {
-    id: 'antigravity',
-    name: 'Antigravity',
-    description:
-      'Google Antigravity Cloud Agents (antigravity.google.com) — Google login, live Cascade streaming, models & cloud sandboxes.',
-    availability: 'available',
-    monogram: 'Ag',
-    homeUrl: 'https://antigravity.google.com',
-    loginUrl: 'https://antigravity.google.com'
   }
 ]
 

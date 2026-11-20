@@ -104,6 +104,7 @@ class BotArkViewModel(application: Application) : AndroidViewModel(application) 
     val uiState: StateFlow<BotArkUiState> = _uiState.asStateFlow()
 
     private var reconnectJob: Job? = null
+    private var reconnectAttempt: Int = 0
     private val directJobs = mutableMapOf<String, Job>()
 
     init {
@@ -175,6 +176,7 @@ class BotArkViewModel(application: Application) : AndroidViewModel(application) 
                 try {
                     val fresh = mergeWithLocalStandalone(_uiState.value.snapshot, bridge.fetchSnapshot(updated))
                     vault.saveSnapshotCache(fresh)
+                    reconnectAttempt = 0
                     _uiState.update {
                         it.copy(
                             pairedDesktop = updated,
@@ -504,8 +506,10 @@ class BotArkViewModel(application: Application) : AndroidViewModel(application) 
                 val current = _uiState.value.pairedDesktop ?: return@connectWebSocket
                 _uiState.update { it.copy(connectionState = BridgeConnectionState.Offline(current.hostName)) }
                 reconnectJob?.cancel()
+                reconnectAttempt = (reconnectAttempt + 1).coerceAtMost(4)
+                val delayMs = (3_000L shl (reconnectAttempt - 1).coerceAtLeast(0)).coerceAtMost(24_000L)
                 reconnectJob = viewModelScope.launch {
-                    delay(5_000)
+                    delay(delayMs)
                     if (_uiState.value.pairedDesktop != null) reconnectDesktop()
                 }
             }

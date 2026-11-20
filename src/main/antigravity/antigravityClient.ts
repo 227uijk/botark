@@ -175,6 +175,8 @@ function parseRpcErrorPayload(status: number, bodyText: string): AntigravityRpcE
   return new AntigravityRpcError(status, `Antigravity RPC HTTP ${status}`)
 }
 
+const ANTIGRAVITY_RPC_TIMEOUT_MS = 25_000
+
 export async function callAntigravityRpc(
   accountId: string,
   method: string,
@@ -186,22 +188,52 @@ export async function callAntigravityRpc(
     throw new AntigravityRpcError(401, 'Not signed in to Google Antigravity (missing SAPISID cookies)', 16)
   }
   const url = `${ANTIGRAVITY_API_ORIGIN}${ANTIGRAVITY_RPC_PREFIX}/${method}`
-  const res = await prepared.ses.fetch(url, {
-    method: 'POST',
-    headers: prepared.headers,
-    body: JSON.stringify(bodyArray),
-    signal
-  })
-  const text = await res.text()
-  if (!res.ok) {
-    throw parseRpcErrorPayload(res.status, text)
+  const maxAttempts = method === 'StartCascade' || method === 'SendUserCascadeMessage' ? 1 : 2
+  let lastError: unknown
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      await sleep(400 * attempt, signal)
+    }
+    const deadline = AbortSignal.timeout(ANTIGRAVITY_RPC_TIMEOUT_MS)
+    const effectiveSignal = signal ? AbortSignal.any([signal, deadline]) : deadline
+    try {
+      const res = await prepared.ses.fetch(url, {
+        method: 'POST',
+        headers: prepared.headers,
+        body: JSON.stringify(bodyArray),
+        signal: effectiveSignal
+      })
+      const text = await res.text()
+      if (!res.ok) {
+        const err = parseRpcErrorPayload(res.status, text)
+        if ((res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504) && attempt + 1 < maxAttempts) {
+          lastError = err
+          continue
+        }
+        throw err
+      }
+      if (!text.trim()) return []
+      try {
+        return JSON.parse(text)
+      } catch {
+        throw new AntigravityRpcError(502, `Invalid JSON response from Antigravity ${method}`)
+      }
+    } catch (error) {
+      if (error instanceof AntigravityRpcError) throw error
+      lastError = error
+      if (signal?.aborted || attempt + 1 >= maxAttempts) {
+        const msg =
+          error instanceof Error && error.name === 'TimeoutError'
+            ? `Antigravity ${method} timed out`
+            : error instanceof Error
+              ? error.message
+              : String(error)
+        throw new AntigravityRpcError(504, msg)
+      }
+    }
   }
-  if (!text.trim()) return []
-  try {
-    return JSON.parse(text)
-  } catch {
-    throw new AntigravityRpcError(502, `Invalid JSON response from Antigravity ${method}`)
-  }
+  throw lastError instanceof Error ? lastError : new AntigravityRpcError(502, `Antigravity ${method} failed`)
 }
 
 export type AntigravitySessionProbe =

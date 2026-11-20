@@ -6,11 +6,13 @@ import android.net.Uri
 import android.os.Message
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,6 +36,7 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.OpenInBrowser
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.WifiOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -88,9 +91,18 @@ fun StandaloneWebScreen(
     var progress by remember(botId) { mutableIntStateOf(0) }
     var isLoading by remember(botId) { mutableStateOf(true) }
     var canGoBack by remember(botId) { mutableStateOf(false) }
+    var loadError by remember(botId) { mutableStateOf<String?>(null) }
     var webViewRef by remember(botId) { mutableStateOf<WebView?>(null) }
     var menuExpanded by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+
+    DisposableEffect(botId) {
+        onDispose {
+            webViewRef?.stopLoading()
+            webViewRef?.destroy()
+            webViewRef = null
+        }
+    }
 
     BackHandler(enabled = canGoBack) {
         webViewRef?.goBack()
@@ -272,7 +284,6 @@ fun StandaloneWebScreen(
 
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
-                        settings.databaseEnabled = true
                         settings.loadsImagesAutomatically = true
                         settings.javaScriptCanOpenWindowsAutomatically = true
                         settings.setSupportMultipleWindows(true)
@@ -295,6 +306,18 @@ fun StandaloneWebScreen(
                                         ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u)))
                                     }
                                     true
+                                }
+                            }
+
+                            override fun onReceivedError(
+                                view: WebView?,
+                                request: WebResourceRequest?,
+                                error: WebResourceError?
+                            ) {
+                                if (request?.isForMainFrame == true) {
+                                    isLoading = false
+                                    loadError = error?.description?.toString()?.ifBlank { null }
+                                        ?: "网络连接异常，请检查网络或代理设置"
                                 }
                             }
 
@@ -348,6 +371,62 @@ fun StandaloneWebScreen(
                     }
                 }
             )
+
+            loadError?.let { errMsg ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(palette.canvas)
+                        .padding(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.WifiOff,
+                        contentDescription = null,
+                        tint = palette.textSecondary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = "页面暂时无法加载",
+                        fontSize = 15.sp,
+                        fontFamily = ArkSansFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.textPrimary
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = errMsg,
+                        fontSize = 12.sp,
+                        color = palette.textSecondary,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .height(38.dp)
+                            .clip(CircleShape)
+                            .background(palette.ink)
+                            .clickable {
+                                loadError = null
+                                isLoading = true
+                                webViewRef?.reload()
+                            }
+                            .padding(horizontal = 20.dp)
+                    ) {
+                        Text(
+                            text = "重新加载",
+                            fontSize = 13.5.sp,
+                            fontFamily = ArkSansFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            color = palette.onInk
+                        )
+                    }
+                }
+            }
 
             if (isLoading && progress in 1..99) {
                 Box(

@@ -754,7 +754,8 @@ export async function trySyncFromElectronPartition(
       headers: {
         Accept: 'application/json',
         'User-Agent': CHROME_UA
-      }
+      },
+      signal: AbortSignal.timeout(20_000)
     })
     if (!res.ok) return undefined
     const data = (await res.json()) as Record<string, unknown>

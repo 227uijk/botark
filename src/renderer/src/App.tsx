@@ -13,9 +13,11 @@ import { startAdapterBridge } from '@/services/adapterBridge'
 import { startMobileSyncBridge } from '@/services/mobileSyncBridge'
 import { useBotStore } from '@/store/botStore'
 import { startPrefsSync, usePrefsStore } from '@/store/prefsStore'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
 export default function App() {
   const settingsOpen = useBotStore((s) => s.settingsOpen)
+  const selectedBotId = useBotStore((s) => s.selectedBotId)
   // Details only make sense next to a selected bot (and not while in Settings).
   const infoOpen = useBotStore(
     (s) => !s.settingsOpen && s.infoPanelOpen && s.bots.some((b) => b.id === s.selectedBotId)
@@ -186,8 +188,16 @@ export default function App() {
         <AppShell
           asideOpen={infoOpen}
           sidebar={<Sidebar onAddBot={() => setAddBotOpen(true)} />}
-          main={settingsOpen ? <SettingsView /> : <ChatArea />}
-          aside={<InfoPanel />}
+          main={
+            <ErrorBoundary surface={settingsOpen ? '管理控制台' : '对话区'} resetKey={settingsOpen ? 'settings' : selectedBotId}>
+              {settingsOpen ? <SettingsView /> : <ChatArea />}
+            </ErrorBoundary>
+          }
+          aside={
+            <ErrorBoundary surface="右侧面板" resetKey={selectedBotId}>
+              <InfoPanel />
+            </ErrorBoundary>
+          }
         />
       </div>
       <AddBotDialog />

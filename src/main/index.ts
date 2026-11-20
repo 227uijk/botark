@@ -55,11 +55,14 @@ if (!gotLock) {
   })
 }
 
-// A stray rejection in a timer or IPC handler should be visible in logs,
-// not silently swallowed. Only the error name/message is logged.
+// A stray rejection or transient socket error in a timer/proxy/IPC handler
+// should be logged cleanly instead of crashing the whole desktop workspace.
 process.on('unhandledRejection', (reason) => {
   const text = reason instanceof Error ? `${reason.name}: ${reason.message}` : typeof reason
   console.error('[bothub] unhandled rejection:', text.slice(0, 300))
+})
+process.on('uncaughtException', (error) => {
+  console.error('[bothub] uncaught exception:', `${error.name}: ${error.message}`.slice(0, 300))
 })
 
 function createMainWindow(): BrowserWindow {
@@ -115,6 +118,19 @@ function createMainWindow(): BrowserWindow {
   // The app is a single page: block navigations (e.g. a file dropped onto the
   // window) that would replace the UI. Reloads are not affected.
   win.webContents.on('will-navigate', (event) => event.preventDefault())
+
+  // Self-heal if Chromium's renderer process crashes or runs out of memory.
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[bothub] renderer gone:', details.reason, 'exitCode=', details.exitCode)
+    if (!quitting && !win.isDestroyed() && details.reason !== 'clean-exit') {
+      setTimeout(() => {
+        if (!quitting && !win.isDestroyed()) win.webContents.reload()
+      }, 600)
+    }
+  })
+  win.on('unresponsive', () => {
+    console.warn('[bothub] main window became unresponsive')
+  })
 
   const wantGrokLogin = process.argv.includes('--open-grok-login')
   const devUrl = process.env['ELECTRON_RENDERER_URL']

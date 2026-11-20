@@ -14,6 +14,7 @@ struct StandaloneBotWebView: View {
     @State private var estimatedProgress: Double = 0
     @State private var isLoading: Bool = true
     @State private var canGoBack: Bool = false
+    @State private var loadError: String? = nil
     @State private var reloadToken = UUID()
     @State private var backTrigger = UUID()
     @State private var confirmDelete = false
@@ -41,9 +42,40 @@ struct StandaloneBotWebView: View {
                     currentUrlString: $currentUrlString,
                     estimatedProgress: $estimatedProgress,
                     isLoading: $isLoading,
-                    canGoBack: $canGoBack
+                    canGoBack: $canGoBack,
+                    loadError: $loadError
                 )
                 .ignoresSafeArea(edges: .bottom)
+
+                if let errText = loadError {
+                    VStack(spacing: 12) {
+                        Image(systemName: "wifi.exclamationmark")
+                            .font(.system(size: 26, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                        Text("页面暂时无法加载")
+                            .font(ArkFont.semibold(15))
+                        Text(errText)
+                            .font(ArkFont.regular(12))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                            .padding(.horizontal, 24)
+                        Button {
+                            loadError = nil
+                            reloadToken = UUID()
+                        } label: {
+                            Text("重新加载")
+                                .font(ArkFont.semibold(13.5))
+                                .foregroundStyle(ArkTheme.onInk)
+                                .padding(.horizontal, 20)
+                                .frame(height: 38)
+                                .background(ArkTheme.ink, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(ArkTheme.canvas)
+                }
 
                 if isLoading && estimatedProgress < 0.99 {
                     GeometryReader { geo in
@@ -197,6 +229,7 @@ private struct StandaloneWKWebViewRepresentable: UIViewRepresentable {
     @Binding var estimatedProgress: Double
     @Binding var isLoading: Bool
     @Binding var canGoBack: Bool
+    @Binding var loadError: String?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -270,6 +303,26 @@ private struct StandaloneWKWebViewRepresentable: UIViewRepresentable {
             backObs = webView.observe(\.canGoBack, options: [.new]) { [weak self] wv, _ in
                 Task { @MainActor in self?.parent.canGoBack = wv.canGoBack }
             }
+        }
+
+        func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            Task { @MainActor in self.parent.loadError = nil }
+        }
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            let nsErr = error as NSError
+            if nsErr.code == NSURLErrorCancelled { return }
+            Task { @MainActor in self.parent.loadError = error.localizedDescription }
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            let nsErr = error as NSError
+            if nsErr.code == NSURLErrorCancelled { return }
+            Task { @MainActor in self.parent.loadError = error.localizedDescription }
+        }
+
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            webView.reload()
         }
 
         func webView(

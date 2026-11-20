@@ -36,6 +36,7 @@ public final class BotArkStore {
     private let bridge = DesktopBridgeClient()
     private let directHermes = DirectHermesClient()
     private var reconnectTask: Task<Void, Never>?
+    private var reconnectAttempt: Int = 0
     private var activeDirectTasks: [String: Task<Void, Never>] = [:]
 
     private static var cacheUrl: URL {
@@ -159,6 +160,7 @@ public final class BotArkStore {
             do {
                 let fresh = try await bridge.fetchSnapshot(desktop: desktop)
                 applySnapshot(fresh)
+                reconnectAttempt = 0
                 connectionState = .connected(hostName: desktop.hostName, activeHost: best)
                 openLiveSocket(for: desktop)
                 return
@@ -484,8 +486,10 @@ public final class BotArkStore {
 
     private func scheduleReconnect() {
         reconnectTask?.cancel()
+        reconnectAttempt = min(reconnectAttempt + 1, 4)
+        let delaySec = min(24, 3 * (1 << max(0, reconnectAttempt - 1)))
         reconnectTask = Task {
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            try? await Task.sleep(nanoseconds: UInt64(delaySec) * 1_000_000_000)
             guard !Task.isCancelled, pairedDesktop != nil else { return }
             await reconnectDesktop()
         }
