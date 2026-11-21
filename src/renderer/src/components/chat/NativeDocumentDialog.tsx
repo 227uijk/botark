@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Copy, Download, FileCode, FileText, Maximize2, Minimize2, RefreshCw, X } from 'lucide-react'
+import { Check, Copy, Download, FileCode, FileText, Maximize2, Minimize2, RefreshCw, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { Dialog } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { MarkdownText } from './MarkdownText'
@@ -135,7 +135,9 @@ function useDocumentContent(target: NativeDocumentTarget | null) {
         }
       }
 
-      if ((isHttpUrl || isDotFileId) && bridge?.dot?.rpc && target.platformId !== 'hark') {
+      const isMuseUrl = target.platformId === 'meta-muse' || /^https?:\/\/(?:[^/]*\.)?muse\.ai\//i.test(rawPath)
+
+      if ((isHttpUrl || isDotFileId) && bridge?.dot?.rpc && target.platformId !== 'hark' && !isMuseUrl) {
         const dotRes = await bridge.dot.rpc({
           accountId: target.accountId,
           op: 'downloadFile',
@@ -264,6 +266,68 @@ function triggerTargetDownload(
   setTimeout(() => URL.revokeObjectURL(url), 2000)
 }
 
+function useBase64BlobUrl(rawBase64: string | undefined, mime: string, enabled: boolean): string | null {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!enabled || !rawBase64) {
+      setUrl(null)
+      return
+    }
+    const bin = atob(rawBase64)
+    const bytes = new Uint8Array(new ArrayBuffer(bin.length))
+    for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i)
+    const blob = new Blob([bytes], { type: mime || 'application/octet-stream' })
+    const nextUrl = URL.createObjectURL(blob)
+    setUrl(nextUrl)
+    return () => {
+      URL.revokeObjectURL(nextUrl)
+    }
+  }, [rawBase64, mime, enabled])
+  return url
+}
+
+function ZoomableImagePreview({ src, alt, maxHeightClass }: { src: string; alt: string; maxHeightClass: string }) {
+  const [zoom, setZoom] = useState<number>(1)
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4 shadow-soft">
+      <div className="flex items-center justify-end gap-1 text-[11px] text-ink-secondary">
+        <button
+          type="button"
+          onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.25).toFixed(2))))}
+          className="inline-flex items-center gap-0.5 rounded-md bg-hover px-2 py-1 hover:bg-active hover:text-ink"
+          title="缩小"
+        >
+          <ZoomOut className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setZoom(1)}
+          className="rounded-md bg-hover px-2 py-1 tabular-nums hover:bg-active hover:text-ink"
+          title="重置缩放"
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button
+          type="button"
+          onClick={() => setZoom((z) => Math.min(3, Number((z + 0.25).toFixed(2))))}
+          className="inline-flex items-center gap-0.5 rounded-md bg-hover px-2 py-1 hover:bg-active hover:text-ink"
+          title="放大"
+        >
+          <ZoomIn className="size-3.5" />
+        </button>
+      </div>
+      <div className="flex justify-center overflow-auto rounded-xl bg-sunken/50 p-3">
+        <img
+          src={src}
+          alt={alt}
+          style={zoom !== 1 ? { transform: `scale(${zoom})`, transformOrigin: 'top center' } : undefined}
+          className={cn(maxHeightClass, 'max-w-full rounded-lg object-contain transition-transform duration-150')}
+        />
+      </div>
+    </div>
+  )
+}
+
 /**
  * Right-side Split-Pane Document / Artifact Canvas Viewer (aligned with ChatGPT Canvas / Claude Artifacts / Muse Workspace).
  */
@@ -296,7 +360,15 @@ export function DocumentCanvasPane({
     lowerName.endsWith('.html') ||
     lowerName.endsWith('.htm') ||
     Boolean(target.html)
-  const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(lowerName)
+  const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|avif|bmp)(?:[?#].*)?$/i.test(lowerName)
+  const isVideo = mime.startsWith('video/') || /\.(mp4|m4v|webm|mov|mkv|avi)(?:[?#].*)?$/i.test(lowerName)
+  const isAudio = mime.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac)(?:[?#].*)?$/i.test(lowerName)
+  const isPdf = mime === 'application/pdf' || /\.pdf(?:[?#].*)?$/i.test(lowerName)
+  const binaryBlobUrl = useBase64BlobUrl(
+    rawBase64,
+    isPdf ? 'application/pdf' : isVideo ? (mime.startsWith('video/') ? mime : 'video/mp4') : isAudio ? (mime.startsWith('audio/') ? mime : 'audio/mpeg') : mime,
+    Boolean(rawBase64 && (isVideo || isAudio || isPdf))
+  )
 
   const copyContent = () => {
     void navigator.clipboard.writeText(content).then(
@@ -395,13 +467,26 @@ export function DocumentCanvasPane({
             {error}
           </div>
         ) : isImage && rawBase64 ? (
-          <div className="flex justify-center rounded-2xl border border-line bg-surface p-5 shadow-soft">
-            <img
-              src={`data:${mime};base64,${rawBase64}`}
-              alt={target.title}
-              className="max-h-[75vh] max-w-full rounded-lg object-contain"
-            />
+          <ZoomableImagePreview
+            src={`data:${mime.startsWith('image/') ? mime : 'image/png'};base64,${rawBase64}`}
+            alt={target.title}
+            maxHeightClass="max-h-[70vh]"
+          />
+        ) : isVideo && binaryBlobUrl ? (
+          <div className="flex justify-center rounded-2xl border border-line bg-surface p-4 shadow-soft">
+            <video controls playsInline preload="metadata" src={binaryBlobUrl} className="max-h-[72vh] w-full rounded-xl bg-black" />
           </div>
+        ) : isAudio && binaryBlobUrl ? (
+          <div className="rounded-2xl border border-line bg-surface p-5 shadow-soft">
+            <p className="mb-3 text-[13px] font-medium text-ink">{target.title}</p>
+            <audio controls preload="metadata" src={binaryBlobUrl} className="w-full" />
+          </div>
+        ) : isPdf && binaryBlobUrl ? (
+          <iframe
+            title={target.title}
+            src={binaryBlobUrl}
+            className="h-full min-h-[560px] w-full rounded-2xl border border-line bg-white shadow-soft"
+          />
         ) : mode === 'rendered' && isMarkdown ? (
           <article className="mx-auto max-w-[640px] rounded-2xl border border-line bg-surface px-7 py-6 text-[14.5px] leading-[1.7] text-ink shadow-soft">
             <MarkdownText
@@ -461,7 +546,15 @@ export function NativeDocumentDialog({
     lowerName.endsWith('.markdown') ||
     Boolean(target.markdown)
   const isHtml = mime.includes('html') || lowerName.endsWith('.html') || lowerName.endsWith('.htm') || Boolean(target.html)
-  const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(lowerName)
+  const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|avif|bmp)(?:[?#].*)?$/i.test(lowerName)
+  const isVideo = mime.startsWith('video/') || /\.(mp4|m4v|webm|mov|mkv|avi)(?:[?#].*)?$/i.test(lowerName)
+  const isAudio = mime.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac)(?:[?#].*)?$/i.test(lowerName)
+  const isPdf = mime === 'application/pdf' || /\.pdf(?:[?#].*)?$/i.test(lowerName)
+  const binaryBlobUrl = useBase64BlobUrl(
+    rawBase64,
+    isPdf ? 'application/pdf' : isVideo ? (mime.startsWith('video/') ? mime : 'video/mp4') : isAudio ? (mime.startsWith('audio/') ? mime : 'audio/mpeg') : mime,
+    Boolean(rawBase64 && (isVideo || isAudio || isPdf))
+  )
 
   const copyContent = () => {
     void navigator.clipboard.writeText(content).then(
@@ -549,13 +642,26 @@ export function NativeDocumentDialog({
           {error}
         </div>
       ) : isImage && rawBase64 ? (
+        <ZoomableImagePreview
+          src={`data:${mime.startsWith('image/') ? mime : 'image/png'};base64,${rawBase64}`}
+          alt={target.title}
+          maxHeightClass="max-h-[58vh]"
+        />
+      ) : isVideo && binaryBlobUrl ? (
         <div className="flex justify-center rounded-xl bg-sunken p-4">
-          <img
-            src={`data:${mime};base64,${rawBase64}`}
-            alt={target.title}
-            className="max-h-[62vh] max-w-full rounded-lg object-contain"
-          />
+          <video controls playsInline preload="metadata" src={binaryBlobUrl} className="max-h-[62vh] w-full rounded-lg bg-black" />
         </div>
+      ) : isAudio && binaryBlobUrl ? (
+        <div className="rounded-xl border border-line bg-surface p-5">
+          <p className="mb-3 text-[13px] font-medium text-ink">{target.title}</p>
+          <audio controls preload="metadata" src={binaryBlobUrl} className="w-full" />
+        </div>
+      ) : isPdf && binaryBlobUrl ? (
+        <iframe
+          title={target.title}
+          src={binaryBlobUrl}
+          className="h-[64vh] w-full rounded-xl border border-line bg-white"
+        />
       ) : mode === 'rendered' && isMarkdown ? (
         <article className="max-h-[66vh] overflow-y-auto rounded-xl border border-line bg-surface p-6 text-[14.5px] leading-[1.7] text-ink shadow-soft">
           <MarkdownText text={content} />

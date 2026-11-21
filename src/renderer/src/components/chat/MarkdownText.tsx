@@ -1,5 +1,5 @@
-import { type ReactNode, memo, useState } from 'react'
-import { Check, Copy } from 'lucide-react'
+import { type ReactNode, memo, useEffect, useState } from 'react'
+import { Check, Copy, Download, Image as ImageIcon, X, ZoomIn } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { t } from '@/lib/i18n'
 
@@ -13,6 +13,122 @@ import { t } from '@/lib/i18n'
  * - Fenced code blocks with language header + one-click Copy button
  * - Inline: **bold**, *italic*, ~~strikethrough~~, `code`, [label](url), ![alt](img), bare https:// URLs
  */
+
+function InlineMarkdownImage({ src, alt }: { src: string; alt: string }) {
+  const [zoomed, setZoomed] = useState(false)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    if (!zoomed) return
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') setZoomed(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [zoomed])
+
+  const filename =
+    alt.trim() ||
+    (src.startsWith('data:') ? 'image.png' : src.split(/[?#]/, 1)[0]?.split('/').pop() || 'image.png')
+
+  const saveImage = () => {
+    const a = document.createElement('a')
+    a.href = src
+    a.download = filename
+    if (/^https?:\/\//i.test(src)) {
+      a.target = '_blank'
+      a.rel = 'noreferrer'
+    }
+    a.click()
+  }
+
+  if (failed) {
+    return (
+      <span className="my-1 inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1 text-[12px] text-ink-secondary">
+        <ImageIcon className="size-3.5 text-ink-muted" aria-hidden />
+        <a href={src} target="_blank" rel="noreferrer" className="max-w-60 truncate underline">
+          {alt || filename}
+        </a>
+      </span>
+    )
+  }
+
+  return (
+    <>
+      <span className="group/mdimg relative my-1.5 inline-block max-w-full overflow-hidden rounded-xl border border-line bg-sunken/30 align-top">
+        <button
+          type="button"
+          onClick={() => setZoomed(true)}
+          className="block cursor-zoom-in"
+          title="点击放大查看"
+        >
+          <img
+            src={src}
+            alt={alt}
+            onError={() => setFailed(true)}
+            className="max-h-72 max-w-full object-contain"
+          />
+        </button>
+        <span className="pointer-events-none absolute top-2 right-2 flex items-center gap-1 opacity-0 transition-opacity group-hover/mdimg:opacity-100">
+          <button
+            type="button"
+            onClick={() => setZoomed(true)}
+            title="放大查看"
+            className="pointer-events-auto grid size-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm hover:bg-black/75"
+          >
+            <ZoomIn className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={saveImage}
+            title="保存图片"
+            className="pointer-events-auto grid size-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm hover:bg-black/75"
+          >
+            <Download className="size-3.5" />
+          </button>
+        </span>
+      </span>
+      {zoomed && (
+        <span
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setZoomed(false)}
+        >
+          <span
+            className="mb-3 flex w-full max-w-4xl items-center justify-between gap-3 text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="truncate text-[13px] font-medium text-white/90">{filename}</span>
+            <span className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={saveImage}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-white/25"
+              >
+                <Download className="size-3.5" /> 保存图片
+              </button>
+              <button
+                type="button"
+                aria-label="关闭预览"
+                onClick={() => setZoomed(false)}
+                className="grid size-8 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"
+              >
+                <X className="size-4" />
+              </button>
+            </span>
+          </span>
+          <img
+            src={src}
+            alt={alt}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[82vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
+          />
+        </span>
+      )}
+    </>
+  )
+}
 
 function CodeBlock({ lang, code }: { lang: string; code: string }) {
   const [copied, setCopied] = useState(false)
@@ -92,14 +208,7 @@ function renderInline(
           />
         )
       } else if (/^https?:\/\/|^data:image\//i.test(url)) {
-        nodes.push(
-          <img
-            key={`${keyPrefix}-img-${i}`}
-            src={url}
-            alt={alt}
-            className="my-1.5 max-h-72 max-w-full rounded-lg border border-line object-contain"
-          />
-        )
+        nodes.push(<InlineMarkdownImage key={`${keyPrefix}-img-${i}`} src={url} alt={alt} />)
       } else if (/^\/?(?:fs\/raw\/)?workspace\//i.test(url) || /\.(png|jpe?g|gif|webp|svg)(?:[?#].*)?$/i.test(url)) {
         if (!suppressWorkspaceImages) {
           const cleanPath = url.replace(/^\/?fs\/raw\//i, '').replace(/^\/+/, '')

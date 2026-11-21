@@ -46,7 +46,7 @@ jobs:
             echo "Draft release $TAG already exists; uploading into it."
           else
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
-              --title "$TAG" --generate-notes
+              --title "BotArk $TAG" --generate-notes
           fi
 
   build:

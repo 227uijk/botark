@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from 'react'
-import { AlertCircle, Check, Clock3, Copy, CornerDownRight, Download, ExternalLink, FileText, Film, Image as ImageIcon, KeyRound, Loader2, Maximize2, Music, RotateCw, Wrench, X, ZoomIn } from 'lucide-react'
+import { AlertCircle, Check, Clock3, Copy, CornerDownRight, Download, ExternalLink, FileText, Film, Image as ImageIcon, KeyRound, Loader2, Maximize2, Music, RotateCw, Wrench, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { formatBytes, formatClock } from '@/lib/format'
 import { useBotStore } from '@/store/botStore'
@@ -363,17 +363,52 @@ function ImageLightbox({
   filename: string
   onClose: () => void
 }) {
+  const [zoom, setZoom] = useState(1)
+  const [copiedImg, setCopiedImg] = useState(false)
+
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
+      if (e.key === '+' || e.key === '=') setZoom((z) => Math.min(3, Number((z + 0.25).toFixed(2))))
+      if (e.key === '-') setZoom((z) => Math.max(0.5, Number((z - 0.25).toFixed(2))))
+      if (e.key === '0') setZoom(1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  const copyImageToClipboard = async () => {
+    try {
+      const res = await fetch(src)
+      const rawBlob = await res.blob()
+      const pngBlob =
+        rawBlob.type === 'image/png'
+          ? rawBlob
+          : await new Promise<Blob>((resolve, reject) => {
+              const img = new Image()
+              img.crossOrigin = 'anonymous'
+              img.onload = () => {
+                const canvas = document.createElement('canvas')
+                canvas.width = img.naturalWidth
+                canvas.height = img.naturalHeight
+                const ctx = canvas.getContext('2d')
+                ctx?.drawImage(img, 0, 0)
+                canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('encode failed'))), 'image/png')
+              }
+              img.onerror = reject
+              img.src = src
+            })
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })])
+      setCopiedImg(true)
+      setTimeout(() => setCopiedImg(false), 1600)
+    } catch {
+      /* ignore if clipboard image API unavailable */
+    }
+  }
+
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/82 p-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={alt}
@@ -384,7 +419,39 @@ function ImageLightbox({
         onClick={(e) => e.stopPropagation()}
       >
         <span className="truncate text-[13px] font-medium text-white/90">{filename}</span>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.25).toFixed(2))))}
+            title="缩小 (-)"
+            className="grid size-8 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"
+          >
+            <ZoomOut className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setZoom(1)}
+            title="重置缩放 (0)"
+            className="rounded-full bg-white/15 px-2.5 py-1 text-[11.5px] font-medium tabular-nums text-white hover:bg-white/25"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            type="button"
+            onClick={() => setZoom((z) => Math.min(3, Number((z + 0.25).toFixed(2))))}
+            title="放大 (+)"
+            className="grid size-8 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"
+          >
+            <ZoomIn className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => void copyImageToClipboard()}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-white/25"
+          >
+            {copiedImg ? <Check className="size-3.5 text-status-online" /> : <Copy className="size-3.5" />}
+            {copiedImg ? '已复制' : '复制图片'}
+          </button>
           <button
             type="button"
             onClick={() => saveDataOrUrlToDisk(src, filename)}
@@ -402,12 +469,14 @@ function ImageLightbox({
           </button>
         </div>
       </div>
-      <img
-        src={src}
-        alt={alt}
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[82vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
-      />
+      <div className="flex max-h-[82vh] max-w-[92vw] items-center justify-center overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <img
+          src={src}
+          alt={alt}
+          style={zoom !== 1 ? { transform: `scale(${zoom})`, transformOrigin: 'center center' } : undefined}
+          className="max-h-[80vh] max-w-[88vw] rounded-xl object-contain shadow-2xl transition-transform duration-150"
+        />
+      </div>
     </div>
   )
 }
@@ -749,9 +818,17 @@ function MediaParts({
     }
   }
 
+  const allImages = parts.length >= 2 && parts.every((p) => looksLikeImage(p))
+
   return (
     <>
-      <ul className="mb-1.5 flex max-w-[78%] flex-col gap-1.5" aria-label={t('Media')}>
+      <ul
+        className={cn(
+          'mb-1.5 max-w-[78%] gap-1.5',
+          allImages ? 'grid grid-cols-2' : 'flex flex-col'
+        )}
+        aria-label={t('Media')}
+      >
       {parts.map((part) => {
         const isHttpUrl = isHttp(part.path)
         const subtitle = isHttpUrl
