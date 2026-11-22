@@ -47,6 +47,7 @@ export class HermesAdapter implements PlatformAdapter {
   private readonly statuses = new Map<string, ConnectionStatus>()
   private readonly listeners = new Set<AdapterListener>()
   private bridgeUnsub: Unsubscribe | null = null
+  private readonly pendingAcceptances = new Map<string, () => void>()
 
   constructor() {
     this.bindBridgeEvents()
@@ -59,6 +60,10 @@ export class HermesAdapter implements PlatformAdapter {
   }
 
   private handleMainEvent(event: HermesMainEvent): void {
+    if (event.type === 'accepted') {
+      this.pendingAcceptances.get(event.requestId)?.()
+      return
+    }
     if (event.type === 'activity') {
       this.emit({
         type: 'activity',
@@ -242,14 +247,19 @@ export class HermesAdapter implements PlatformAdapter {
 
     const sessionId = message.sessionId
     let accepted = false
-    try {
+    const requestId = createId('hermes_req')
+    const markAccepted = () => {
+      if (accepted) return
       accepted = true
       message.onAccepted?.()
-
+    }
+    this.pendingAcceptances.set(requestId, markAccepted)
+    try {
       const res = (await invokeHermesRpc({
         accountId: message.accountId,
         op: 'sendMessage',
         botId: message.conversationId,
+        requestId,
         sessionId,
         sessionKey: message.hermesSessionKey,
         text: message.text,
@@ -276,6 +286,7 @@ export class HermesAdapter implements PlatformAdapter {
       })
       this.setStatus(message.accountId, 'online')
 
+      markAccepted()
       const hasPayload = Boolean(res?.text?.trim() || res?.tools?.length || res?.media?.length)
       return {
         messageId: createId('msg'),
@@ -310,6 +321,8 @@ export class HermesAdapter implements PlatformAdapter {
       const next = statusAfterSendFailure(error)
       this.setStatus(message.accountId, next, next === 'error' ? detail : undefined)
       throw error instanceof AdapterError ? error : new AdapterError('network', detail)
+    } finally {
+      this.pendingAcceptances.delete(requestId)
     }
   }
 
