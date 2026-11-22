@@ -3,8 +3,16 @@ import { adapterRegistry } from '@adapters/registry'
 import type { IncomingMessage, OutgoingMessage, PlatformAdapter } from '@adapters/types'
 import type { Bot } from '@/types'
 import { useBotStore } from '@/store/botStore'
-import { mentions, roomMarkdown, type CollabRoom } from './model'
-import { stopRoom, submitBrief, useRooms } from './roomStore'
+import { mentions, roomMarkdown, stripFinalPrefix, type CollabRoom } from './model'
+import {
+  clearRoomTranscript,
+  deleteRoom,
+  renameRoom,
+  stopRoom,
+  submitBrief,
+  updateRoomConfig,
+  useRooms
+} from './roomStore'
 
 const members = ['Muse', 'Dot'].map((name) => ({ name, botId: name, platform: 'dot' as const, accountId: name, cursor: 0 }))
 function fixture(mode: CollabRoom['mode'], respond: (m: OutgoingMessage) => Promise<string>, limit = 8) {
@@ -67,4 +75,48 @@ it('completes a native room with an approved local tool while Slack is unavailab
   expect(roomMarkdown(room)).toContain('Accepted')
   expect(run).toHaveBeenCalledOnce()
   expect(slack).not.toHaveBeenCalled()
+})
+
+it('renames, updates config, clears transcripts, and removes forked Slack threads on delete', () => {
+  const parent: CollabRoom = {
+    id: 'room-parent',
+    title: 'Original',
+    brief: 'Old brief',
+    members,
+    mode: 'auto',
+    limit: 8,
+    finalId: 'm2',
+    messages: [
+      { id: 'm1', author: 'User', text: 'Brief' },
+      { id: 'm2', author: 'Muse', text: '[FINAL]\nSummary' }
+    ]
+  }
+  const child: CollabRoom = {
+    ...parent,
+    id: 'room-parent/slack/C1/1.0',
+    slackParent: 'room-parent',
+    messages: []
+  }
+  useRooms.setState({ rooms: [parent, child], speakers: {}, turnProgress: {}, errors: {} })
+  useBotStore.setState({ selectedBotId: parent.id, bots: [{ id: 'fallback-bot', accountIds: [] } as unknown as Bot] })
+
+  expect(stripFinalPrefix('[FINAL]\nSummary')).toBe('Summary')
+  renameRoom(parent.id, '  Architecture Review  ')
+  updateRoomConfig(parent.id, { mode: 'manual', limit: 99 })
+  expect(useRooms.getState().rooms[0]).toMatchObject({
+    title: 'Architecture Review',
+    mode: 'manual',
+    limit: 24
+  })
+
+  clearRoomTranscript(parent.id)
+  expect(useRooms.getState().rooms[0]).toMatchObject({
+    messages: [],
+    finalId: undefined,
+    brief: ''
+  })
+
+  deleteRoom(parent.id)
+  expect(useRooms.getState().rooms).toEqual([])
+  expect(useBotStore.getState().selectedBotId).toBe('fallback-bot')
 })

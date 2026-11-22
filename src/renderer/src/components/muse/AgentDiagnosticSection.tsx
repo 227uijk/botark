@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Section } from '@/components/info/Section'
 import { Button } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/Field'
+import { Select } from '@/components/ui/Select'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
 import { cleanSidebarError } from '@/lib/sidebarCompat'
@@ -160,17 +161,13 @@ export function AgentDiagnosticSection({ accountId }: { accountId: string }) {
 
         <div className="flex gap-1.5">
           {availableModels.length > 0 ? (
-            <select
+            <Select
+              size="xs"
               value={modelName}
-              onChange={(e) => setModelName(e.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-2 py-1 text-[12px] text-ink"
-            >
-              {availableModels.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+              onValueChange={(next) => setModelName(next)}
+              className="flex-1"
+              options={availableModels.map((m) => ({ value: m, label: m }))}
+            />
           ) : (
             <TextInput
               value={modelName}

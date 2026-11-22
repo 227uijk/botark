@@ -1,6 +1,6 @@
 import { BrowserWindow, Notification, session as electronSession } from 'electron'
 import type { MuseMainEvent, MuseSessionStatus, WebViewBounds } from '@shared/ipc'
-import { partitionForAccount, WebContentsViewManager } from '../webContentsViewManager'
+import { partitionForAccount, webViewId, WebContentsViewManager } from '../webContentsViewManager'
 import { MUSE_HOOK_SCRIPT, museDomSendScript, museRpcScript } from './hookScript'
 import {
   MuseGatewayError,
@@ -141,6 +141,22 @@ export class MuseSessionManager {
     this.emit({ type: 'status', status: session.status })
   }
 
+  private materializeDomView(session: AccountSession, pinned = false): void {
+    if (this.views.getView(session.viewId)) {
+      if (pinned) this.views.setPinned(session.viewId, true)
+      return
+    }
+    const info = this.views.create({
+      botId: session.botId,
+      accountId: session.accountId,
+      url: MUSE_ORIGIN,
+      label: `Meta Muse · ${session.accountId}`
+    })
+    session.viewId = info.viewId
+    if (pinned) this.views.setPinned(session.viewId, true)
+    this.configureView(info.viewId, session.accountId)
+  }
+
   async ensure(botId: string, accountId: string, opts?: { show?: boolean; bounds?: WebViewBounds }): Promise<MuseSessionStatus> {
     const activeLogin = this.loginWindows.get(accountId)
     if (!opts?.show && activeLogin && !activeLogin.isDestroyed() && !(await this.hasSessionCookie(accountId))) {
@@ -158,27 +174,14 @@ export class MuseSessionManager {
     }
 
     let session = this.sessions.get(accountId)
-    // Recreate if the underlying WebContentsView was destroyed externally.
-    if (session && !this.views.getView(session.viewId)) {
-      if (session.pollTimer) clearInterval(session.pollTimer)
-      this.sessions.delete(accountId)
-      session = undefined
-    }
     if (!session) {
       await applyProxyToPartition(accountId)
       const ses = electronSession.fromPartition(partitionForAccount(accountId))
       ses.setUserAgent(cleanMuseChromeUserAgent(ses.getUserAgent()))
-      const info = this.views.create({
-        botId,
-        accountId,
-        url: MUSE_ORIGIN,
-        label: `Meta Muse · ${accountId}`
-      })
-      this.configureView(info.viewId, accountId)
       session = {
         accountId,
         botId,
-        viewId: info.viewId,
+        viewId: webViewId(botId, accountId),
         status: {
           accountId,
           signedIn: false,
@@ -191,6 +194,15 @@ export class MuseSessionManager {
       }
       this.sessions.set(accountId, session)
       this.startPolling(accountId)
+    } else {
+      session.botId = botId
+    }
+
+    // Memory optimization (#35): Only spawn a Chromium WebContentsView when the
+    // user opens the embedded web view (`opts.show`) or when non-native hook mode is explicitly forced.
+    const needsDomView = Boolean(opts?.show) || museTransportMode() !== 'native'
+    if (needsDomView) {
+      this.materializeDomView(session, museTransportMode() !== 'native')
     }
 
     if (opts?.show && opts.bounds) {
@@ -256,22 +268,20 @@ export class MuseSessionManager {
   private startPolling(accountId: string): void {
     const session = this.sessions.get(accountId)
     if (!session || session.pollTimer) return
+    // Lightweight cookie + Noise gateway heartbeat (12s) keeps sessions alive without hidden BrowserWindows.
     session.pollTimer = setInterval(() => {
       void this.refreshSession(accountId)
-    }, 5000)
+    }, 12_000)
   }
 
   async refreshSession(accountId: string): Promise<MuseSessionStatus | undefined> {
     const session = this.sessions.get(accountId)
-    const view = session && this.views.getView(session.viewId)
     if (!session) return undefined
+    const view = this.views.getView(session.viewId)
 
     const partition = partitionForAccount(accountId)
     const ses = electronSession.fromPartition(partition)
     const cookies = await ses.cookies.get({ name: 'hatch_sess' })
-    // hatch_sess is the source of truth. The embedded WebContentsView often still
-    // sits on Meta/Facebook auth from the pre-login redirect; that URL must not
-    // veto a cookie that the login window just wrote into the shared partition.
     const signedIn = hasNonEmptyHatchSession(cookies)
 
     if (signedIn !== session.status.signedIn) {
@@ -280,7 +290,7 @@ export class MuseSessionManager {
         type: 'login',
         accountId,
         signedIn,
-        handle: signedIn ? undefined : undefined
+        handle: undefined
       })
       if (signedIn) {
         void this.refreshQuota(accountId)
@@ -298,28 +308,55 @@ export class MuseSessionManager {
       session.status.url = view.webContents.getURL()
     }
 
-    if (signedIn && view && !view.webContents.isDestroyed()) {
+    // Pure Node.js Native Noise Gateway heartbeat (zero WebContentsView required).
+    if (signedIn && museTransportMode() === 'native' && !this.nativeReady(accountId)) {
       try {
-        await this.installHook(accountId)
+        await this.native.get(accountId).gateway.connect()
+      } catch (error) {
+        const cvm = error instanceof MuseGatewayError && error.code === 'cvm_required'
+        if (cvm) {
+          session.status.phaseDetail = 'Muse needs Owner verification (CVM) — finish it in the web session'
+          this.materializeDomView(session, true)
+        }
+      }
+    }
+
+    if (signedIn) {
+      try {
+        if (view && !view.webContents.isDestroyed()) {
+          await this.installHook(accountId)
+        }
         if (this.nativeReady(accountId)) {
+          session.status.ready = true
+          session.status.phase = 'ready'
+          session.status.phaseDetail = undefined
+          this.ensureChatWatch(accountId)
+          // Unpin any background DOM view once native Noise transport is healthy so idle hibernation can reclaim RAM.
+          if (view) this.views.setPinned(session.viewId, false)
           const pending = unwrapMuseResult(
             await this.native.get(accountId).gateway.request('egress.approvals', {})
           )
           const list = normalizeApprovals(pending)
           session.status.pendingApprovals = list.length
           this.emit({ type: 'approvals', accountId, pending: list })
-        } else if (session.status.hook === 'sendRequest') {
+        } else if (view && !view.webContents.isDestroyed() && session.status.hook === 'sendRequest') {
           const pending = await this.rpcRaw(accountId, 'egress.approvals', {})
           const list = normalizeApprovals(pending)
           session.status.pendingApprovals = list.length
           this.emit({ type: 'approvals', accountId, pending: list })
         }
       } catch {
-        // Gateway may not be up yet.
+        // Gateway may still be handshaking.
       }
+    } else {
+      session.status.ready = false
+      session.status.phase = 'signed-out'
+      session.status.phaseDetail = 'Sign in to muse.ai in the web session'
     }
 
-    await this.watchdog(accountId)
+    if (view && !view.webContents.isDestroyed()) {
+      await this.watchdog(accountId)
+    }
     this.emitStatus(accountId)
     return session.status
   }
@@ -1042,8 +1079,12 @@ export class MuseSessionManager {
 
   private async rpcRaw(accountId: string, method: string, params?: unknown): Promise<unknown> {
     const session = this.sessions.get(accountId)
-    const view = session && this.views.getView(session.viewId)
-    if (!session || !view) throw new Error(`No muse session for ${accountId}`)
+    if (!session) throw new Error(`No muse session for ${accountId}`)
+    if (!this.views.getView(session.viewId)) {
+      this.materializeDomView(session, true)
+    }
+    const view = this.views.getView(session.viewId)
+    if (!view) throw new Error(`No muse web view for ${accountId}`)
 
     await this.installHook(accountId)
 

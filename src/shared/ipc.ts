@@ -9,8 +9,16 @@ export const WEB_VIEW_CHANNELS = {
   resize: 'bothub:web-view:resize',
   detach: 'bothub:web-view:detach',
   destroy: 'bothub:web-view:destroy',
-  clearPartition: 'bothub:web-view:clear-partition'
+  clearPartition: 'bothub:web-view:clear-partition',
+  navigate: 'bothub:web-view:navigate',
+  openInPartition: 'bothub:web-view:open-in-partition'
 } as const
+
+export interface OpenInPartitionRequest {
+  accountId: string
+  url: string
+  title?: string
+}
 
 /** Rectangle in CSS pixels relative to the window's content area. */
 export interface WebViewBounds {
@@ -238,6 +246,18 @@ export type MuseRichWidgetView =
         options?: Array<{ id: string; label: string }>
       }>
       submitted?: boolean
+    }
+  | {
+      kind: 'session_card'
+      widgetId: string
+      cardType: 'browser' | 'computer' | 'vault'
+      title: string
+      subtitle?: string
+      status?: string
+      url?: string
+      taskId?: string
+      previewSha256?: string
+      actionLabel?: string
     }
 
 export interface MuseOptionWidgetView {

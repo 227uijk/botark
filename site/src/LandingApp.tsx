@@ -1318,14 +1318,14 @@ export function LandingApp() {
         <section id="platforms" className="reveal-section mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <div className="mb-10 text-center">
             <span className="font-mono text-[12px] font-semibold tracking-wider text-cyan-400 uppercase">
-              5 Native Protocol Adapters
+              6 Native Protocol Adapters
             </span>
             <h2 className="mt-2 text-[30px] font-extrabold tracking-tight text-white sm:text-[40px]">
-              {L('五大平台，原汁原味的深度操控', 'Deep protocol integration for every platform')}
+              {L('六大平台，原汁原味的深度操控', 'Deep protocol integration across all 6 platforms')}
             </h2>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 key: 'grok' as const,
@@ -1335,6 +1335,16 @@ export function LandingApp() {
                   L('1 个账号自动同步展开名下全部 Bot 与群聊室', '1 account auto-expands all bots & group rooms'),
                   L('直接在已有账号下秒建新 Bot，无需重复登录', 'Create new bots on existing accounts in 1 click'),
                   L('原生管理子代理任务、记忆、技能库与云沙盒文件', 'Subagents, memories, skills & cloud sandbox files')
+                ]
+              },
+              {
+                key: 'antigravity' as const,
+                title: 'Antigravity',
+                proto: 'gRPC-Web + Cloud Capsules',
+                points: [
+                  L('独立安全浏览器分区直登 Google，支持多号并行', 'Isolated Google partition login with multi-account support'),
+                  L('实时切换云端模型配额与 Cascades 会话历史', 'Switch cloud models, quotas & Cascades sessions'),
+                  L('管理云端沙盒 Capsules、工作区与自定义 Agent', 'Manage cloud sandbox Capsules, workspaces & agents')
                 ]
               },
               {

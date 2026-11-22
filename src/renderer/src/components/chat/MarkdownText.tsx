@@ -167,7 +167,8 @@ function renderInline(
   text: string,
   keyPrefix: string,
   onFileLinkClick?: (path: string, label: string) => void,
-  suppressWorkspaceImages?: boolean
+  suppressWorkspaceImages?: boolean,
+  onLinkClick?: (href: string, label: string) => boolean
 ): ReactNode[] {
   const nodes: ReactNode[] = []
   // Match image ![alt](url), link [label](url), **bold**, ~~strike~~, *italic*, `code`, or bare https:// URL
@@ -242,6 +243,11 @@ function renderInline(
             href={href}
             target="_blank"
             rel="noreferrer"
+            onClick={(e) => {
+              if (onLinkClick?.(href, label)) {
+                e.preventDefault()
+              }
+            }}
             className="font-medium text-accent-600 underline decoration-accent-600/40 underline-offset-2 hover:decoration-accent-600"
           >
             {label}
@@ -272,13 +278,24 @@ function renderInline(
             ⚡ {label}
           </span>
         )
+      } else if (onLinkClick && href) {
+        nodes.push(
+          <button
+            key={`${keyPrefix}-act-${i}`}
+            type="button"
+            onClick={() => onLinkClick(href, label)}
+            className="font-medium text-accent-600 underline decoration-accent-600/40 underline-offset-2 hover:decoration-accent-600"
+          >
+            {label}
+          </button>
+        )
       } else {
         nodes.push(label)
       }
     } else if (token.startsWith('**')) {
       nodes.push(
         <strong key={`${keyPrefix}-b-${i}`} className="font-semibold text-ink">
-          {renderInline(token.slice(2, -2), `${keyPrefix}-b-${i}`, onFileLinkClick)}
+          {renderInline(token.slice(2, -2), `${keyPrefix}-b-${i}`, onFileLinkClick, suppressWorkspaceImages, onLinkClick)}
         </strong>
       )
     } else if (token.startsWith('~~')) {
@@ -324,6 +341,11 @@ function renderInline(
           href={token}
           target="_blank"
           rel="noreferrer"
+          onClick={(e) => {
+            if (onLinkClick?.(token, token)) {
+              e.preventDefault()
+            }
+          }}
           className="break-all text-accent-600 underline decoration-accent-600/40 underline-offset-2 hover:decoration-accent-600"
         >
           {token}
@@ -361,9 +383,11 @@ function splitTableCells(line: string): string[] {
 function renderBlocks(
   text: string,
   onFileLinkClick?: (path: string, label: string) => void,
-  suppressWorkspaceImages?: boolean
+  suppressWorkspaceImages?: boolean,
+  onLinkClick?: (href: string, label: string) => boolean
 ): ReactNode[] {
-  const inline = (s: string, key: string) => renderInline(s, key, onFileLinkClick, suppressWorkspaceImages)
+  const inline = (s: string, key: string) =>
+    renderInline(s, key, onFileLinkClick, suppressWorkspaceImages, onLinkClick)
   const cleaned = text.replace(/\[\[hatch_widget:[^\]]+\]\]/g, '').replace(/\r\n/g, '\n')
   const lines = cleaned.split('\n')
   const blocks: ReactNode[] = []
@@ -408,7 +432,7 @@ function renderBlocks(
               : 'mt-1.5 mb-0.5 text-[13.5px] font-semibold text-ink'
       blocks.push(
         <div key={`h-${block++}`} className={cls}>
-          {renderInline(heading[2]!, `h${block}`, onFileLinkClick)}
+          {inline(heading[2]!, `h${block}`)}
         </div>
       )
       i += 1
@@ -431,7 +455,7 @@ function renderBlocks(
               <tr className="border-b border-line bg-sunken/60">
                 {headers.map((h, hi) => (
                   <th key={hi} className="px-3 py-1.5 font-semibold text-ink">
-                    {renderInline(h, `th-${block}-${hi}`, onFileLinkClick)}
+                    {inline(h, `th-${block}-${hi}`)}
                   </th>
                 ))}
               </tr>
@@ -441,7 +465,7 @@ function renderBlocks(
                 <tr key={ri} className="hover:bg-hover/40">
                   {headers.map((_, ci) => (
                     <td key={ci} className="px-3 py-1.5 text-ink-secondary">
-                      {renderInline(r[ci] ?? '', `td-${block}-${ri}-${ci}`, onFileLinkClick)}
+                      {inline(r[ci] ?? '', `td-${block}-${ri}-${ci}`)}
                     </td>
                   ))}
                 </tr>
@@ -465,7 +489,7 @@ function renderBlocks(
           key={`q-${block++}`}
           className="my-1.5 border-l-[3px] border-line-strong pl-3 text-ink-secondary italic"
         >
-          {renderInline(qLines.join('\n'), `q${block}`, onFileLinkClick)}
+          {inline(qLines.join('\n'), `q${block}`)}
         </blockquote>
       )
       continue
@@ -488,14 +512,14 @@ function renderBlocks(
                 className="mt-1 size-3.5 shrink-0 rounded border-line accent-accent-600"
               />
               <span className={cn(checked && 'text-ink-muted line-through')}>
-                {renderInline(taskMatch[2]!, `li${block}-${items.length}`, onFileLinkClick)}
+                {inline(taskMatch[2]!, `li${block}-${items.length}`)}
               </span>
             </li>
           )
         } else {
           items.push(
             <li key={`li-${block}-${items.length}`} className="leading-[1.55]">
-              {renderInline(rawItem, `li${block}-${items.length}`, onFileLinkClick)}
+              {inline(rawItem, `li${block}-${items.length}`)}
             </li>
           )
         }
@@ -516,7 +540,7 @@ function renderBlocks(
         const itemText = (lines[i] ?? '').replace(/^\s*\d+\.\s+/, '')
         items.push(
           <li key={`oli-${block}-${items.length}`} className="leading-[1.55]">
-            {renderInline(itemText, `oli${block}-${items.length}`, onFileLinkClick)}
+            {inline(itemText, `oli${block}-${items.length}`)}
           </li>
         )
         i += 1
@@ -566,19 +590,21 @@ export const MarkdownText = memo(function MarkdownText({
   text,
   className,
   onFileLinkClick,
-  suppressWorkspaceImages
+  suppressWorkspaceImages,
+  onLinkClick
 }: {
   text: string
   className?: string
   onFileLinkClick?: (path: string, label: string) => void
   suppressWorkspaceImages?: boolean
+  onLinkClick?: (href: string, label: string) => boolean
 }) {
   if (!/[*_`#\-|>~\[\]]|\n\d+\.|https?:\/\//.test(text) && !text.includes('```')) {
     return <span className={cn('whitespace-pre-wrap break-words', className)}>{text}</span>
   }
   return (
     <div className={cn('break-words [&_p+p]:mt-2', className)}>
-      {renderBlocks(text, onFileLinkClick, suppressWorkspaceImages)}
+      {renderBlocks(text, onFileLinkClick, suppressWorkspaceImages, onLinkClick)}
     </div>
   )
 })

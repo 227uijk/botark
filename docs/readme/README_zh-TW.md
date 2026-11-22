@@ -4,10 +4,10 @@
 
 # BotArk
 
-**把你常用的所有 Personal Agent，收進同一個原生桌面客戶端。**
+**把你常用的所有 Personal Agent，收進同一個深度客製的原生桌面工作台。**
 
 告別滿桌面的獨立應用與十幾個無痕瀏覽器視窗，<br />
-在一個乾淨順手的 macOS / Windows 視窗裡並排使用 **Grok Bot**、**ChatGPT Dot**、**Meta Muse** 與 **Hark**。
+在一個絲滑、克制的 macOS / Windows 原生視窗裡並排使用 **Grok Bot**、**Google Antigravity**、**ChatGPT Dot**、**Meta Muse**、**Hark** 與開源 **Hermes**，或將它們拉進**跨平台多 Agent 協作室**接力共創。
 
 <p>
   <a href="https://github.com/qybaihe/botark/releases/latest"><img src="https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=2563eb" alt="最新版本" /></a>
@@ -18,6 +18,8 @@
 </p>
 
 <h4>
+  <a href="https://qybaihe.github.io/botark/">🌐 官方網站</a>
+  &nbsp;·&nbsp;
   <a href="https://github.com/qybaihe/botark/releases/latest">🍎 下載 macOS 版 (Apple 晶片)</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/qybaihe/botark/releases/latest">💻 下載 macOS 版 (Intel)</a>
@@ -53,33 +55,28 @@
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../assets/botark-dark.webp" />
-    <img src="../assets/botark-light.webp" alt="BotArk 三欄原生桌面工作台" width="100%" />
+    <img src="../assets/botark-light.webp" alt="BotArk 深度客製三欄原生桌面工作台" width="100%" />
   </picture>
 </div>
 
 ---
 
-## ✨ 核心體驗：從接入到日常協作
-
-現在的 Personal Agent 早已不只是簡單問答——它們有長期記憶、能跑背景子任務、會排程巡檢、還帶著各自的雲端電腦與檔案庫。但只要你同時在用兩三家平台，或者手裡有工作號、個人號好幾個帳號，每天光是找網頁、切無痕視窗、配代理就會被打斷無數次。
-
-**BotArk 把這套碎片化的日常重新理順成了三件事：**
+## ✨ 對標 Grok Bot 的深度客製體驗與跨平台協作
 
 <table>
   <tr>
     <td width="46%" valign="middle">
-      <h3>1. 不管幾個平台、多少個帳號，輕鬆收進來</h3>
-      <p>無論是單號互動登入還是多號車隊匯入，都能用最順手的方式一步到位：</p>
+      <h3>1. 六大平台、任意數量帳號，一步收攏</h3>
       <ul>
-        <li><b>彈窗直登與預設瀏覽器一鍵授權</b>：自動遵循系統代理，OAuth 驗證不亂跳</li>
-        <li><b>全格式憑據貼上直連</b>：支援 Access Token、Cookie、JSON 或 API Key 貼上即用</li>
-        <li><b>批次自動匯入</b>：支援 Meta Muse 信箱自動讀取驗證碼批次登入，以及 ChatGPT Dot 多行批次匯入</li>
+        <li><b>安全分區直登與預設瀏覽器一鍵授權</b>：自動遵循系統代理</li>
+        <li><b>全格式憑據貼上即連</b>：支援 Access Token、Session Cookie、JSON 或 API Key 直接匯入</li>
+        <li><b>車隊級批次匯入</b>：支援 Meta Muse 信箱自動收碼與 ChatGPT Dot 多行批次匯入</li>
       </ul>
     </td>
     <td width="54%" valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="../assets/feature-platforms-dark.webp" />
-        <img src="../assets/feature-platforms-light.webp" alt="BotArk 帳號匯入與四大平台概覽" width="100%" />
+        <img src="../assets/feature-platforms-light.webp" alt="BotArk 六大平台統一接入導覽" width="100%" />
       </picture>
     </td>
   </tr>
@@ -87,45 +84,39 @@
     <td width="54%" valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="../assets/feature-accounts-dark.webp" />
-        <img src="../assets/feature-accounts-light.webp" alt="BotArk 多帳號控制台與 Grok 單號多 Bot 展開" width="100%" />
+        <img src="../assets/feature-accounts-light.webp" alt="BotArk 六大平台管理控制台" width="100%" />
       </picture>
     </td>
     <td width="46%" valign="middle">
-      <h3>2. 底層帳號徹底隔離，列表按 Bot 直觀平鋪</h3>
-      <p>在底層，每個帳號都運行在獨立的 Chromium 沙盒分區與系統鑰匙圈加密槽位中，同一平台掛十幾個帳號也絕不串號，還支援在代理池中<b>一號一 IP 獨立綁定</b>（代理異常自動阻斷，絕不裸連暴露真實 IP）。</p>
-      <p>在介面上，左側始終以<b>單個 Bot</b> 為單位清爽排列：登入 1 個 <b>Grok Bot</b> 帳號，名下所有專業 Bot 與群聊房間會自動逐個展開到側邊欄，也能直接在已有帳號下新建專屬 Bot。</p>
+      <h3>2. 底層鑰匙圈與代理硬隔離，表面靈動 3D 編排</h3>
+      <p>每個帳號運行於獨立 Chromium 沙盒分區與系統鑰匙圈加密槽位，支援代理池<b>一號一 IP 獨立綁定</b>（異常自動 Fail-Closed 阻斷防洩漏）。置頂 3D <b>GrokBotMark</b> 磁貼隨游標靈動注視，登入單一 <b>Grok Bot</b> 帳號自動展開名下全部專業 Agent。</p>
     </td>
   </tr>
 </table>
 
-<table>
-  <tr>
-    <td width="33%" valign="top">
-      <h4>🗂️ 跨平台混編分組（<code>⌘K</code>）</h4>
-      按「日常助理 / 研究寫作 / 開發維運」而不是按廠商來歸類你的助手；常用 Bot 一鍵置頂，按 <code>⌘K</code> 秒搜秒切。
-    </td>
-    <td width="33%" valign="top">
-      <h4>🛠️ 按需展開右側操作台（<code>⌘I</code>）</h4>
-      平時收起面板保持聊天視野乾淨；需要查子任務進度、改長期記憶與技能、管排程任務或下載沙盒檔案時，一鍵呼出。
-    </td>
-    <td width="34%" valign="top">
-      <h4>🛡️ 防重發狀態機 &amp; 純本地隱私</h4>
-      精確區分「發送中 / 已接收 / 失敗」，平台已受理的訊息絕不誤判重發。無任何雲端中轉與遙測埋點，資料 100% 留在本機。
-    </td>
-  </tr>
-</table>
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../assets/feature-rooms-dark.webp" />
+    <img src="../assets/feature-rooms-light.webp" alt="BotArk 跨平台多 Agent 協作室與共識定稿" width="100%" />
+  </picture>
+</div>
+
+- **跨平台多 Agent 協作室 & Slack 橋接**：支援 `@提及` 自主接力、`[FINAL]` 翡翠共識定稿匯出與零公網伺服器 Slack Socket Mode 雙向同步。
+- **白名單本地工作區 & 逐次審批 MCP 中樞**：支援 `@檔案` / `@資料夾` 上下文注入、標準 `mcpServers` JSON 匯入與逐次人工審批。
+- **原生 iOS & Android 客戶端**：支援免電腦獨立直用模式（Standalone Mode）、區域網路 / Tailscale 掃碼同步與加密離線包匯入。
 
 ---
 
-## 🤖 四大平台原生能力一覽
+## 🤖 六大原生平台能力一覽
 
 | 平台 | 支援的登入與匯入方式 | 帳號與側邊欄關係 | 右側專屬操作台（`⌘I`） |
 | :--- | :--- | :--- | :--- |
-| <img src="../../src/renderer/src/assets/platforms/grok.png" width="18" height="18" align="absmiddle" /> **Grok Bot** | 彈窗登入、**預設瀏覽器一鍵授權**，或貼上 Token / Cookie / JSON / API Key | **1 個帳號 → 自動展開多個 Bot**（支援直接在已有帳號下新建 Bot） | 歷史會話、背景子任務、自動化觸發器、記憶與技能編輯、檔案庫、雲端沙盒終端、MCP 連接器與配方匯入匯出 |
-| <img src="../../src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | 獨立分區視窗登入，或**信箱列表自動收碼批次匯入** | 1 個獨立帳號 → 1 個 Muse 助手（支援多號並行） | 額度即時監控、Sentinel 操作審批、多會話切換、排程任務、長期目標、記憶與技能、檔案預覽與雲電腦視圖 |
+| <img src="../../src/renderer/src/assets/platforms/grok.png" width="18" height="18" align="absmiddle" /> **Grok Bot** | 彈窗登入、**預設瀏覽器一鍵授權**，或貼上 Token / Cookie / JSON / API Key | **1 個帳號 → 自動展開多個 Bot**（支援原地新建與複製 Bot） | 歷史會話與回滾、背景子任務、自動化觸發器、記憶與技能、檔案庫、雲端沙盒終端、MCP 連接器與配方匯入匯出 |
+| <img src="../../src/renderer/src/assets/platforms/antigravity.png" width="18" height="18" align="absmiddle" /> **Antigravity** | 獨立安全分區直登 Google（`antigravity.google.com`） | 1 個隔離 Google 帳號 → 1 個雲端 Agent（支援多號並行） | 模型與配額切換、雲端 **Cascades** 會話同步、雲端沙盒 **Capsules** 環境、工作區與自訂雲端 Agent |
+| <img src="../../src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | 獨立分區視窗登入，或**信箱列表自動收碼批次匯入** | 1 個獨立帳號 → 1 個 Muse 助手（支援多號並行） | 額度即時監控、Sentinel 操作審批、多會話同步、排程任務、長期目標、記憶與技能、多媒體預覽與雲電腦視圖 |
 | <img src="../../src/renderer/src/assets/platforms/dot.svg" width="18" height="18" align="absmiddle" /> **ChatGPT Dot** | 網頁彈窗登入，或**單條 / 多行批次貼上 AT、RT、JSON 匯入** | 1 個帳號 → 1 個 Dot 助手（內建 Refresh Token 自動續期） | Orbit 角色切換、Dot / Native 雙模式、核心目標編輯、**換號一鍵遷移目標與記憶**、Pages 頁面與檔案庫 |
-| <img src="../../src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / 信箱視窗登入，或**貼上 Session Cookie 匯入** | 1 個帳號 → 1 個 Hark 助手 | 快捷工作流卡片、歷史會話切換、排程巡檢任務、生成檔案下載、雲端瀏覽器即時畫面與工作區連接器 |
-| <img src="../../src/renderer/src/assets/platforms/hermes.png" width="18" height="18" align="absmiddle" /> **Hermes** | **自動偵測本機 `~/.hermes`**，或填寫遠端 API Server 網址與 `API_SERVER_KEY`（鑰匙圈加密） | 1 個實例 / Profile（`/p/<name>`）→ 1 個 Hermes 助手 | 原生 Session SSE 串流工具呼叫、危險指令審批、歷史會話切換、Cron 排程、Skills 與工具集 |
+| <img src="../../src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / 信箱視窗登入，或**貼上 Session Cookie 匯入** | 1 個帳號 → 1 個 Hark 助手 + **專案空間膠囊** | **Hark 專案空間管理**（新建、切換、封存專案會話）、排程巡檢任務、生成產物下載、雲端瀏覽器即時畫面與連接器 |
+| <img src="../../src/renderer/src/assets/platforms/hermes.png" width="18" height="18" align="absmiddle" /> **Hermes** | **自動偵測本機 `~/.hermes`**，或填寫遠端 API Server 網址與 `API_SERVER_KEY`（鑰匙圈加密） | 1 個實例 / Profile（`/p/<name>`）→ 1 個 Hermes 助手 | 原生 Session SSE 串流工具呼叫、高危指令審批、持久化會話切換、Cron 排程、Skills 與本地 MCP 迴路橋 |
 
 ---
 
@@ -135,14 +126,17 @@
 
 - **macOS（Apple 晶片 / Intel）**：`BotArk-<版本號>-arm64.dmg` / `x64.dmg`（✅ **Apple Developer ID 官方簽章與公證**，拖入「應用程式」即可直接開啟）
 - **Windows 10 / 11（64 位元）**：`BotArk-Setup-<版本號>-x64.exe`
+- **Android 8.0+ / iOS**：`BotArk-<版本號>-android.apk` / 詳見 [`ios/BotArk/README.md`](../../ios/BotArk/README.md)
 
 ---
 
-## 🗺️ 後續計畫（Roadmap）
+## 🗺️ 演進路線（Roadmap）
 
+- [x] **接入 Google Antigravity**：多帳號隔離登入、雲端 Cascades 會話、Capsules 沙盒環境與雲端 Agent 調度。
+- [x] **跨平台多 Agent 協作室 & 受控本地 MCP**：支援 `@提及` 自治接力、`[FINAL]` 共識定稿與 Slack Socket Mode 橋接。
+- [x] **原生 Android & iOS 行動端**：支援免電腦獨立直用模式、區域網路掃碼同步與加密離線包匯入。
 - [ ] **接入 Claude Duet**：原生適配 Anthropic **Claude Duet**（主動提醒、操作審批、雲端虛擬機檔案與記憶／技能管理）。
-- [ ] **推出 Android & iOS 行動端**：隨時在手機上與各平台 Agent 對話與接收通知，並**支援直接匯入帳號**。
-- [ ] **多帳號與效率持續增強**：持續完善批次匯入、全域快捷鍵與跨平台任務整合。
+- [ ] **跨平台統一審批收件匣與排程編排**：支援跨房間、跨平台的排程協作流水線。
 
 ---
 

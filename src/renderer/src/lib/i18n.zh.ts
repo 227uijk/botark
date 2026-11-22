@@ -413,5 +413,6 @@ export const ZH: Record<string, string> = {
   'No installed skills': '暂无已安装技能',
   Toolsets: '工具集',
   'No toolsets reported': '暂无可用工具集',
-  Off: '未启用'
+  Off: '未启用',
+  Environments: '环境'
 }

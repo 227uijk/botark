@@ -9,6 +9,7 @@ import {
   KeyRound,
   LayoutDashboard,
   LogOut,
+  MoreHorizontal,
   Pencil,
   Pin,
   PinOff,
@@ -18,7 +19,6 @@ import {
   Server,
   Settings,
   ShieldAlert,
-  ShieldCheck,
   Shuffle,
   Smartphone,
   Sparkles,
@@ -31,9 +31,14 @@ import { createId } from '@shared/id'
 import { SecurityVaultCenter } from '@/components/info/SecurityVaultCard'
 import { PaneHeader } from '@/components/layout/PaneHeader'
 import { MuseBatchImport } from '@/components/add-bot/MuseBatchImport'
+import { ArkMobileLinkSvg, ArkRelayOrbSvg } from '@/components/ui/ArkGlyphs'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
+import { SwitchPill } from '@/components/ui/Controls'
 import { Dialog } from '@/components/ui/Dialog'
+import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/Menu'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { Select } from '@/components/ui/Select'
 import { StatusBadge } from '@/components/ui/Status'
 import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
@@ -41,6 +46,8 @@ import { useT, t } from '@/lib/i18n'
 import { platformIcon } from '@/lib/platformIcons'
 import { HermesAccountsSettingsPanel } from '@/components/hermes/HermesAccountsSettingsPanel'
 import { MobileSyncSettingsPanel } from '@/components/mobile-sync/MobileSyncSettingsPanel'
+import { NEW_ROOM_ID } from '@/rooms/RoomView'
+import { useRooms } from '@/rooms/roomStore'
 import { useBotStore } from '@/store/botStore'
 import { usePrefsStore, type Locale, type ThemePref } from '@/store/prefsStore'
 
@@ -95,8 +102,8 @@ export function SettingsView() {
   const setOnboardingOpen = useBotStore((s) => s.setOnboardingOpen)
   const groups = useBotStore((s) => s.groups)
   const bots = useBotStore((s) => s.bots)
+  const collabRooms = useRooms((s) => s.rooms)
   const accounts = useBotStore((s) => s.accounts)
-  const messages = useBotStore((s) => s.messages)
   const addBot = useBotStore((s) => s.addBot)
   const selectBot = useBotStore((s) => s.selectBot)
   const connectAccount = useBotStore((s) => s.connectAccount)
@@ -685,22 +692,22 @@ export function SettingsView() {
   }
 
   const NAV: Array<{ id: SettingsTab; label: string; icon: typeof Users; platformId?: PlatformId; count?: number }> = [
-    { id: 'overview', label: '全局总览与巡检', icon: LayoutDashboard, count: bots.length },
-    { id: 'muse-accounts', label: 'Muse 账号管理', icon: Users, platformId: 'meta-muse', count: museAccounts.length },
-    { id: 'dot-accounts', label: 'Dot 账号管理', icon: Users, platformId: 'dot', count: dotAccounts.length },
-    { id: 'grok-accounts', label: 'Grok Bot 账号管理', icon: Users, platformId: 'grok', count: grokAccounts.length },
-    { id: 'hark-accounts', label: 'Hark 账号管理', icon: Users, platformId: 'hark', count: harkAccounts.length },
-    { id: 'hermes-accounts', label: 'Hermes 实例管理', icon: Server, platformId: 'hermes', count: hermesAccounts.length },
+    { id: 'overview', label: '总览', icon: LayoutDashboard, count: bots.length },
+    { id: 'muse-accounts', label: 'Meta Muse', icon: Users, platformId: 'meta-muse', count: museAccounts.length },
+    { id: 'dot-accounts', label: 'ChatGPT Dot', icon: Users, platformId: 'dot', count: dotAccounts.length },
+    { id: 'grok-accounts', label: 'Grok Bot', icon: Users, platformId: 'grok', count: grokAccounts.length },
+    { id: 'hark-accounts', label: 'Hark', icon: Users, platformId: 'hark', count: harkAccounts.length },
+    { id: 'hermes-accounts', label: 'Hermes', icon: Server, platformId: 'hermes', count: hermesAccounts.length },
     {
       id: 'antigravity-accounts',
-      label: 'Antigravity 账号管理',
+      label: 'Antigravity',
       icon: Users,
       platformId: 'antigravity',
       count: antigravityAccounts.length
     },
-    { id: 'mobile-sync', label: '手机扫码同步', icon: Smartphone },
-    { id: 'proxy-pool', label: '代理池与自动分配', icon: Server, count: pool.length },
-    { id: 'general', label: '常规、分组与安全', icon: Settings }
+    { id: 'mobile-sync', label: '手机同步', icon: Smartphone },
+    { id: 'proxy-pool', label: '代理池', icon: Server, count: pool.length },
+    { id: 'general', label: '常规与安全', icon: Settings }
   ]
 
   return (
@@ -713,12 +720,9 @@ export function SettingsView() {
             className="no-drag press inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13px] font-medium text-ink shadow-soft hover:bg-hover"
           >
             <ArrowLeft className="size-3.5" aria-hidden />
-            返回对话
+            返回
           </button>
-          <h1 className="text-[15px] font-semibold tracking-tight text-ink">BotArk 管理控制台</h1>
-          <span className="inline-flex items-center gap-1 rounded-full bg-status-online/10 px-2.5 py-0.5 text-[11px] font-medium text-status-online-ink">
-            <ShieldCheck className="size-3" /> Keychain safeStorage 加密已启用
-          </span>
+          <h1 className="text-[15px] font-semibold tracking-tight text-ink">设置与账号</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -727,14 +731,14 @@ export function SettingsView() {
             disabled={busy || allAccounts.length === 0}
             onClick={() => void handleReconnectAll(false)}
           >
-            <Activity className={cn('size-3.5', busy && 'animate-spin')} /> 全量健康巡检
+            <Activity className={cn('size-3.5', busy && 'animate-spin')} /> 健康巡检
           </Button>
         </div>
       </PaneHeader>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Left Settings Sub-navigation */}
-        <aside className="flex w-[220px] shrink-0 flex-col gap-1 border-r border-line px-3 py-4">
+        <aside className="flex w-[208px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line px-2.5 py-3">
           {NAV.map((item) => {
             const Icon = item.icon
             const pIcon = platformIcon(item.platformId)
@@ -763,6 +767,8 @@ export function SettingsView() {
                     draggable={false}
                     className="size-4 shrink-0 rounded-[4px] object-cover ring-1 ring-line"
                   />
+                ) : item.id === 'mobile-sync' ? (
+                  <ArkMobileLinkSvg className="size-4 shrink-0" />
                 ) : (
                   <Icon className="size-4 shrink-0" aria-hidden />
                 )}
@@ -792,77 +798,58 @@ export function SettingsView() {
             )}
 
             {settingsTab === 'overview' && (
-              <div className="flex flex-col gap-5 animate-veil-in">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">账号与 Bot 总览</h2>
-                    <p className="mt-1 text-[13px] text-ink-secondary">
-                      统一查看在线状态、一键重连与切换对话。
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col gap-4 animate-veil-in">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-[17px] font-semibold tracking-tight text-ink">总览</h2>
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <Button
                       size="sm"
                       variant="secondary"
                       disabled={busy || allAccounts.length === 0}
                       onClick={() => void handleReconnectAll(true)}
                     >
-                      <RefreshCw className="size-3.5" /> 重连离线账号
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setSettingsOpen(true, 'general')}
-                    >
-                      <ShieldAlert className="size-3.5" /> 凭据清理与导出
+                      <RefreshCw className="size-3.5" /> 重连离线
                     </Button>
                   </div>
                 </div>
 
-                {/* Top KPI Cards */}
+                {/* Clean Minimalist KPI Strip */}
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="rounded-2xl border border-line bg-surface p-3.5 shadow-soft">
-                    <p className="text-[12px] text-ink-muted">工作区 Bot 总数</p>
+                  <div className="rounded-2xl border border-line bg-surface px-4 py-3 shadow-hairline">
+                    <p className="text-[11.5px] text-ink-muted">Bot 总数</p>
                     <p className="mt-1 text-[22px] font-semibold tabular-nums text-ink">{bots.length}</p>
-                    <p className="mt-0.5 text-[11px] text-ink-muted">共 {groups.length} 个侧栏分组</p>
                   </div>
-                  <div className="rounded-2xl border border-line bg-surface p-3.5 shadow-soft">
-                    <p className="text-[12px] text-ink-muted">在线就绪账号</p>
+                  <div className="rounded-2xl border border-line bg-surface px-4 py-3 shadow-hairline">
+                    <p className="text-[11.5px] text-ink-muted">在线账号</p>
                     <p className="mt-1 text-[22px] font-semibold tabular-nums text-status-online-ink">
                       {onlineAccountsCount} <span className="text-[13px] font-normal text-ink-muted">/ {allAccounts.length}</span>
                     </p>
-                    <p className="mt-0.5 text-[11px] text-ink-muted">实时流式通道就绪</p>
                   </div>
-                  <div className="rounded-2xl border border-line bg-surface p-3.5 shadow-soft">
-                    <p className="text-[12px] text-ink-muted">Dot 自动续期凭据</p>
-                    <p className="mt-1 text-[22px] font-semibold tabular-nums text-ink">
-                      {Object.values(dotMetaMap).filter((m) => m.hasRefreshToken).length}
-                      <span className="text-[13px] font-normal text-ink-muted"> / {dotAccounts.length}</span>
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-ink-muted">含 RT 自动换取 AT</p>
+                  <div className="rounded-2xl border border-line bg-surface px-4 py-3 shadow-hairline">
+                    <p className="text-[11.5px] text-ink-muted">协作群聊</p>
+                    <p className="mt-1 text-[22px] font-semibold tabular-nums text-ink">{collabRooms.length}</p>
                   </div>
-                  <div className="rounded-2xl border border-line bg-surface p-3.5 shadow-soft">
-                    <p className="text-[12px] text-ink-muted">代理池与安全存储</p>
+                  <div className="rounded-2xl border border-line bg-surface px-4 py-3 shadow-hairline">
+                    <p className="text-[11.5px] text-ink-muted">加密代理池</p>
                     <p className="mt-1 text-[22px] font-semibold tabular-nums text-ink">{pool.length}</p>
-                    <p className="mt-0.5 text-[11px] text-status-online-ink">Keychain 0600 加密</p>
                   </div>
                 </div>
 
                 {/* Platform Breakdown Cards */}
-                <div className="grid grid-cols-3 gap-2.5 lg:grid-cols-6">
+                <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
                   {(
                     [
-                      { id: 'meta-muse', tab: 'muse-accounts', name: 'Meta Muse', list: museAccounts, desc: 'Noise WSS 隧道' },
-                      { id: 'dot', tab: 'dot-accounts', name: 'ChatGPT Dot', list: dotAccounts, desc: 'Calpico + OAuth RT' },
-                      { id: 'grok', tab: 'grok-accounts', name: 'Grok Bot', list: grokAccounts, desc: 'Sand PKCE OAuth' },
-                      { id: 'hark', tab: 'hark-accounts', name: 'Hark Pro', list: harkAccounts, desc: 'Sync SSE + Session' },
-                      { id: 'hermes', tab: 'hermes-accounts', name: 'Hermes', list: hermesAccounts, desc: 'Open-Source Gateway' },
+                      { id: 'meta-muse', tab: 'muse-accounts', name: 'Meta Muse', list: museAccounts, desc: 'Noise WSS' },
+                      { id: 'dot', tab: 'dot-accounts', name: 'ChatGPT Dot', list: dotAccounts, desc: 'Calpico Room' },
+                      { id: 'grok', tab: 'grok-accounts', name: 'Grok Bot', list: grokAccounts, desc: 'Sand PKCE' },
+                      { id: 'hark', tab: 'hark-accounts', name: 'Hark Pro', list: harkAccounts, desc: '项目空间' },
+                      { id: 'hermes', tab: 'hermes-accounts', name: 'Hermes', list: hermesAccounts, desc: '本地网关' },
                       {
                         id: 'antigravity',
                         tab: 'antigravity-accounts',
                         name: 'Antigravity',
                         list: antigravityAccounts,
-                        desc: 'Google Cloud Agent'
+                        desc: 'Google Cloud'
                       }
                     ] as const
                   ).map((p) => {
@@ -874,29 +861,54 @@ export function SettingsView() {
                         key={p.id}
                         type="button"
                         onClick={() => setSettingsOpen(true, p.tab)}
-                        className="press flex flex-col justify-between rounded-2xl border border-line bg-surface p-3 text-left transition-colors hover:border-line-strong hover:bg-hover/50"
+                        className="press flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-3.5 py-3 text-left shadow-hairline transition-colors hover:border-line-strong hover:bg-hover/50"
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="inline-flex min-w-0 items-center gap-2">
-                            {platformIcon(p.id) && (
-                              <img
-                                src={platformIcon(p.id)}
-                                alt=""
-                                aria-hidden
-                                draggable={false}
-                                className="size-5 shrink-0 rounded-[5px] object-cover ring-1 ring-line"
-                              />
-                            )}
-                            <span className="truncate text-[13px] font-semibold text-ink">{p.name}</span>
-                          </span>
-                          <span className="rounded-full bg-sunken px-2 py-0.5 font-mono text-[11px] text-ink-secondary">
-                            {onCount}/{p.list.length}
-                          </span>
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          {platformIcon(p.id) && (
+                            <img
+                              src={platformIcon(p.id)}
+                              alt=""
+                              aria-hidden
+                              draggable={false}
+                              className="size-7 shrink-0 rounded-lg object-cover ring-1 ring-line"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <span className="block truncate text-[13.5px] font-semibold tracking-tight text-ink">
+                              {p.name}
+                            </span>
+                            <span className="block truncate text-[11px] text-ink-muted">{p.desc}</span>
+                          </div>
                         </div>
-                        <p className="mt-2 text-[11px] text-ink-muted">{p.desc} →</p>
+                        <span className="shrink-0 rounded-full bg-sunken px-2 py-0.5 font-mono text-[11px] font-medium text-ink-secondary tabular-nums">
+                          {onCount}/{p.list.length}
+                        </span>
                       </button>
                     )
                   })}
+                </div>
+
+                {/* Compact 1-Line Multi-Agent Collaboration Card */}
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-2.5 shadow-hairline">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-accent-50 text-accent-600">
+                      <ArkRelayOrbSvg active className="size-4" />
+                    </span>
+                    <span className="truncate text-[13.5px] font-medium text-ink">
+                      多 Agent 协作群聊{collabRooms.length > 0 ? ` · ${collabRooms.length} 个房间` : ''}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setSettingsOpen(false)
+                      selectBot(NEW_ROOM_ID)
+                    }}
+                  >
+                    <Plus className="size-3.5" />
+                    新建群聊
+                  </Button>
                 </div>
 
                 {/* Unified Bot & Account Management Table */}
@@ -912,28 +924,34 @@ export function SettingsView() {
                       />
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <select
+                      <Select
+                        size="sm"
+                        variant="pill"
                         value={platformFilter}
-                        onChange={(e) => setPlatformFilter(e.target.value as typeof platformFilter)}
-                        className="h-8 rounded-xl border border-line bg-canvas px-2.5 text-[12px] text-ink"
-                      >
-                        <option value="all">全部平台 ({bots.length})</option>
-                        <option value="meta-muse">Meta Muse ({museBots.length})</option>
-                        <option value="dot">ChatGPT Dot ({dotBots.length})</option>
-                        <option value="grok">Grok Bot ({grokBots.length})</option>
-                        <option value="hark">Hark Pro ({harkBots.length})</option>
-                        <option value="hermes">Hermes ({hermesBots.length})</option>
-                        <option value="antigravity">Antigravity ({antigravityBots.length})</option>
-                      </select>
-                      <select
+                        onValueChange={(next) => setPlatformFilter(next)}
+                        className="min-w-36"
+                        options={[
+                          { value: 'all', label: `全部平台 (${bots.length})` },
+                          { value: 'meta-muse', label: `Meta Muse (${museBots.length})` },
+                          { value: 'dot', label: `ChatGPT Dot (${dotBots.length})` },
+                          { value: 'grok', label: `Grok Bot (${grokBots.length})` },
+                          { value: 'hark', label: `Hark Pro (${harkBots.length})` },
+                          { value: 'hermes', label: `Hermes (${hermesBots.length})` },
+                          { value: 'antigravity', label: `Antigravity (${antigravityBots.length})` }
+                        ]}
+                      />
+                      <Select
+                        size="sm"
+                        variant="pill"
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-                        className="h-8 rounded-xl border border-line bg-canvas px-2.5 text-[12px] text-ink"
-                      >
-                        <option value="all">全部状态</option>
-                        <option value="online">仅在线</option>
-                        <option value="offline">仅离线 / 异常</option>
-                      </select>
+                        onValueChange={(next) => setStatusFilter(next)}
+                        className="min-w-28"
+                        options={[
+                          { value: 'all', label: '全部状态' },
+                          { value: 'online', label: '仅在线' },
+                          { value: 'offline', label: '仅离线 / 异常' }
+                        ]}
+                      />
                     </div>
                   </div>
 
@@ -952,7 +970,6 @@ export function SettingsView() {
                     <ul className="divide-y divide-line">
                       {filteredBots.map((bot) => {
                         const acc = accounts[bot.activeAccountId]
-                        const msgCount = (messages[bot.id] ?? []).length
                         const dotMeta = bot.platformId === 'dot' ? dotMetaMap[bot.activeAccountId] : undefined
                         const isEditing = editingBotId === bot.id
                         return (
@@ -1033,10 +1050,8 @@ export function SettingsView() {
                                 </div>
                                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px] text-ink-muted">
                                   <span className="font-mono text-[11px]">
-                                    {acc?.handle || dotMeta?.handle || bot.activeAccountId}
+                                    {acc?.handle || dotMeta?.handle || PLATFORM_LABELS[bot.platformId]}
                                   </span>
-                                  <span>·</span>
-                                  <span>{msgCount} 条消息</span>
                                   {dotMeta?.planType && (
                                     <>
                                       <span>·</span>
@@ -1048,63 +1063,59 @@ export function SettingsView() {
                             </div>
 
                             <div className="flex shrink-0 items-center gap-1.5">
-                              <select
+                              <Select
+                                size="xs"
+                                variant="pill"
                                 value={bot.groupId}
-                                onChange={(e) => moveBotToGroup(bot.id, e.target.value)}
+                                onValueChange={(next) => moveBotToGroup(bot.id, next)}
                                 title="调整所属分组"
-                                className="h-7 rounded-lg border border-line bg-canvas px-2 text-[11.5px] text-ink-secondary"
-                              >
-                                {groups.map((g) => (
-                                  <option key={g.id} value={g.id}>
-                                    {g.name}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                onClick={() => togglePinBot(bot.id)}
-                                title={bot.pinned ? '取消置顶' : '置顶到侧边栏顶部'}
-                                className={cn(
-                                  'inline-flex size-7 items-center justify-center rounded-lg border border-line transition-colors',
-                                  bot.pinned
-                                    ? 'bg-accent-50 text-accent-600'
-                                    : 'bg-canvas text-ink-muted hover:bg-hover hover:text-ink'
-                                )}
-                              >
-                                {bot.pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
-                              </button>
-                              <Button size="sm" variant="secondary" onClick={() => selectBot(bot.id)}>
-                                进入对话
-                              </Button>
-                              {acc && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  disabled={acc.pending}
-                                  onClick={() => void connectAccount(acc.id)}
-                                >
-                                  重连
-                                </Button>
-                              )}
-                              {acc && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  disabled={acc.pending}
-                                  onClick={() => void signOutAccount(acc.id)}
-                                  title="退出并清除该账号凭据"
-                                >
-                                  <LogOut className="size-3.5" />
-                                </Button>
-                              )}
+                                className="max-w-32"
+                                options={groups.map((g) => ({ value: g.id, label: g.name }))}
+                              />
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                onClick={() => void removeBot(bot.id)}
-                                title="删除该 Bot 与账号"
+                                variant="secondary"
+                                onClick={() => {
+                                  setSettingsOpen(false)
+                                  selectBot(bot.id)
+                                }}
                               >
-                                <Trash2 className="size-3.5 text-status-error" />
+                                对话
                               </Button>
+                              <Menu>
+                                <MenuTrigger
+                                  aria-label={`${bot.name} 更多操作`}
+                                  className="press-icon grid size-7 place-items-center rounded-full text-ink-muted hover:bg-hover hover:text-ink"
+                                >
+                                  <MoreHorizontal className="size-4" />
+                                </MenuTrigger>
+                                <MenuContent align="end" side="bottom" className="min-w-40">
+                                  <MenuItem onSelect={() => togglePinBot(bot.id)}>
+                                    {bot.pinned ? <PinOff aria-hidden /> : <Pin aria-hidden />}
+                                    {bot.pinned ? '取消置顶' : '置顶侧边栏'}
+                                  </MenuItem>
+                                  {acc && (
+                                    <MenuItem
+                                      disabled={acc.pending}
+                                      onSelect={() => void connectAccount(acc.id)}
+                                    >
+                                      <RefreshCw aria-hidden /> 重新连接
+                                    </MenuItem>
+                                  )}
+                                  {acc && (
+                                    <MenuItem
+                                      disabled={acc.pending}
+                                      onSelect={() => void signOutAccount(acc.id)}
+                                    >
+                                      <LogOut aria-hidden /> 退出登录
+                                    </MenuItem>
+                                  )}
+                                  <MenuSeparator />
+                                  <MenuItem danger onSelect={() => void removeBot(bot.id)}>
+                                    <Trash2 aria-hidden /> 删除 Bot
+                                  </MenuItem>
+                                </MenuContent>
+                              </Menu>
                             </div>
                           </li>
                         )
@@ -1337,24 +1348,26 @@ export function SettingsView() {
                       <KeyRound className="size-3.5 text-accent-600" />
                       导入 ChatGPT AT / RT / JSON 凭据（支持多行批量导入）
                     </span>
-                    <label className="flex items-center gap-1.5 text-[12px] text-ink-secondary">
-                      导入目标：
-                      <select
+                    <div className="flex items-center gap-1.5 text-[12px] text-ink-secondary">
+                      <span>导入目标：</span>
+                      <Select
+                        size="xs"
+                        variant="pill"
                         value={dotTargetAccountId}
-                        onChange={(e) => setDotTargetAccountId(e.target.value)}
-                        className="rounded-lg border border-line bg-canvas px-2 py-1 text-[12px] text-ink"
-                      >
-                        <option value="__new__">+ 新建独立 Dot Bot（支持多行批量导入）</option>
-                        {dotAccounts.map((acc) => {
-                          const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
-                          return (
-                            <option key={acc.id} value={acc.id}>
-                              替换凭据：{ownerBot?.name || acc.displayName} ({acc.handle || acc.id})
-                            </option>
-                          )
-                        })}
-                      </select>
-                    </label>
+                        onValueChange={(next) => setDotTargetAccountId(next)}
+                        className="max-w-64"
+                        options={[
+                          { value: '__new__', label: '+ 新建独立 Dot Bot（支持多行批量导入）' },
+                          ...dotAccounts.map((acc) => {
+                            const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
+                            return {
+                              value: acc.id,
+                              label: `替换凭据：${ownerBot?.name || acc.displayName} (${acc.handle || acc.id})`
+                            }
+                          })
+                        ]}
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-col gap-2">
                     <textarea
@@ -1387,15 +1400,10 @@ export function SettingsView() {
                       </Button>
                     </div>
                     {dotTargetAccountId !== '__new__' && (
-                      <label className="mt-0.5 flex items-center gap-1.5 text-[12px] text-ink-secondary">
-                        <input
-                          type="checkbox"
-                          checked={dotMigrateMemory}
-                          onChange={(e) => setDotMigrateMemory(e.target.checked)}
-                          className="rounded border-line"
-                        />
-                        替换账号时自动将该 Bot 现有的核心目标 (Goal) 与记忆 (Memory) 迁移至新账号
-                      </label>
+                      <div className="mt-0.5 flex items-center justify-between gap-3 rounded-xl bg-main px-3 py-2 ring-1 ring-line/50 text-[12px] text-ink-secondary">
+                        <span>替换账号时自动迁移当前目标与记忆</span>
+                        <SwitchPill checked={dotMigrateMemory} onCheckedChange={setDotMigrateMemory} />
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1566,18 +1574,20 @@ export function SettingsView() {
                 <div className="rounded-2xl border border-line bg-surface p-4 shadow-soft">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[13px] font-medium text-ink">粘贴凭据导入（Token / Cookie / JSON / API Key）</span>
-                    <select
+                    <Select
+                      size="xs"
+                      variant="pill"
                       value={grokTargetAccountId}
-                      onChange={(e) => setGrokTargetAccountId(e.target.value)}
-                      className="rounded-lg border border-line bg-canvas px-2 py-1 text-[12px] text-ink"
-                    >
-                      <option value="__new__">+ 接入新 Grok 账号（自动同步全部 Bot）</option>
-                      {grokAccounts.map((acc) => (
-                        <option key={acc.id} value={acc.id}>
-                          更新凭据：{acc.handle || acc.displayName || acc.id}
-                        </option>
-                      ))}
-                    </select>
+                      onValueChange={(next) => setGrokTargetAccountId(next)}
+                      className="max-w-64"
+                      options={[
+                        { value: '__new__', label: '+ 接入新 Grok 账号（自动同步全部 Bot）' },
+                        ...grokAccounts.map((acc) => ({
+                          value: acc.id,
+                          label: `更新凭据：${acc.handle || acc.displayName || acc.id}`
+                        }))
+                      ]}
+                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <textarea
@@ -1757,21 +1767,23 @@ export function SettingsView() {
                 <div className="rounded-2xl border border-line bg-surface p-4 shadow-soft">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[13px] font-medium text-ink">导入 Hark Session Cookie / Token</span>
-                    <select
+                    <Select
+                      size="xs"
+                      variant="pill"
                       value={harkTargetAccountId}
-                      onChange={(e) => setHarkTargetAccountId(e.target.value)}
-                      className="rounded-lg border border-line bg-canvas px-2 py-1 text-[12px] text-ink"
-                    >
-                      <option value="__new__">+ 新建独立 Hark Bot</option>
-                      {harkAccounts.map((acc) => {
-                        const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
-                        return (
-                          <option key={acc.id} value={acc.id}>
-                            更新会话：{ownerBot?.name || acc.displayName} ({acc.handle || acc.id})
-                          </option>
-                        )
-                      })}
-                    </select>
+                      onValueChange={(next) => setHarkTargetAccountId(next)}
+                      className="max-w-64"
+                      options={[
+                        { value: '__new__', label: '+ 新建独立 Hark Bot' },
+                        ...harkAccounts.map((acc) => {
+                          const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
+                          return {
+                            value: acc.id,
+                            label: `更新会话：${ownerBot?.name || acc.displayName} (${acc.handle || acc.id})`
+                          }
+                        })
+                      ]}
+                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <textarea
@@ -1999,18 +2011,21 @@ export function SettingsView() {
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-[13px] font-medium text-ink">批量粘贴或导入代理</span>
                     <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-1.5 text-[12px] text-ink-secondary">
-                        无协议前缀时默认：
-                        <select
+                      <div className="flex items-center gap-1.5 text-[12px] text-ink-secondary">
+                        <span>无协议前缀时默认：</span>
+                        <Select
+                          size="xs"
+                          variant="pill"
                           value={defaultMode}
-                          onChange={(e) => setDefaultMode(e.target.value as Exclude<MuseProxyMode, 'direct'>)}
-                          className="rounded-lg border border-line bg-canvas px-2 py-1 text-[12px] text-ink"
-                        >
-                          <option value="socks5">SOCKS5</option>
-                          <option value="socks5h">SOCKS5H (远程 DNS)</option>
-                          <option value="http">HTTP / HTTPS</option>
-                        </select>
-                      </label>
+                          onValueChange={(next) => setDefaultMode(next)}
+                          className="w-40"
+                          options={[
+                            { value: 'socks5', label: 'SOCKS5' },
+                            { value: 'socks5h', label: 'SOCKS5H (远程 DNS)' },
+                            { value: 'http', label: 'HTTP / HTTPS' }
+                          ]}
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => fileRef.current?.click()}
@@ -2133,21 +2148,16 @@ export function SettingsView() {
                       <p className="text-[14px] font-medium text-ink">{tr('Appearance')}</p>
                       <p className="text-[12px] text-ink-muted">Grok Bot Sand Light / Sand Dark 配色系统</p>
                     </div>
-                    <div className="flex rounded-xl bg-hover p-0.5 text-[12px]">
-                      {(['system', 'light', 'dark'] as ThemePref[]).map((id) => (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setTheme(id)}
-                          className={cn(
-                            'rounded-lg px-3 py-1 font-medium transition-colors',
-                            theme === id ? 'bg-surface text-ink shadow-soft' : 'text-ink-secondary hover:text-ink'
-                          )}
-                        >
-                          {id === 'system' ? tr('Match system') : id === 'light' ? tr('Light') : tr('Dark')}
-                        </button>
-                      ))}
-                    </div>
+                    <SegmentedControl<ThemePref>
+                      size="sm"
+                      value={theme}
+                      onValueChange={(id) => setTheme(id)}
+                      options={[
+                        { value: 'system', label: tr('Match system') },
+                        { value: 'light', label: tr('Light') },
+                        { value: 'dark', label: tr('Dark') }
+                      ]}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between px-4 py-3.5">
@@ -2155,34 +2165,25 @@ export function SettingsView() {
                       <p className="text-[14px] font-medium text-ink">{tr('Language')}</p>
                       <p className="text-[12px] text-ink-muted">切换界面显示语言</p>
                     </div>
-                    <div className="flex rounded-xl bg-hover p-0.5 text-[12px]">
-                      {([
-                        ['zh', '简体中文'],
-                        ['en', 'English']
-                      ] as Array<[Locale, string]>).map(([id, label]) => (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => {
-                            if (id === locale) return
-                            setLocale(id)
-                            window.location.reload()
-                          }}
-                          className={cn(
-                            'rounded-lg px-3 py-1 font-medium transition-colors',
-                            locale === id ? 'bg-surface text-ink shadow-soft' : 'text-ink-secondary hover:text-ink'
-                          )}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
+                    <SegmentedControl<Locale>
+                      size="sm"
+                      value={locale}
+                      onValueChange={(id) => {
+                        if (id === locale) return
+                        setLocale(id)
+                        window.location.reload()
+                      }}
+                      options={[
+                        { value: 'zh', label: '简体中文' },
+                        { value: 'en', label: 'English' }
+                      ]}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div>
                       <p className="text-[14px] font-medium text-ink">当前版本</p>
-                      <p className="font-mono text-[12px] text-ink-muted">BotArk {version || '0.6.0'}</p>
+                      <p className="font-mono text-[12px] text-ink-muted">BotArk {version || '0.11.1'}</p>
                     </div>
                     <Button
                       size="sm"
@@ -2202,7 +2203,7 @@ export function SettingsView() {
                     <div>
                       <p className="text-[14px] font-medium text-ink">新手引导与产品架构导览</p>
                       <p className="text-[12px] text-ink-muted">
-                        随时查看四大原生协议对比、钥匙串加密沙盒架构与专属右侧操作台交互指南
+                        查看六大原生协议、多 Agent 协作群聊、受控本地 MCP 与钥匙串加密沙盒架构指南
                       </p>
                     </div>
                     <Button

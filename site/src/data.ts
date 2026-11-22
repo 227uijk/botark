@@ -4,16 +4,17 @@ import museIcon from '@/assets/platforms/muse.svg'
 import dotIcon from '@/assets/platforms/dot.svg'
 import harkIcon from '@/assets/platforms/hark.svg'
 import hermesIcon from '@/assets/platforms/hermes.png'
+import antigravityIcon from '@/assets/platforms/antigravity.png'
 
 export type Lang = 'zh' | 'en'
-export type PlatformKey = 'grok' | 'muse' | 'dot' | 'hark' | 'hermes'
+export type PlatformKey = 'grok' | 'muse' | 'dot' | 'hark' | 'hermes' | 'antigravity'
 
 export const RELEASE_URLS = {
   latest: 'https://github.com/qybaihe/botark/releases/latest',
-  macArm: 'https://github.com/qybaihe/botark/releases/download/v0.9.0/BotArk-0.9.0-arm64.dmg',
-  macIntel: 'https://github.com/qybaihe/botark/releases/download/v0.9.0/BotArk-0.9.0-x64.dmg',
-  winX64: 'https://github.com/qybaihe/botark/releases/download/v0.9.0/BotArk-Setup-0.9.0-x64.exe',
-  androidApk: 'https://github.com/qybaihe/botark/releases/download/v0.9.0/BotArk-0.9.0-android.apk',
+  macArm: 'https://github.com/qybaihe/botark/releases/latest',
+  macIntel: 'https://github.com/qybaihe/botark/releases/latest',
+  winX64: 'https://github.com/qybaihe/botark/releases/latest',
+  androidApk: 'https://github.com/qybaihe/botark/releases/latest',
   iosRepo: 'https://github.com/qybaihe/botark/tree/main/ios/BotArk',
   repo: 'https://github.com/qybaihe/botark',
   discussions: 'https://github.com/qybaihe/botark/discussions'
@@ -24,7 +25,8 @@ export const PLATFORM_ICONS: Record<PlatformKey, string> = {
   muse: museIcon,
   dot: dotIcon,
   hark: harkIcon,
-  hermes: hermesIcon
+  hermes: hermesIcon,
+  antigravity: antigravityIcon
 }
 
 export interface DemoBot {
@@ -404,6 +406,57 @@ export const DEMO_BOTS: DemoBot[] = [
           items: [
             { zh: '⏱️ 每日构建监控 · 已启用（一键立即运行）', en: '⏱️ Daily Build Watch · Enabled (Run Now)' },
             { zh: '🧩 Toolsets: terminal, files, web, memory', en: '🧩 Toolsets: terminal, files, web, memory' }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: 'antigravity-cloud',
+    platform: 'antigravity',
+    platformLabel: 'Antigravity',
+    group: { zh: '工程与研发', en: 'Engineering' },
+    name: { zh: 'Antigravity · 云端代理', en: 'Antigravity · Cloud Agent' },
+    accountHandle: 'antigravity.google.com',
+    shape: 'crystal',
+    color: 'cyan',
+    badge: { zh: '云端沙盒', en: 'Cloud Agent' },
+    messages: [
+      {
+        role: 'user',
+        text: {
+          zh: '在云端沙盒 Capsule 里并发验证多 Agent 协作室的轮次上限与共识定稿逻辑。',
+          en: 'Verify Multi-Agent Room turn caps and [FINAL] consensus sealing inside a cloud Capsule.'
+        }
+      },
+      {
+        role: 'bot',
+        tool: { zh: 'Antigravity Capsule · 云端沙盒验证通过', en: 'Antigravity Capsule · Cloud verification passed' },
+        text: {
+          zh: '云端 Cascade 执行完毕：跨平台 `@提及` 接力与 `[FINAL]` 共识定稿断言全部通过，右侧面板可随时切换模型配额与 Capsules 环境。',
+          en: 'Cloud Cascade complete: cross-platform `@mention` handoffs and `[FINAL]` consensus deliverables passed all assertions.'
+        }
+      }
+    ],
+    quickPrompts: [
+      {
+        label: { zh: '☁️ 切换云端沙盒 Capsule', en: '☁️ Inspect Cloud Capsules' },
+        replyTool: { zh: 'gRPC-Web · 已同步 Cascades 与配额', en: 'gRPC-Web · Synced Cascades & quota' },
+        reply: {
+          zh: '当前 Google 独立分区运行稳定，模型剩余配额充足，支持在多 Agent 协作室与其他平台联合编排。',
+          en: 'Isolated Google partition online with full model quota — ready for multi-agent room orchestration.'
+        }
+      }
+    ],
+    workbench: {
+      protocolBadge: 'gRPC-Web · Cloud Agent',
+      cards: [
+        {
+          title: { zh: '模型配额与 Cascades 会话', en: 'Models & Cloud Cascades' },
+          tag: { zh: '配额充足', en: 'Online' },
+          items: [
+            { zh: '✨ 独立 Google 安全分区直登 · 零抓包', en: '✨ Isolated Google partition sign-in' },
+            { zh: '☁️ 云端沙盒 Capsules 与工作区实时同步', en: '☁️ Live Cloud Capsules & Workspaces sync' }
           ]
         }
       ]

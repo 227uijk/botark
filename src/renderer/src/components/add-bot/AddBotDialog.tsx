@@ -5,11 +5,15 @@ import type { PlatformId } from '@adapters/types'
 import { createId } from '@shared/id'
 import { Camera, ChevronLeft, ChevronRight, ExternalLink, ListPlus, Plus, RefreshCw } from 'lucide-react'
 import { MuseBatchImport } from './MuseBatchImport'
+import { ArkRelayOrbSvg } from '@/components/ui/ArkGlyphs'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
+import { SwitchPill } from '@/components/ui/Controls'
 import { Dialog } from '@/components/ui/Dialog'
 import { IconButton } from '@/components/ui/IconButton'
 import { PlatformGlyph } from '@/components/ui/PlatformGlyph'
+import { Select } from '@/components/ui/Select'
+import { NEW_ROOM_ID } from '@/rooms/RoomView'
 import { useMorphHeight } from '@/hooks/useMorphHeight'
 import { usePlatformLogin } from '@/hooks/usePlatformLogin'
 import { avatarFromFile } from '@/lib/avatarImage'
@@ -284,6 +288,10 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
               error={phase.error}
               onPick={handlePickPlatform}
               onBatch={() => setBatch(true)}
+              onCreateRoom={() => {
+                close()
+                useBotStore.getState().selectBot(NEW_ROOM_ID)
+              }}
             />
           )}
           {!batch && phase.kind === 'waiting' && (
@@ -404,17 +412,17 @@ function GrokExistingAccountStep({
         <div className="flex items-center justify-between gap-2">
           <span className="text-[13px] font-medium text-ink">在已登录账号下新建 Bot</span>
           {accounts.length > 1 ? (
-            <select
+            <Select
+              size="xs"
+              variant="pill"
               value={targetAccId}
-              onChange={(e) => setTargetAccId(e.target.value)}
-              className="rounded-lg border border-line bg-main px-2 py-1 text-[12px] text-ink"
-            >
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.handle || a.displayName}
-                </option>
-              ))}
-            </select>
+              onValueChange={(next) => setTargetAccId(next)}
+              className="max-w-44"
+              options={accounts.map((a) => ({
+                value: a.id,
+                label: a.handle || a.displayName
+              }))}
+            />
           ) : (
             <span className="truncate font-mono text-[11.5px] text-ink-muted">
               {accounts[0]?.handle || accounts[0]?.displayName}（已同步 {existingCount} 个 Bot）
@@ -486,13 +494,15 @@ function PlatformStep({
   initialPlatform,
   error,
   onPick,
-  onBatch
+  onBatch,
+  onCreateRoom
 }: {
   listRef: RefObject<HTMLUListElement | null>
   initialPlatform?: PlatformId | null
   error?: string
   onPick: (platformId: PlatformId) => void
   onBatch: () => void
+  onCreateRoom: () => void
 }) {
   const platforms = adapterRegistry.listPlatforms().filter((p) => p.usable)
   const t = useT()
@@ -508,24 +518,19 @@ function PlatformStep({
                 data-initial-platform={highlighted ? 'true' : undefined}
                 onClick={() => onPick(p.id)}
                 className={cn(
-                  'group flex h-12 w-full items-center gap-3 rounded-[10px] px-2.5 text-left transition-colors duration-100',
+                  'group press flex h-12 w-full items-center gap-3 rounded-xl px-2.5 text-left transition-colors duration-120 outline-none',
                   highlighted
-                    ? 'bg-accent-50/50 ring-1 ring-accent/40 hover:bg-accent-50'
-                    : 'hover:bg-hover active:bg-active'
+                    ? 'bg-accent-50/70 ring-1 ring-accent-300/70 hover:bg-accent-50'
+                    : 'hover:bg-hover focus-visible:bg-hover focus-visible:ring-1 focus-visible:ring-line-strong active:bg-active'
                 )}
               >
                 <PlatformGlyph platform={p} size="md" />
-                <div className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-medium text-ink">{p.name}</span>
-                  {p.id === 'grok' && (
-                    <span className="block truncate text-[11.5px] text-ink-muted">
-                      登录一次自动同步账号下全部 Bot
-                    </span>
-                  )}
-                </div>
+                <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-ink">
+                  {p.name}
+                </span>
                 <ChevronRight
                   className={cn(
-                    'size-4 text-ink-muted transition-opacity duration-100 group-hover:opacity-100 group-focus-visible:opacity-100',
+                    'size-4 text-ink-muted transition-all duration-150 group-hover:translate-x-0.5 group-hover:opacity-100 group-focus-visible:opacity-100',
                     highlighted ? 'opacity-100 text-accent-600' : 'opacity-0'
                   )}
                   aria-hidden
@@ -535,14 +540,24 @@ function PlatformStep({
           )
         })}
       </ul>
-      <button
-        type="button"
-        onClick={onBatch}
-        className="mt-2.5 flex h-10 w-full items-center gap-2.5 rounded-[10px] border border-dashed border-line px-3 text-left text-[13px] text-ink-secondary transition-colors hover:border-ink/20 hover:bg-hover hover:text-ink"
-      >
-        <ListPlus className="size-4" aria-hidden />
-        <span className="flex-1">{t('Batch import Muse accounts')}</span>
-      </button>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={onCreateRoom}
+          className="press flex h-10 items-center gap-2 rounded-xl border border-line/80 bg-sunken/40 px-3 text-left text-[12.5px] font-medium text-ink transition-colors outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-line-strong"
+        >
+          <ArkRelayOrbSvg active className="size-4 shrink-0 text-ink" />
+          <span className="truncate">多 Agent 协作室</span>
+        </button>
+        <button
+          type="button"
+          onClick={onBatch}
+          className="press flex h-10 items-center gap-2 rounded-xl border border-dashed border-line-strong px-3 text-left text-[12.5px] text-ink-secondary transition-colors outline-none hover:border-ink/20 hover:bg-hover hover:text-ink focus-visible:ring-1 focus-visible:ring-line-strong"
+        >
+          <ListPlus className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">{t('Batch import Muse accounts')}</span>
+        </button>
+      </div>
       {error && (
         <p className="mt-3 px-2 text-[12px] text-status-error" role="alert">
           {error}
@@ -1052,15 +1067,10 @@ function HermesConnectStep({
         </label>
 
         {detected?.hasLocalEnvKey && !apiKey.trim() && (
-          <label className="flex items-center gap-2 text-[12px] text-ink-secondary">
-            <input
-              type="checkbox"
-              checked={useLocalKey}
-              onChange={(e) => setUseLocalKey(e.target.checked)}
-              className="rounded border-line"
-            />
-            <span>自动使用本机 ~/.hermes/.env 中的 API_SERVER_KEY（仅主进程加密读取）</span>
-          </label>
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-sunken/50 px-3 py-2">
+            <span className="text-[12px] text-ink-secondary">自动读取 ~/.hermes/.env 密钥</span>
+            <SwitchPill checked={useLocalKey} onCheckedChange={setUseLocalKey} />
+          </div>
         )}
 
         <label className="flex flex-col gap-1">

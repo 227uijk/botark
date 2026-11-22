@@ -1,21 +1,43 @@
-import { session as electronSession, shell, WebContentsView, type BrowserWindow, type Rectangle } from 'electron'
-import type { CreateWebViewRequest, WebViewBounds, WebViewInfo } from '@shared/ipc'
+import {
+  BrowserWindow,
+  session as electronSession,
+  shell,
+  WebContentsView,
+  type Rectangle
+} from 'electron'
+import type {
+  CreateWebViewRequest,
+  OpenInPartitionRequest,
+  WebViewBounds,
+  WebViewInfo
+} from '@shared/ipc'
+import { applyProxyToPartition } from './muse/accountProxy'
+import { cleanMuseChromeUserAgent } from './muse/museLoginHelpers'
 
 /**
  * Manages embedded platform web sessions for one window.
  *
- * Each bot + account pair gets its own WebContentsView. Views are created
- * hidden; the renderer attaches one at a time over a placeholder region and
- * keeps its bounds in sync. Every account gets its own persistent session
- * partition, so multiple logins on the same platform never share cookies.
- *
- * Stub: today it loads a local placeholder page (or a caller-provided http(s)
- * URL). Platform automation/protocol work will build on top of this.
+ * Memory & Session Discipline:
+ * - Only ONE WebContentsView is attached at a time; switching bots swaps the
+ *   active view cleanly inside the same window.
+ * - Detached views immediately enable `backgroundThrottling` and enter an LRU
+ *   idle hibernation queue (keeping at most 1 warm detached view for 90s).
+ *   Older idle views close their Chromium renderer process while preserving
+ *   100% of their `persist:bothub-account-*` cookies & storage on disk.
+ * - Popups (`window.open`) inside embedded views open in an authenticated
+ *   in-app child BrowserWindow sharing the exact same account partition & proxy,
+ *   never leaking or bouncing out to an unauthenticated OS browser.
  */
+
+const IDLE_HIBERNATE_MS = 90_000
+const MAX_WARM_DETACHED_VIEWS = 1
 
 interface ManagedView {
   info: Omit<WebViewInfo, 'attached'>
   view: WebContentsView
+  lastUsedAt: number
+  idleTimer?: ReturnType<typeof setTimeout>
+  pinned?: boolean
 }
 
 export function webViewId(botId: string, accountId: string): string {
@@ -46,12 +68,11 @@ function placeholderPage(label: string, partition: string): string {
   <div class="glyph">◎</div>
   <h1>${escapeHtml(label)}</h1>
   <p>This is an embedded WebContentsView running in its own session partition <code>${escapeHtml(partition)}</code>.</p>
-  <p>The platform's web app will load here once protocol integration lands.</p>
 </div></body></html>`
   return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
 }
 
-function isHttpUrl(url: string): boolean {
+export function isHttpUrl(url: string): boolean {
   try {
     const { protocol } = new URL(url)
     return protocol === 'http:' || protocol === 'https:'
@@ -71,10 +92,10 @@ function toRectangle(bounds: WebViewBounds): Rectangle {
 
 export class WebContentsViewManager {
   private readonly views = new Map<string, ManagedView>()
+  private readonly childWindows = new Set<BrowserWindow>()
   private attachedId: string | null = null
 
   constructor(private readonly window: BrowserWindow) {
-    // A renderer reload must not leave a native view floating over the new page.
     window.webContents.on('did-start-navigation', (details) => {
       if (details.isMainFrame && !details.isSameDocument) this.detachAll()
     })
@@ -84,32 +105,49 @@ export class WebContentsViewManager {
   create(request: CreateWebViewRequest): WebViewInfo {
     const viewId = webViewId(request.botId, request.accountId)
     const existing = this.views.get(viewId)
-    if (existing) return this.describe(existing)
+    if (existing) {
+      existing.lastUsedAt = Date.now()
+      if (request.url && isHttpUrl(request.url) && request.url !== existing.info.url) {
+        existing.info.url = request.url
+        if (!existing.view.webContents.isDestroyed()) {
+          void existing.view.webContents.loadURL(request.url).catch(() => {})
+        }
+      }
+      return this.describe(existing)
+    }
 
     if (request.url !== undefined && !isHttpUrl(request.url)) {
       throw new Error(`Refusing to load non-http(s) URL: ${request.url}`)
     }
 
     const partition = partitionForAccount(request.accountId)
+    void applyProxyToPartition(request.accountId).catch(() => {})
+
     const view = new WebContentsView({
       webPreferences: {
         partition,
         sandbox: true,
         contextIsolation: true,
         nodeIntegration: false,
-        // Detached views must keep timers/rAF alive (Muse streams SSR via rAF).
-        backgroundThrottling: false
+        backgroundThrottling: true
       }
     })
     view.setBackgroundColor('#ffffff')
+    view.webContents.setUserAgent(cleanMuseChromeUserAgent(view.webContents.getUserAgent()))
 
-    // Popups open in the user's browser; the embedded page never spawns windows.
+    // Keep popups (cloud browser, vault login, OAuth) inside the account's isolated BotArk partition!
     view.webContents.setWindowOpenHandler(({ url }) => {
-      if (isHttpUrl(url)) void shell.openExternal(url)
+      if (isHttpUrl(url)) {
+        void this.openInPartition({ accountId: request.accountId, url })
+      }
       return { action: 'deny' }
     })
     view.webContents.on('will-navigate', (event, url) => {
       if (!isHttpUrl(url)) event.preventDefault()
+    })
+    view.webContents.on('did-navigate', (_event, url) => {
+      const m = this.views.get(viewId)
+      if (m && isHttpUrl(url)) m.info.url = url
     })
 
     const url = request.url ?? placeholderPage(request.label ?? 'Web session', partition)
@@ -118,15 +156,43 @@ export class WebContentsViewManager {
     })
 
     const managed: ManagedView = {
-      info: { viewId, botId: request.botId, accountId: request.accountId, partition, url: request.url ?? 'about:placeholder' },
-      view
+      info: {
+        viewId,
+        botId: request.botId,
+        accountId: request.accountId,
+        partition,
+        url: request.url ?? 'about:placeholder'
+      },
+      view,
+      lastUsedAt: Date.now()
     }
     this.views.set(viewId, managed)
+    this.evictExcessDetachedViews()
     return this.describe(managed)
+  }
+
+  /** Pin or unpin a view from automatic idle hibernation (used only for active DOM hook fallbacks). */
+  setPinned(viewId: string, pinned: boolean): void {
+    const managed = this.views.get(viewId)
+    if (!managed) return
+    managed.pinned = pinned
+    if (pinned) {
+      this.clearIdleTimer(managed)
+      if (!managed.view.webContents.isDestroyed()) {
+        managed.view.webContents.setBackgroundThrottling(false)
+      }
+    } else if (this.attachedId !== viewId) {
+      this.scheduleIdleHibernate(managed)
+    }
   }
 
   attach(viewId: string, bounds: WebViewBounds): WebViewInfo {
     const managed = this.require(viewId)
+    this.clearIdleTimer(managed)
+    managed.lastUsedAt = Date.now()
+    if (!managed.view.webContents.isDestroyed()) {
+      managed.view.webContents.setBackgroundThrottling(false)
+    }
     if (this.attachedId && this.attachedId !== viewId) this.detach(this.attachedId)
     if (this.attachedId !== viewId) {
       this.window.contentView.addChildView(managed.view)
@@ -146,30 +212,93 @@ export class WebContentsViewManager {
     if (!managed || this.attachedId !== viewId) return
     this.window.contentView.removeChildView(managed.view)
     this.attachedId = null
+    managed.lastUsedAt = Date.now()
+    if (!managed.pinned && !managed.view.webContents.isDestroyed()) {
+      managed.view.webContents.setBackgroundThrottling(true)
+    }
+    this.evictExcessDetachedViews()
+    this.scheduleIdleHibernate(managed)
   }
 
   detachAll(): void {
     if (this.attachedId) this.detach(this.attachedId)
   }
 
+  navigate(viewId: string, url?: string): WebViewInfo {
+    const managed = this.require(viewId)
+    managed.lastUsedAt = Date.now()
+    if (!managed.view.webContents.isDestroyed()) {
+      if (url && isHttpUrl(url)) {
+        managed.info.url = url
+        void managed.view.webContents.loadURL(url).catch(() => {})
+      } else {
+        managed.view.webContents.reload()
+      }
+    }
+    return this.describe(managed)
+  }
+
+  /**
+   * Open an authenticated in-app child BrowserWindow sharing the account's isolated
+   * partition & proxy — used for cloud browser views, credential vault forms, and OAuth popups.
+   */
+  async openInPartition(request: OpenInPartitionRequest): Promise<void> {
+    if (!isHttpUrl(request.url)) return
+    await applyProxyToPartition(request.accountId).catch(() => {})
+    const partition = partitionForAccount(request.accountId)
+    const ses = electronSession.fromPartition(partition)
+    ses.setUserAgent(cleanMuseChromeUserAgent(ses.getUserAgent()))
+
+    const popup = new BrowserWindow({
+      width: 1060,
+      height: 740,
+      minWidth: 680,
+      minHeight: 480,
+      parent: this.window.isDestroyed() ? undefined : this.window,
+      title: request.title || 'BotArk 安全会话窗口',
+      autoHideMenuBar: true,
+      backgroundColor: '#ffffff',
+      webPreferences: {
+        partition,
+        sandbox: true,
+        contextIsolation: true,
+        nodeIntegration: false
+      }
+    })
+
+    popup.webContents.setUserAgent(cleanMuseChromeUserAgent(popup.webContents.getUserAgent()))
+    popup.webContents.setWindowOpenHandler(({ url }) => {
+      if (isHttpUrl(url)) {
+        void popup.loadURL(url).catch(() => {})
+      } else if (/^mailto:/i.test(url)) {
+        void shell.openExternal(url)
+      }
+      return { action: 'deny' }
+    })
+
+    this.childWindows.add(popup)
+    popup.on('closed', () => {
+      this.childWindows.delete(popup)
+    })
+
+    await popup.loadURL(request.url).catch((err) => {
+      console.warn('[web-view] openInPartition failed:', err instanceof Error ? err.message : err)
+    })
+  }
+
   destroy(viewId: string): void {
     const managed = this.views.get(viewId)
     if (!managed) return
-    if (!this.window.isDestroyed()) this.detach(viewId)
+    this.clearIdleTimer(managed)
+    if (!this.window.isDestroyed()) this.detachIfAttached(viewId, managed)
     this.views.delete(viewId)
     if (!managed.view.webContents.isDestroyed()) managed.view.webContents.close()
   }
 
-  /** Return the native view for advanced integrations (e.g. Muse RPC). */
   getView(viewId: string): WebContentsView | undefined {
     return this.views.get(viewId)?.view
   }
 
-
-  /**
-   * Destroy every view for this account, then wipe the persist partition
-   * (cookies, localStorage, indexedDB) so the next ensure starts signed out.
-   */
   async clearPartition(accountId: string): Promise<void> {
     const doomed = [...this.views.entries()].filter(([, m]) => m.info.accountId === accountId)
     for (const [viewId] of doomed) this.destroy(viewId)
@@ -180,12 +309,50 @@ export class WebContentsViewManager {
   }
 
   destroyAll(): void {
+    for (const popup of [...this.childWindows]) {
+      if (!popup.isDestroyed()) popup.close()
+    }
+    this.childWindows.clear()
     for (const viewId of [...this.views.keys()]) this.destroy(viewId)
     this.attachedId = null
   }
 
   list(): WebViewInfo[] {
     return [...this.views.values()].map((managed) => this.describe(managed))
+  }
+
+  private detachIfAttached(viewId: string, managed: ManagedView): void {
+    if (this.attachedId !== viewId) return
+    this.window.contentView.removeChildView(managed.view)
+    this.attachedId = null
+  }
+
+  private clearIdleTimer(managed: ManagedView): void {
+    if (managed.idleTimer) {
+      clearTimeout(managed.idleTimer)
+      managed.idleTimer = undefined
+    }
+  }
+
+  private scheduleIdleHibernate(managed: ManagedView): void {
+    this.clearIdleTimer(managed)
+    if (managed.pinned) return
+    managed.idleTimer = setTimeout(() => {
+      managed.idleTimer = undefined
+      if (this.attachedId !== managed.info.viewId && !managed.pinned) {
+        this.destroy(managed.info.viewId)
+      }
+    }, IDLE_HIBERNATE_MS)
+    managed.idleTimer.unref?.()
+  }
+
+  private evictExcessDetachedViews(): void {
+    const candidates = [...this.views.values()]
+      .filter((m) => m.info.viewId !== this.attachedId && !m.pinned)
+      .sort((a, b) => b.lastUsedAt - a.lastUsedAt)
+    for (const stale of candidates.slice(MAX_WARM_DETACHED_VIEWS)) {
+      this.destroy(stale.info.viewId)
+    }
   }
 
   private require(viewId: string): ManagedView {

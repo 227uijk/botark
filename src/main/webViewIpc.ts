@@ -1,5 +1,10 @@
 import { ipcMain, type BrowserWindow, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
-import { WEB_VIEW_CHANNELS, type CreateWebViewRequest, type WebViewBounds } from '@shared/ipc'
+import {
+  WEB_VIEW_CHANNELS,
+  type CreateWebViewRequest,
+  type OpenInPartitionRequest,
+  type WebViewBounds
+} from '@shared/ipc'
 import { WebContentsViewManager } from './webContentsViewManager'
 
 /** One manager per window, keyed by the window's own webContents id. */
@@ -14,13 +19,10 @@ export function attachWebViewManager(window: BrowserWindow): WebContentsViewMana
 }
 
 function managerFor(event: IpcMainEvent | IpcMainInvokeEvent): WebContentsViewManager {
-  // Only windows we created (and registered) may control web views.
   const manager = managers.get(event.sender.id)
   if (!manager) throw new Error('Web views are not available for this sender')
   return manager
 }
-
-// IPC payloads come from the renderer: validate shapes before use.
 
 function parseString(value: unknown, field: string, maxLength = 256): string {
   if (typeof value !== 'string' || value.length === 0 || value.length > maxLength) {
@@ -41,6 +43,16 @@ function parseCreateRequest(value: unknown): CreateWebViewRequest {
     accountId: parseString(request['accountId'], 'accountId'),
     url: parseOptionalString(request['url'], 'url', 2048),
     label: parseOptionalString(request['label'], 'label', 200)
+  }
+}
+
+function parseOpenInPartitionRequest(value: unknown): OpenInPartitionRequest {
+  if (typeof value !== 'object' || value === null) throw new TypeError('Invalid openInPartition request')
+  const request = value as Record<string, unknown>
+  return {
+    accountId: parseString(request['accountId'], 'accountId'),
+    url: parseString(request['url'], 'url', 2048),
+    title: parseOptionalString(request['title'], 'title', 200)
   }
 }
 
@@ -68,7 +80,6 @@ export function registerWebViewIpc(): void {
     managerFor(event).attach(parseString(viewId, 'viewId', 600), parseBounds(bounds))
   )
 
-  // High-frequency and fire-and-forget: ignore malformed or stale updates.
   ipcMain.on(WEB_VIEW_CHANNELS.resize, (event, viewId: unknown, bounds: unknown) => {
     const manager = managers.get(event.sender.id)
     if (!manager || typeof viewId !== 'string') return
@@ -89,5 +100,16 @@ export function registerWebViewIpc(): void {
 
   ipcMain.handle(WEB_VIEW_CHANNELS.clearPartition, async (event, accountId: unknown) => {
     await managerFor(event).clearPartition(parseString(accountId, 'accountId'))
+  })
+
+  ipcMain.handle(WEB_VIEW_CHANNELS.navigate, (event, viewId: unknown, url: unknown) =>
+    managerFor(event).navigate(
+      parseString(viewId, 'viewId', 600),
+      url === undefined ? undefined : parseString(url, 'url', 2048)
+    )
+  )
+
+  ipcMain.handle(WEB_VIEW_CHANNELS.openInPartition, async (event, request: unknown) => {
+    await managerFor(event).openInPartition(parseOpenInPartitionRequest(request))
   })
 }

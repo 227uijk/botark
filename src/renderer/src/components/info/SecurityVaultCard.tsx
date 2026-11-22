@@ -5,11 +5,11 @@ import {
   KeyRound,
   MessageSquarePlus,
   RefreshCw,
-  ShieldCheck,
   Sparkles,
   Users
 } from 'lucide-react'
 import type { SecurityVaultStatus } from '@shared/ipc'
+import { ArkShieldVaultSvg } from '@/components/ui/ArkGlyphs'
 import { Button } from '@/components/ui/Button'
 import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
@@ -270,20 +270,22 @@ export function SecurityVaultCenter() {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-soft">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-sunken/40 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="size-4 text-status-online-ink" />
+    <div className="overflow-hidden rounded-2xl border border-line/70 bg-surface shadow-soft">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/60 bg-sunken/30 px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-status-online/12 text-status-online-ink">
+            <ArkShieldVaultSvg className="size-4" />
+          </span>
           <div>
-            <h3 className="text-[14px] font-semibold text-ink">系统钥匙串与加密保险箱巡检</h3>
+            <h3 className="text-[14px] font-semibold text-ink">系统钥匙串与加密保险箱</h3>
             <p className="text-[12px] text-ink-secondary">
-              全平台凭据、代理密码与 Dot 记忆快照均由系统硬件钥匙串加密存储，渲染层零明文令牌暴露
+              全平台凭据由系统钥匙串 AES-256-GCM 硬件加密隔离存储
             </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
           <Button size="sm" variant="secondary" disabled={loading} onClick={() => void handleHarden()}>
-            <KeyRound className="size-3.5" /> 加固 0600 权限
+            <KeyRound className="size-3.5" /> 加固 0600
           </Button>
           <Button size="sm" variant="ghost" disabled={loading} onClick={() => void refresh()}>
             <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />

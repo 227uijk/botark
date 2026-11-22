@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { Button } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/Field'
+import { Select } from '@/components/ui/Select'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
 import { cleanSidebarError } from '@/lib/sidebarCompat'
@@ -270,36 +271,26 @@ export function PermissionsSection({ accountId }: { accountId: string }) {
       ) : (
         <div className="flex flex-col gap-2.5">
           <div className="grid grid-cols-2 gap-2">
-            <label className="flex flex-col gap-1 text-[12px]">
+            <div className="flex flex-col gap-1 text-[12px]">
               <span className="font-medium text-ink">{t('Network default')}</span>
-              <select
+              <Select
+                size="xs"
                 value={network}
-                onChange={(e) => setNetwork(e.target.value as typeof network)}
-                className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] text-ink"
-              >
-                <option value="">{t('Permissions unavailable')}</option>
-                {MODES.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label()}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-[12px]">
+                onValueChange={(next) => setNetwork(next)}
+                placeholder={t('Permissions unavailable')}
+                options={MODES.map((m) => ({ value: m.value, label: m.label() }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1 text-[12px]">
               <span className="font-medium text-ink">{t('Connector default')}</span>
-              <select
+              <Select
+                size="xs"
                 value={connector}
-                onChange={(e) => setConnector(e.target.value as typeof connector)}
-                className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] text-ink"
-              >
-                <option value="">{t('Permissions unavailable')}</option>
-                {MODES.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label()}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onValueChange={(next) => setConnector(next)}
+                placeholder={t('Permissions unavailable')}
+                options={MODES.map((m) => ({ value: m.value, label: m.label() }))}
+              />
+            </div>
           </div>
           <Button
             size="sm"
@@ -376,15 +367,18 @@ export function PermissionsSection({ accountId }: { accountId: string }) {
               aria-label="Host"
               className="h-7 flex-1 text-[12px]"
             />
-            <select
+            <Select
+              size="xs"
+              variant="pill"
               value={ruleMode}
-              onChange={(e) => setRuleMode(e.target.value as typeof ruleMode)}
-              className="rounded-lg border border-line bg-surface px-2 text-[12px] text-ink"
-            >
-              <option value="allow">allow</option>
-              <option value="ask">ask</option>
-              <option value="deny">deny</option>
-            </select>
+              onValueChange={(next) => setRuleMode(next)}
+              className="w-24 shrink-0"
+              options={[
+                { value: 'allow', label: 'allow' },
+                { value: 'ask', label: 'ask' },
+                { value: 'deny', label: 'deny' }
+              ]}
+            />
             <Button size="sm" variant="secondary" disabled={saving || !ruleHost.trim()} onClick={addNetworkRule}>
               {t('Add')}
             </Button>

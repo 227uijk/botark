@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef } from 'react'
+import { useEffect, useId, useMemo, useRef, useSyncExternalStore } from 'react'
 import type { ConnectionStatus } from '@adapters/types'
 import { cn } from '@/lib/cn'
 import {
@@ -92,6 +92,22 @@ export function getBotColorHex(colorId: BotColorId, isDark = false): string {
 const DEFAULT_APPEARANCE = createAppearance('var(--grok-bot-ink)')
 const DEFAULT_FILL = 0.92
 const CANVAS_PCT = `${computeCanvasScale(DEFAULT_FILL) * 100}%`
+
+function subscribeTheme(onStoreChange: () => void): () => void {
+  if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
+    return () => undefined
+  }
+  const observer = new MutationObserver(onStoreChange)
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  })
+  return () => observer.disconnect()
+}
+
+function getIsDarkSnapshot(): boolean {
+  return typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark'
+}
 
 export interface GrokBotMarkProps {
   seed: string
@@ -213,7 +229,7 @@ export function GrokBotMark({
     }
   }, [pokeSignal])
 
-  const isDark = typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark'
+  const isDark = useSyncExternalStore(subscribeTheme, getIsDarkSnapshot, () => false)
   const inkHex = getBotColorHex(colorId, isDark)
 
   return (

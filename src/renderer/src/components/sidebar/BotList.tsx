@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
-import { ChevronRight, FolderPlus, MoreHorizontal, Pencil, Settings2, Trash2 } from 'lucide-react'
+import { ChevronRight, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArkProjectStackSvg } from '@/components/ui/ArkGlyphs'
 import { InlineEdit } from '@/components/ui/InlineEdit'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/Menu'
 import { cn } from '@/lib/cn'
@@ -298,22 +299,23 @@ export function BotList() {
         </div>
       </div>
 
-      <div className="mt-auto flex shrink-0 flex-col gap-0.5 border-t border-ink/[0.06] px-1 pt-2 pb-1">
+      <div className="mt-auto flex shrink-0 items-center justify-between gap-1 border-t border-ink/[0.05] px-1 pt-1.5 pb-0.5">
         <button
           type="button"
           onClick={() => addGroup()}
-          className="press flex h-7 w-full items-center gap-2 rounded-lg px-2 text-[12px] font-medium text-ink-muted transition-colors hover:bg-hover hover:text-ink-secondary"
+          className="press inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium text-ink-muted transition-colors hover:bg-hover hover:text-ink-secondary"
         >
-          <FolderPlus className="size-3.5" aria-hidden />
+          <Plus className="size-3.5" aria-hidden />
           {t('New section')}
         </button>
         <button
           type="button"
           onClick={() => setConfigureOpen(true)}
-          className="press flex h-7 w-full items-center gap-2 rounded-lg px-2 text-[12px] font-medium text-ink-muted transition-colors hover:bg-hover hover:text-ink-secondary"
+          title={t('Configure sections')}
+          aria-label={t('Configure sections')}
+          className="press-icon grid size-7 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-hover hover:text-ink-secondary"
         >
-          <Settings2 className="size-3.5" aria-hidden />
-          {t('Configure sections')}
+          <ArkProjectStackSvg className="size-3.5" />
         </button>
       </div>
 

@@ -23,6 +23,7 @@ import type {
   UpdateStatusEvent,
   WebViewBounds,
   WebViewInfo,
+  OpenInPartitionRequest,
   GrokMainEvent,
   GrokOpenLoginRequest,
   GrokSetAccessTokenRequest,
@@ -81,6 +82,10 @@ export interface WebViewBridge {
   destroy(viewId: string): Promise<void>
   /** Wipe cookies/storage for an account partition (sign out). */
   clearPartition(accountId: string): Promise<void>
+  /** Navigate an existing view to a target http(s) URL (or reload if omitted). */
+  navigate(viewId: string, url?: string): Promise<WebViewInfo>
+  /** Open an authenticated in-app child window sharing the account's session partition & proxy. */
+  openInPartition(request: OpenInPartitionRequest): Promise<void>
 }
 
 /**

@@ -4,6 +4,7 @@ import type { MuseProxyMode, MuseProxyView } from '@shared/ipc'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { Button } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/Field'
+import { Select } from '@/components/ui/Select'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
 import { t } from '@/lib/i18n'
@@ -108,20 +109,15 @@ export function ProxySection({ accountId }: { accountId: string }) {
         <span>钥匙串加密存储 · 不可读时自动阻断直连</span>
       </p>
       <div className="flex flex-col gap-2">
-        <label className="flex flex-col gap-1 text-[12px]">
+        <div className="flex flex-col gap-1 text-[12px]">
           <span className="font-medium text-ink">{t('Mode')}</span>
-          <select
+          <Select
+            size="sm"
             value={mode}
-            onChange={(e) => setMode(e.target.value as MuseProxyMode)}
-            className="rounded-lg border border-line bg-surface px-2 py-1 text-[12.5px] text-ink"
-          >
-            {MODES.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label()}
-              </option>
-            ))}
-          </select>
-        </label>
+            onValueChange={(next) => setMode(next)}
+            options={MODES.map((m) => ({ value: m.value, label: m.label() }))}
+          />
+        </div>
         {mode !== 'direct' && (
           <>
             <div className="grid grid-cols-[1fr_84px] gap-1.5">

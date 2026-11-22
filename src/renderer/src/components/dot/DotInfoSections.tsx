@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { Download, Eye, FileText, KeyRound, Lock, LogIn, Pause, Play, Plus, Sparkles, Target, Trash2 } from 'lucide-react'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { Button } from '@/components/ui/Button'
+import { SwitchPill } from '@/components/ui/Controls'
 import { TextInput } from '@/components/ui/Field'
+import { Select } from '@/components/ui/Select'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { NativeDocumentDialog, type NativeDocumentTarget } from '@/components/chat/NativeDocumentDialog'
 import { getBridge } from '@/lib/bridge'
@@ -250,15 +252,10 @@ export function DotCredentialsAndQuotaSection({
               className="h-7 font-mono text-[11px]"
             />
             {authInfo?.signedIn && (
-              <label className="flex cursor-pointer items-center gap-1.5 py-0.5 text-[11px] text-ink-secondary">
-                <input
-                  type="checkbox"
-                  checked={autoMigrateMemory}
-                  onChange={(e) => setAutoMigrateMemory(e.target.checked)}
-                  className="size-3 accent-accent-600"
-                />
-                自动迁移当前记忆
-              </label>
+              <div className="flex items-center justify-between gap-2 py-0.5 text-[11.5px] text-ink-secondary">
+                <span>自动迁移当前记忆</span>
+                <SwitchPill checked={autoMigrateMemory} onCheckedChange={setAutoMigrateMemory} />
+              </div>
             )}
             <Button
               size="sm"
@@ -741,17 +738,16 @@ export function DotGoalAndThreadsSection({ accountId }: { accountId: string }) {
 
           {otherDotBots.length > 0 && memorySnapshot.trim() && (
             <div className="flex items-center gap-1.5">
-              <select
+              <Select
+                size="xs"
                 value={targetBotId || otherDotBots[0]?.id || ''}
-                onChange={(e) => setTargetBotId(e.target.value)}
-                className="h-7 min-w-0 flex-1 rounded-lg border border-line bg-main px-2 text-[11.5px] text-ink outline-none"
-              >
-                {otherDotBots.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    迁移至：{b.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(next) => setTargetBotId(next)}
+                className="flex-1"
+                options={otherDotBots.map((b) => ({
+                  value: b.id,
+                  label: `迁移至：${b.name}`
+                }))}
+              />
               <Button
                 size="sm"
                 variant="secondary"

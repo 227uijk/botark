@@ -70,7 +70,6 @@ import { useBotStore } from '@/store/botStore'
 import type { Bot, BotAccount } from '@/types'
 import { AccountList } from './AccountList'
 import { MemoryEditor } from './MemoryEditor'
-import { InspectorProtocolCard } from './SecurityVaultCard'
 import { EmptyLine, Section, SectionsCollapsed } from './Section'
 import {
   getPlatformInspector,
@@ -221,7 +220,7 @@ function NotesAndProxyCollapsed({
     <SectionsCollapsed>
       {extraBeforeProxy}
       {bot.activeAccountId && <ProxySection accountId={bot.activeAccountId} />}
-      <Section title={t('Notes')} count={bot.memory.length || undefined}>
+      <Section title={t('Notes')} count={(bot.memory ?? []).length || undefined}>
         <div className="flex flex-col gap-2">
           <MemoryEditor bot={bot} />
           <textarea
@@ -290,7 +289,6 @@ export function InfoPanel() {
       {bot && inspector && (
         <div className="min-h-0 flex-1 overflow-y-auto pb-4">
           <BotHero key={bot.id} bot={bot} />
-          <InspectorProtocolCard bot={bot} activeTab={activeTab} onSelectTab={setTab} />
           <Tabs
             tabs={inspector.tabs}
             platformKey={bot.platformId}

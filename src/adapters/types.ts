@@ -242,6 +242,18 @@ export type MuseRichWidget =
       }>
       submitted?: boolean
     }
+  | {
+      kind: 'session_card'
+      widgetId: string
+      cardType: 'browser' | 'computer' | 'vault'
+      title: string
+      subtitle?: string
+      status?: string
+      url?: string
+      taskId?: string
+      previewSha256?: string
+      actionLabel?: string
+    }
 
 export interface MuseOptionWidget {
   kind: 'option'

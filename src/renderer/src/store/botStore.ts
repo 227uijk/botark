@@ -59,6 +59,8 @@ export interface BotHubState {
   paletteKey: number
   /** Show the embedded platform web session instead of the chat (Electron only). */
   webSessionOpen: boolean
+  /** Optional deep-link URL to open inside the embedded platform web session. */
+  webSessionTargetUrl: string | null
   /** Open the dedicated Grok Bot-style Settings view in the main pane. */
   settingsOpen: boolean
   settingsTab:
@@ -101,6 +103,8 @@ export interface BotHubState {
   setAddBotOpen: (open: boolean, initialPlatform?: PlatformId | null) => void
   setOnboardingOpen: (open: boolean) => void
   toggleWebSession: () => void
+  openWebSessionAt: (url?: string | null) => void
+  closeWebSession: () => void
   setSettingsOpen: (
     open: boolean,
     tab?:
@@ -627,13 +631,17 @@ export const useBotStore = create<BotHubState>()(
     }
 
     try {
+      const outboundText =
+        message.replyQuote && bot.platformId !== 'grok'
+          ? `> ${message.replyQuote.replace(/\n/g, '\n> ')}\n\n${message.text}`
+          : message.text
       const receipt = await withTimeout(
         adapter.sendMessage({
           conversationId: botId,
           accountId: message.accountId,
           sessionId: bot.activeSessionId,
           ...(bot.hermesSessionKey ? { hermesSessionKey: bot.hermesSessionKey } : {}),
-          text: message.text,
+          text: outboundText,
           attachments: message.attachments,
           replyToId: message.replyToId,
           replyQuote: message.replyQuote,
@@ -700,6 +708,7 @@ export const useBotStore = create<BotHubState>()(
     paletteQuery: '',
     paletteKey: 0,
     webSessionOpen: false,
+    webSessionTargetUrl: null,
     settingsOpen: false,
     settingsTab: 'overview',
     activeDocument: null,
@@ -747,6 +756,8 @@ export const useBotStore = create<BotHubState>()(
         return {
           selectedBotId: botId,
           settingsOpen: false,
+          webSessionOpen: state.selectedBotId === botId ? state.webSessionOpen : false,
+          webSessionTargetUrl: state.selectedBotId === botId ? state.webSessionTargetUrl : null,
           activeDocument:
             state.activeDocument && targetBot?.accountIds.includes(state.activeDocument.accountId)
               ? state.activeDocument
@@ -851,7 +862,23 @@ export const useBotStore = create<BotHubState>()(
 
     setOnboardingOpen: (open) => set({ onboardingOpen: open }),
 
-    toggleWebSession: () => set((state) => ({ webSessionOpen: !state.webSessionOpen })),
+    toggleWebSession: () =>
+      set((state) => ({
+        webSessionOpen: !state.webSessionOpen,
+        webSessionTargetUrl: state.webSessionOpen ? null : state.webSessionTargetUrl
+      })),
+
+    openWebSessionAt: (url) =>
+      set({
+        webSessionOpen: true,
+        webSessionTargetUrl: url && /^https?:\/\//i.test(url) ? url : null
+      }),
+
+    closeWebSession: () =>
+      set({
+        webSessionOpen: false,
+        webSessionTargetUrl: null
+      }),
 
     setSettingsOpen: (open, tab) =>
       set((state) => ({

@@ -4,7 +4,8 @@ import {
   historyAssistantsAfterTurn,
   parseHistoryTranscript,
   parseMediaParts,
-  parseMuseTimestampMs
+  parseMuseTimestampMs,
+  parseRichWidgets
 } from './chat'
 import { normalizeMuseFsPath, sniffImageMimeFromBytes } from './fs'
 import { cleanSidebarError, isIncompatibleApiError } from '../../renderer/src/lib/sidebarCompat'
@@ -206,5 +207,57 @@ describe('sidebarCompat', () => {
     expect(isIncompatibleApiError('[unimplemented] method ListGrokBotFoo')).toBe(true)
     expect(cleanSidebarError('invite: HTTP 405')).toBeUndefined()
     expect(cleanSidebarError('ECONNRESET while connecting')).toBe('ECONNRESET while connecting')
+  })
+})
+
+describe('parseRichWidgets session_card (#34)', () => {
+  it('parses Muse browser_task and credential vault widgets from transcript payloads', () => {
+    const browserWidgets = parseRichWidgets({
+      transcript: {
+        widgets: [
+          {
+            widget_id: 'w-browser-1',
+            kind: 'browser_task',
+            data: {
+              title: 'Browser',
+              status: 'working',
+              task_id: 'task-123',
+              preview: { sha256: 'abc999', url: 'https://signin.aws.amazon.com' }
+            }
+          }
+        ]
+      }
+    })
+    expect(browserWidgets).toHaveLength(1)
+    expect(browserWidgets[0]).toMatchObject({
+      kind: 'session_card',
+      cardType: 'browser',
+      title: 'Browser',
+      status: '正在工作',
+      taskId: 'task-123',
+      previewSha256: 'abc999'
+    })
+
+    const vaultWidgets = parseRichWidgets({
+      presentations: [
+        {
+          id: 'w-vault-163',
+          kind: 'credential_vault',
+          data: {
+            domain: 'mail.163.com',
+            url: 'https://muse.ai/vault/163'
+          },
+          state: { status: 'pending' }
+        }
+      ]
+    })
+    expect(vaultWidgets).toHaveLength(1)
+    expect(vaultWidgets[0]).toMatchObject({
+      kind: 'session_card',
+      cardType: 'vault',
+      title: '安全存储 · mail.163.com',
+      status: '待填写',
+      url: 'https://muse.ai/vault/163'
+    })
   })
 })

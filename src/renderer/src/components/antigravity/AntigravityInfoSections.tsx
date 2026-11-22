@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Bot,
   Check,
   Cloud,
-  Cpu,
-  FolderGit2,
   Loader2,
   MessageSquare,
-  MessageSquarePlus,
   RefreshCw,
-  Sparkles,
   Trash2
 } from 'lucide-react'
 import type {
@@ -20,7 +15,14 @@ import type {
   AntigravityUserProfile,
   AntigravityWorkspaceInfo
 } from '../../../../main/antigravity/antigravityProtocol'
+import { getPlatform } from '@adapters/platforms'
 import { EmptyLine, Section } from '@/components/info/Section'
+import {
+  ArkComposeNewSvg,
+  ArkPromptSparkSvg,
+  ArkWorkspaceVaultSvg
+} from '@/components/ui/ArkGlyphs'
+import { PlatformGlyph } from '@/components/ui/PlatformGlyph'
 import { cn } from '@/lib/cn'
 import { cleanSidebarError } from '@/lib/sidebarCompat'
 import { t } from '@/lib/i18n'
@@ -121,9 +123,9 @@ export function AntigravityAccountAndModelSection({ accountId }: { accountId: st
       {error && <p className="mb-2 text-[11.5px] text-status-error">{error}</p>}
 
       {models.length === 0 ? (
-        <EmptyLine>{loading ? '正在加载可用模型…' : '登录后自动同步 Google Antigravity 模型列表'}</EmptyLine>
+        <EmptyLine>{loading ? '加载可用模型…' : '登录后自动同步模型'}</EmptyLine>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {models.map((m) => {
             const active =
               selectedModelEnum !== undefined ? selectedModelEnum === m.modelEnum : m.isDefault
@@ -137,13 +139,13 @@ export function AntigravityAccountAndModelSection({ accountId }: { accountId: st
                 type="button"
                 onClick={() => void selectModel(m)}
                 className={cn(
-                  'press flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition-colors',
+                  'press flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors',
                   active
-                    ? 'border-accent bg-accent-50/70 text-ink'
-                    : 'border-line bg-surface text-ink hover:bg-hover'
+                    ? 'bg-surface text-ink shadow-xs ring-1 ring-line/70'
+                    : 'text-ink-secondary hover:bg-hover/70 hover:text-ink'
                 )}
               >
-                <Sparkles className={cn('size-3.5 shrink-0', active ? 'text-accent-600' : 'text-ink-muted')} />
+                <ArkPromptSparkSvg className={cn('size-3.5 shrink-0', active ? 'text-ink' : 'text-ink-muted')} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="truncate text-[12px] font-medium">{m.displayName}</span>
@@ -227,16 +229,16 @@ export function AntigravityConversationsSection({
 
   return (
     <Section
-      title="云端会话 (Cascades)"
+      title="云端会话"
       count={items.length}
       action={
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => startNewAntigravitySession(botId)}
-            className="press-icon inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-accent-600 hover:bg-accent-50"
+            className="press-icon inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-ink-secondary hover:bg-hover hover:text-ink"
           >
-            <MessageSquarePlus className="size-3" />
+            <ArkComposeNewSvg className="size-3" />
             新建
           </button>
           <button
@@ -252,19 +254,19 @@ export function AntigravityConversationsSection({
       }
     >
       {items.length === 0 ? (
-        <EmptyLine>{loading ? '正在拉取云端会话…' : '暂无云端会话，发一条消息即可创建'}</EmptyLine>
+        <EmptyLine>{loading ? '正在拉取云端会话…' : '暂无云端会话'}</EmptyLine>
       ) : (
-        <div className="max-h-64 space-y-1 overflow-y-auto pr-0.5">
+        <div className="max-h-64 space-y-0.5 overflow-y-auto pr-0.5">
           {items.map((conv) => {
             const active = conv.conversationId === activeSessionId
             return (
               <div
                 key={conv.conversationId}
                 className={cn(
-                  'group flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-colors',
+                  'group flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-colors',
                   active
-                    ? 'border-accent bg-accent-50/70 text-ink'
-                    : 'border-line bg-surface text-ink hover:bg-hover'
+                    ? 'bg-surface text-ink shadow-xs ring-1 ring-line/70'
+                    : 'text-ink-secondary hover:bg-hover/70 hover:text-ink'
                 )}
               >
                 <button
@@ -402,17 +404,17 @@ export function AntigravityEnvironmentsSection({ accountId }: { accountId: strin
         )}
       </Section>
 
-      <Section title="工作区 (Workspaces)" count={workspaces.length}>
+      <Section title="工作区" count={workspaces.length}>
         {workspaces.length === 0 ? (
-          <EmptyLine>暂无已同步的 Antigravity 工作区</EmptyLine>
+          <EmptyLine>暂无已同步工作区</EmptyLine>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {workspaces.slice(0, 12).map((ws) => (
               <div
                 key={ws.workspaceUri}
-                className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2.5 py-1.5"
+                className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 hover:bg-hover/60"
               >
-                <FolderGit2 className="size-3.5 shrink-0 text-ink-muted" />
+                <ArkWorkspaceVaultSvg className="size-3.5 shrink-0 text-ink-muted" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[12px] font-medium text-ink">{ws.displayName}</div>
                   <div className="truncate font-mono text-[10px] text-ink-muted">{ws.workspaceUri}</div>
@@ -475,9 +477,9 @@ export function AntigravityAgentsSection({ accountId }: { accountId: string }) {
       }
     >
       {agents.length === 0 ? (
-        <EmptyLine>{loading ? '正在拉取云端 Agents…' : '暂无自定义云端 Agent（默认使用通用 Antigravity Agent）'}</EmptyLine>
+        <EmptyLine>{loading ? '加载云端 Agents…' : '默认通用 Antigravity Agent'}</EmptyLine>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {agents.map((ag) => {
             const active = selectedAgentPath === ag.agentId
             return (
@@ -486,19 +488,16 @@ export function AntigravityAgentsSection({ accountId }: { accountId: string }) {
                 type="button"
                 onClick={() => void pickAgent(ag.agentId)}
                 className={cn(
-                  'press flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left',
+                  'press flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors',
                   active
-                    ? 'border-accent bg-accent-50/70 text-ink'
-                    : 'border-line bg-surface text-ink hover:bg-hover'
+                    ? 'bg-surface text-ink shadow-xs ring-1 ring-line/70'
+                    : 'text-ink-secondary hover:bg-hover/70 hover:text-ink'
                 )}
               >
-                <Bot className="size-3.5 shrink-0 text-accent-600" />
+                <PlatformGlyph platform={getPlatform('antigravity')} size="sm" className="size-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[12px] font-medium">{ag.displayName}</div>
-                  <div className="flex items-center gap-1 text-[10.5px] text-ink-muted">
-                    <Cpu className="size-2.5" />
-                    <span className="truncate">{ag.agentId}</span>
-                  </div>
+                  <div className="truncate font-mono text-[10px] text-ink-muted">{ag.agentId}</div>
                 </div>
                 {active && <Check className="size-3.5 shrink-0 text-accent-600" />}
               </button>

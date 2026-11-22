@@ -266,7 +266,6 @@ export function HarkHomeCardsSection({ accountId, botId }: { accountId: string; 
  * (`/conversations`, `/conversations/clear`, `/search/messages`)
  */
 export function HarkConversationsSection({ accountId, botId }: { accountId: string; botId: string }) {
-  const connectAccount = useBotStore((s) => s.connectAccount)
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<Array<{ id: string; text: string }> | null>(null)
   const [busy, setBusy] = useState(false)
@@ -308,26 +307,12 @@ export function HarkConversationsSection({ accountId, botId }: { accountId: stri
   }
 
   return (
-    <Section
-      title="项目与消息搜索"
-    >
+    <Section title="项目">
       <div className="flex flex-col gap-2 text-[12px]">
         <HarkProjects key={accountId} botId={botId} />
         {error && <p className="text-status-error">{error}</p>}
-        <Button size="sm" variant="secondary" disabled={busy} onClick={() => void connectAccount(accountId)}>
-          同步消息
-        </Button>
-        {activeSessionId && <Button size="sm" variant="ghost" disabled={busy} onClick={async () => {
-          setBusy(true)
-          try {
-            await callHark(accountId, '/conversations/clear', { method: 'POST', body: { conversationId: activeSessionId } })
-            if (useBotStore.getState().bots.find((b) => b.id === botId)?.activeSessionId === activeSessionId) {
-              useBotStore.setState((s) => ({ messages: { ...s.messages, [botId]: [] } }))
-            }
-          } catch (e) { setError(cleanSidebarError(e)) } finally { setBusy(false) }
-        }}>清空上下文</Button>}
 
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 pt-1">
           <TextInput
             value={query}
             onChange={(e) => {
@@ -341,9 +326,35 @@ export function HarkConversationsSection({ accountId, botId }: { accountId: stri
             aria-label="Search Hark messages"
             className="h-7 flex-1 text-[12px]"
           />
-          <Button size="sm" variant="secondary" disabled={busy} onClick={() => void runSearch()}>
-            搜索
-          </Button>
+          {activeSessionId && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true)
+                try {
+                  await callHark(accountId, '/conversations/clear', {
+                    method: 'POST',
+                    body: { conversationId: activeSessionId }
+                  })
+                  if (
+                    useBotStore.getState().bots.find((b) => b.id === botId)?.activeSessionId ===
+                    activeSessionId
+                  ) {
+                    useBotStore.setState((s) => ({ messages: { ...s.messages, [botId]: [] } }))
+                  }
+                } catch (e) {
+                  setError(cleanSidebarError(e))
+                } finally {
+                  setBusy(false)
+                }
+              }}
+              className="px-2 text-[11.5px]"
+            >
+              清空
+            </Button>
+          )}
         </div>
 
         {hits && (

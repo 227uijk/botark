@@ -164,6 +164,18 @@ export type MuseRichWidget =
       widgetId: string
       cards: Array<{ id: string; title: string; subtitle?: string; prompt?: string }>
     }
+  | {
+      kind: 'session_card'
+      widgetId: string
+      cardType: 'browser' | 'computer' | 'vault'
+      title: string
+      subtitle?: string
+      status?: string
+      url?: string
+      taskId?: string
+      previewSha256?: string
+      actionLabel?: string
+    }
 
 export interface MuseOptionWidget {
   kind: 'option'
@@ -276,19 +288,39 @@ export function parseRichWidgets(payload: Record<string, unknown>): MuseRichWidg
     if (Array.isArray(v)) bags.push(...v)
     else if (v && typeof v === 'object') bags.push(v)
   }
-  const nested = asObj(payload['data'])
-  if (nested) {
-    for (const key of ['widgets', 'presentations']) {
+  for (const parentKey of ['data', 'transcript']) {
+    const nested = asObj(payload[parentKey])
+    if (!nested) continue
+    for (const key of ['widgets', 'presentations', 'presentation']) {
       const v = nested[key]
       if (Array.isArray(v)) bags.push(...v)
+      else if (v && typeof v === 'object') bags.push(v)
+    }
+    const msgs = nested['messages']
+    if (Array.isArray(msgs)) {
+      for (const m of msgs) {
+        const mm = asObj(m)
+        const content = mm && Array.isArray(mm['content']) ? mm['content'] : []
+        for (const item of content) {
+          const cc = asObj(item)
+          if (!cc) continue
+          const cType = str(cc['type'] || cc['kind'])
+          if (cType && cType !== 'text' && cType !== 'markdown' && cType !== 'image' && cType !== 'file') {
+            bags.push(cc)
+          }
+        }
+      }
     }
   }
   const out: MuseRichWidget[] = []
+  const seenWidgetIds = new Set<string>()
   for (const raw of bags) {
     const w = asObj(raw)
     if (!w) continue
-    const kind = str(w['kind'] || w['widget_kind'] || w['widgetKind'])
+    const kind = str(w['kind'] || w['widget_kind'] || w['widgetKind'] || w['type'])
     const widgetId = str(w['widget_id'] || w['widgetId'] || w['presentation_id'] || w['id'] || `${kind}-${out.length}`)
+    if (seenWidgetIds.has(widgetId)) continue
+    seenWidgetIds.add(widgetId)
     const data = asObj(w['data']) || w
     if (kind === 'shopping_results' || kind === 'shopping_results_v2') {
       const productsRaw = data['products']
@@ -625,6 +657,53 @@ export function parseRichWidgets(payload: Record<string, unknown>): MuseRichWidg
       if (cards.length) {
         out.push({ kind: 'idea_cards', widgetId, cards })
       }
+      continue
+    }
+    if (/vault|credential|secret|password|auth_card|login_card|secure_storage|account_login/i.test(kind)) {
+      const stateObj = asObj(w['state']) || {}
+      const stateData = asObj(stateObj['data']) || {}
+      const domain = str(data['domain'] || data['host'] || data['service'] || data['site'] || w['domain'])
+      const rawStatus = str(
+        stateData['status'] || stateObj['status'] || data['status'] || data['state'] || w['status']
+      ).toLowerCase()
+      const saved =
+        Boolean(stateData['saved'] || stateData['logged_in'] || data['saved'] || data['is_saved']) ||
+        /saved|logged_in|completed|done|authenticated/i.test(rawStatus)
+      out.push({
+        kind: 'session_card',
+        widgetId,
+        cardType: 'vault',
+        title: str(data['title'] || w['title']) || (domain ? `安全存储 · ${domain}` : '安全存储'),
+        subtitle:
+          str(data['subtitle'] || data['description'] || w['display_text']) ||
+          (saved ? '登录信息已保存' : '在内置安全页面填写凭据，密码不会发到聊天记录'),
+        status: saved ? '已登录' : '待填写',
+        url: str(data['url'] || data['login_url'] || w['url']) || undefined,
+        actionLabel: saved ? '查看安全存储' : str(data['cta_label'] || data['button_label']) || '打开安全卡片'
+      })
+      continue
+    }
+    if (/browser|computer|desktop|remote_view|vm_view|screen/i.test(kind)) {
+      const preview = asObj(data['preview'] || data['latest_preview']) || data
+      const isComputer = /computer|desktop|vm/i.test(kind)
+      const rawStatus = str(data['status'] || data['state'] || w['status'])
+      out.push({
+        kind: 'session_card',
+        widgetId,
+        cardType: isComputer ? 'computer' : 'browser',
+        title: str(data['title'] || w['title']) || (isComputer ? '云端电脑' : 'Browser'),
+        subtitle: str(data['subtitle'] || data['description'] || preview['title'] || data['url']) || undefined,
+        status:
+          /running|working|active|in_progress/i.test(rawStatus)
+            ? '正在工作'
+            : /waiting|input|paused|approval/i.test(rawStatus)
+              ? '等待你操作'
+              : rawStatus || '就绪',
+        url: str(data['url'] || data['current_url'] || preview['url'] || w['url']) || undefined,
+        taskId: str(data['task_id'] || data['taskId'] || preview['task_id'] || preview['taskId']) || undefined,
+        previewSha256: str(preview['sha256'] || preview['hash'] || data['sha256']) || undefined,
+        actionLabel: str(data['cta_label'] || data['button_label']) || (isComputer ? '打开云电脑' : '打开浏览器')
+      })
       continue
     }
 

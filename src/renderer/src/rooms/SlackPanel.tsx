@@ -1,12 +1,21 @@
-import { applySlackConnection } from './slackRooms'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Loader2, Trash2, Unlink } from 'lucide-react'
 import type { SlackRequest, SlackState } from '@shared/slack'
-import { getBridge } from '@/lib/bridge'
+import { ArkSlackWeaveSvg } from '@/components/ui/ArkGlyphs'
 import { Button } from '@/components/ui/Button'
+import { TextInput } from '@/components/ui/Field'
+import { getBridge } from '@/lib/bridge'
+import { cn } from '@/lib/cn'
+import { applySlackConnection } from './slackRooms'
 
-export function SlackPanel({ id }: { id: string }) {
+export interface SlackPanelProps {
+  id: string
+  variant?: 'inspector' | 'inline'
+}
+
+export function SlackPanel({ id, variant = 'inspector' }: SlackPanelProps) {
   const bridge = getBridge()?.slack
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(variant === 'inspector')
   const [state, setState] = useState<SlackState>()
   const [app, setApp] = useState('')
   const [bot, setBot] = useState('')
@@ -14,14 +23,23 @@ export function SlackPanel({ id }: { id: string }) {
   const [thread, setThread] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+
+  const refresh = useCallback(() => {
+    if (!bridge) return
+    void bridge
+      .request({ op: 'status' })
+      .then((next) => setState(next))
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+  }, [bridge])
+
   useEffect(() => {
-    let live = true
-    if (open && bridge) void bridge.request({ op: 'status' }).then((next) => { if (live) setState(next) })
-      .catch((e) => { if (live) setError(String(e)) })
-    return () => { live = false }
-  }, [bridge, open])
+    if (open) refresh()
+  }, [open, refresh])
+
   if (!bridge) return null
+
   const binding = state?.bindings.find((b) => b.roomId === id)
+
   async function run(req: SlackRequest) {
     setBusy(true)
     setError('')
@@ -29,30 +47,203 @@ export function SlackPanel({ id }: { id: string }) {
       const next = await bridge!.request(req)
       applySlackConnection(bridge!, next)
       setState(next)
-      if (req.op === 'connect') { setApp(''); setBot('') }
-    } catch (e) { setError(String(e instanceof Error ? e.message : e)) }
-    finally { setBusy(false) }
+      if (req.op === 'connect') {
+        setApp('')
+        setBot('')
+      }
+      if (req.op === 'bind') {
+        setChannel('')
+        setThread('')
+      }
+    } catch (e) {
+      setError(String(e instanceof Error ? e.message : e))
+    } finally {
+      setBusy(false)
+    }
   }
-  return <div className="shrink-0 text-xs">
-    <button aria-expanded={open} onClick={() => setOpen(!open)}>Slack 桥接（可选）{binding ? ' · ' + binding.channel : ''}</button>
-    {open && <fieldset className="flex flex-wrap items-center gap-2 rounded border border-line p-2" disabled={busy}>
-      {!state?.connected && <>
-        <p className="w-full">开启 Slack Socket Mode，订阅 message.channels、message.groups 和 app_mention，将应用邀请到目标频道。应用需要 chat:write 和相应频道的历史读取权限。</p>
-        {!state?.saved && <><input aria-label="App Token" type="password" autoComplete="off" placeholder="App Token (xapp-)" value={app} onChange={(e) => setApp(e.target.value)} />
-          <input aria-label="Bot Token" type="password" autoComplete="off" placeholder="Bot Token (xoxb-)" value={bot} onChange={(e) => setBot(e.target.value)} /></>}
-        <Button size="sm" disabled={!state?.saved && (!app || !bot)} onClick={() => void run({ op: 'connect', appToken: app || undefined, botToken: bot || undefined })}>连接 Slack</Button>
-      </>}
-      {state?.connected && <Button size="sm" onClick={() => void run({ op: 'disconnect' })}>断开 Slack</Button>}
-      {state?.saved && !state.connected && <Button size="sm" onClick={() => void run({ op: 'forget' })}>清除凭据与绑定</Button>}
-      {binding ? <><span>{binding.channel} {binding.thread ?? '整个频道'}</span>
-        <Button size="sm" onClick={() => void run({ op: 'unbind', roomId: id })}>解除绑定</Button></> :
-        state?.connected && <>
-          <input aria-label="Slack 频道 ID" placeholder="频道 ID" value={channel} onChange={(e) => setChannel(e.target.value)} />
-          <input aria-label="Slack 线程时间戳" placeholder="线程 ts（可选）" value={thread} onChange={(e) => setThread(e.target.value)} />
-          <Button size="sm" disabled={!channel.trim()} onClick={() => void run({ op: 'bind', roomId: id, channel: channel.trim(), thread: thread.trim() || undefined })}>绑定并同步新消息</Button>
-          <p className="w-full">绑定整个频道时，每个新的 Slack 话题独立讨论。在 Slack 输入 @成员名称即可接力。</p>
-        </>}
-      {error && <p role="alert" className="w-full text-status-error">{error}</p>}
-    </fieldset>}
-  </div>
+
+  const content = (
+    <div className="flex flex-col gap-2.5 text-[12px]">
+      {/* Compact Status Bar */}
+      <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-sunken/45 px-3 py-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className={cn(
+              'size-2 shrink-0 rounded-full',
+              state?.connected
+                ? 'bg-status-online'
+                : state?.saved
+                  ? 'bg-status-attention'
+                  : 'bg-ink-faint'
+            )}
+          />
+          <span className="truncate text-[12.5px] font-medium text-ink">
+            {state?.connected
+              ? 'Socket Mode 已连接'
+              : state?.saved
+                ? '已保存凭据'
+                : '未连接 Slack'}
+          </span>
+        </div>
+        {state?.connected && (
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => void run({ op: 'disconnect' })}
+            className="h-6 px-2 text-[11px]"
+          >
+            断开
+          </Button>
+        )}
+      </div>
+
+      {/* Connect Form */}
+      {!state?.connected && (
+        <div className="flex flex-col gap-2">
+          {!state?.saved && (
+            <>
+              <TextInput
+                aria-label="App Token"
+                type="password"
+                autoComplete="off"
+                placeholder="App Token (xapp-...)"
+                value={app}
+                onChange={(e) => setApp(e.target.value)}
+                className="h-8 font-mono text-[12px]"
+              />
+              <TextInput
+                aria-label="Bot Token"
+                type="password"
+                autoComplete="off"
+                placeholder="Bot Token (xoxb-...)"
+                value={bot}
+                onChange={(e) => setBot(e.target.value)}
+                className="h-8 font-mono text-[12px]"
+              />
+            </>
+          )}
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={busy || (!state?.saved && (!app.trim() || !bot.trim()))}
+              onClick={() =>
+                void run({
+                  op: 'connect',
+                  appToken: app.trim() || undefined,
+                  botToken: bot.trim() || undefined
+                })
+              }
+              className="flex-1"
+            >
+              {busy ? <Loader2 className="animate-spin" /> : <ArkSlackWeaveSvg />}
+              {state?.saved ? '重连 Slack' : '连接 Slack'}
+            </Button>
+            {state?.saved && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void run({ op: 'forget' })}
+                title="清除保存的 Slack 凭据"
+                className="press-icon grid size-7 place-items-center rounded-full text-ink-muted hover:bg-hover hover:text-status-error"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Channel Binding */}
+      {binding ? (
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-accent-200/70 bg-accent-50/45 px-3 py-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <ArkSlackWeaveSvg className="size-3.5 text-accent-600" />
+            <div className="min-w-0">
+              <p className="truncate font-mono text-[12px] font-semibold text-ink">
+                {binding.channel}
+              </p>
+              {binding.thread && (
+                <p className="truncate font-mono text-[10.5px] text-ink-muted">
+                  ts {binding.thread}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void run({ op: 'unbind', roomId: id })}
+            title="解除频道绑定"
+            className="press-icon grid size-6 place-items-center rounded-full text-ink-muted hover:bg-hover hover:text-status-error"
+          >
+            <Unlink className="size-3.5" />
+          </button>
+        </div>
+      ) : (
+        state?.connected && (
+          <div className="flex flex-col gap-1.5">
+            <TextInput
+              aria-label="Slack 频道 ID"
+              placeholder="频道 ID（如 C07ABC123）"
+              value={channel}
+              onChange={(e) => setChannel(e.target.value)}
+              className="h-8 font-mono text-[12px]"
+            />
+            <TextInput
+              aria-label="Slack 线程时间戳"
+              placeholder="线程 ts（选填）"
+              value={thread}
+              onChange={(e) => setThread(e.target.value)}
+              className="h-8 font-mono text-[12px]"
+            />
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={busy || !channel.trim()}
+              onClick={() =>
+                void run({
+                  op: 'bind',
+                  roomId: id,
+                  channel: channel.trim(),
+                  thread: thread.trim() || undefined
+                })
+              }
+              className="w-full"
+            >
+              绑定频道
+            </Button>
+          </div>
+        )
+      )}
+
+      {error && (
+        <p role="alert" className="text-[11px] text-status-error">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+
+  if (variant === 'inspector') {
+    return <div className="px-4 py-3">{content}</div>
+  }
+
+  return (
+    <div className="shrink-0">
+      <Button
+        size="sm"
+        variant="secondary"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="h-7 px-2.5 text-[11.5px]"
+      >
+        <ArkSlackWeaveSvg className="size-3.5" />
+        Slack{binding ? ` · ${binding.channel}` : ''}
+      </Button>
+      {open && <div className="mt-2">{content}</div>}
+    </div>
+  )
 }

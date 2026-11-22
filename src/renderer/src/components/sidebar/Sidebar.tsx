@@ -1,7 +1,12 @@
 import { RoomList } from '@/rooms/RoomView'
 import { type KeyboardEvent } from 'react'
-import { PanelLeft, Plus, QrCode, Search, Settings, Sparkles } from 'lucide-react'
+import { Plus, Search, Settings } from 'lucide-react'
 import { hasSeenOnboarding } from '@/components/onboarding/OnboardingGuide'
+import {
+  ArkDrawerToggleSvg,
+  ArkMobileLinkSvg,
+  ArkPromptSparkSvg
+} from '@/components/ui/ArkGlyphs'
 import { GrokBotMark } from '@/components/ui/GrokBotMark'
 import { IconButton } from '@/components/ui/IconButton'
 import { t } from '@/lib/i18n'
@@ -72,7 +77,7 @@ export function Sidebar({ onAddBot }: SidebarProps) {
             label={t('Expand sidebar')}
             onClick={toggleSidebarCollapsed}
           >
-            <PanelLeft />
+            <ArkDrawerToggleSvg side="left" />
           </IconButton>
           <IconButton round label={t('New bot')} shortcut={shortcutLabel('N')} onClick={onAddBot}>
             <Plus />
@@ -84,7 +89,7 @@ export function Sidebar({ onAddBot }: SidebarProps) {
               label="打开操作指南"
               onClick={() => setOnboardingOpen(true)}
             >
-              <Sparkles />
+              <ArkPromptSparkSvg />
             </IconButton>
             {unseenGuide && (
               <span
@@ -120,7 +125,7 @@ export function Sidebar({ onAddBot }: SidebarProps) {
             label={t('Collapse sidebar')}
             onClick={toggleSidebarCollapsed}
           >
-            <PanelLeft />
+            <ArkDrawerToggleSvg side="left" active />
           </IconButton>
           <IconButton round label={t('Search')} shortcut={shortcutLabel('K')} onClick={() => openPalette()}>
             <Search />
@@ -153,10 +158,10 @@ export function Sidebar({ onAddBot }: SidebarProps) {
         </button>
         <IconButton
           round
-          label="iOS 扫码同步"
+          label="手机无线同步"
           onClick={() => setSettingsOpen(true, 'mobile-sync')}
         >
-          <QrCode />
+          <ArkMobileLinkSvg />
         </IconButton>
         <span className="relative shrink-0">
           <IconButton
@@ -165,7 +170,7 @@ export function Sidebar({ onAddBot }: SidebarProps) {
             label="打开操作指南"
             onClick={() => setOnboardingOpen(true)}
           >
-            <Sparkles />
+            <ArkPromptSparkSvg />
           </IconButton>
           {unseenGuide && (
             <span

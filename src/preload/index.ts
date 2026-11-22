@@ -41,7 +41,9 @@ const bridge: BotHubBridge = {
     resize: (viewId, bounds) => ipcRenderer.send(WEB_VIEW_CHANNELS.resize, viewId, bounds),
     detach: (viewId) => ipcRenderer.invoke(WEB_VIEW_CHANNELS.detach, viewId),
     destroy: (viewId) => ipcRenderer.invoke(WEB_VIEW_CHANNELS.destroy, viewId),
-    clearPartition: (accountId) => ipcRenderer.invoke(WEB_VIEW_CHANNELS.clearPartition, accountId)
+    clearPartition: (accountId) => ipcRenderer.invoke(WEB_VIEW_CHANNELS.clearPartition, accountId),
+    navigate: (viewId, url) => ipcRenderer.invoke(WEB_VIEW_CHANNELS.navigate, viewId, url),
+    openInPartition: (request) => ipcRenderer.invoke(WEB_VIEW_CHANNELS.openInPartition, request)
   },
   muse: {
     ensure: (request) => ipcRenderer.invoke(MUSE_CHANNELS.ensure, request),

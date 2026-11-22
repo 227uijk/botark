@@ -22,6 +22,7 @@ import type {
 import { EmptyLine, Section } from '@/components/info/Section'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { Button } from '@/components/ui/Button'
+import { Select } from '@/components/ui/Select'
 import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
 import { cleanSidebarError } from '@/lib/sidebarCompat'
@@ -99,23 +100,23 @@ export function HermesServerSection({ accountId }: { accountId: string }) {
 
         {models.length > 0 && (
           <div className="flex items-center gap-2">
-            <label className="flex shrink-0 items-center gap-1 text-[11.5px] text-ink-secondary">
+            <span className="flex shrink-0 items-center gap-1 text-[11.5px] text-ink-secondary">
               <Cpu className="size-3" aria-hidden />
               {t('Model')}
-            </label>
-            <select
-              value={status?.model || models[0]?.id || 'hermes-agent'}
+            </span>
+            <Select
+              size="xs"
+              variant="pill"
               disabled={savingModel}
-              onChange={(e) => void handleModelChange(e.target.value)}
-              className="h-7 min-w-0 flex-1 rounded-lg border border-line bg-surface px-2 font-mono text-[11.5px] text-ink outline-none focus:border-accent-600"
-            >
-              {models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.id}
-                  {m.root && m.root !== m.id ? ` → ${m.root}` : ''}
-                </option>
-              ))}
-            </select>
+              value={status?.model || models[0]?.id || 'hermes-agent'}
+              onValueChange={(next) => void handleModelChange(next)}
+              className="flex-1 font-mono"
+              options={models.map((m) => ({
+                value: m.id,
+                label: m.id,
+                description: m.root && m.root !== m.id ? m.root : undefined
+              }))}
+            />
           </div>
         )}
 

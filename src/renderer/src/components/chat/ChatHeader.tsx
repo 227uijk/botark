@@ -1,8 +1,10 @@
 import { HarkProjects } from '../hark/HarkProjects'
-import { ChevronRight, Globe, MessageSquarePlus, PanelRight, Pin, PinOff, RefreshCw } from 'lucide-react'
+import { ChevronRight, Globe, Pin, PinOff, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { PaneHeader } from '@/components/layout/PaneHeader'
 import { getPlatformInspector } from '@/components/info/platformInspector'
+import { ArkComposeNewSvg, ArkDrawerToggleSvg, ArkExportDocSvg } from '@/components/ui/ArkGlyphs'
+import { triggerShareConversation } from './ShareConversationDialog'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { IconButton } from '@/components/ui/IconButton'
 import { STATUS_LABEL } from '@/components/ui/Status'
@@ -60,6 +62,7 @@ function useEnsureGrokAgentBound(bot: Bot): void {
 
 export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
   const allAccounts = useBotStore((s) => s.accounts)
+  const hasMessages = useBotStore((s) => (s.messages[bot.id]?.length ?? 0) > 0)
   const infoOpen = useBotStore((s) => s.infoPanelOpen)
   const toggleInfoPanel = useBotStore((s) => s.toggleInfoPanel)
   const webSessionOpen = useBotStore((s) => s.webSessionOpen)
@@ -190,7 +193,7 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
             }
             onClick={() => void handleNewConversation()}
           >
-            <MessageSquarePlus />
+            <ArkComposeNewSvg />
           </IconButton>
         )}
         {bot.activeAccountId && (
@@ -200,6 +203,14 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
             onClick={() => void connectAccount(bot.activeAccountId)}
           >
             <RefreshCw className={cn(activeAccount?.pending && 'animate-spin')} />
+          </IconButton>
+        )}
+        {hasMessages && (
+          <IconButton
+            label="共享对话页面"
+            onClick={() => triggerShareConversation({ botId: bot.id })}
+          >
+            <ArkExportDocSvg />
           </IconButton>
         )}
         <IconButton label={bot.pinned ? t('Unpin from sidebar') : t('Pin to sidebar')} active={bot.pinned === true} onClick={() => togglePinBot(bot.id)}>
@@ -220,7 +231,7 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
           active={infoOpen}
           onClick={toggleInfoPanel}
         >
-          <PanelRight />
+          <ArkDrawerToggleSvg active={infoOpen} />
         </IconButton>
       </div>
     </PaneHeader>

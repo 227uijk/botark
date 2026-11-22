@@ -1,13 +1,17 @@
 import { memo, useEffect, useState } from 'react'
-import { AlertCircle, Check, Clock3, Copy, CornerDownRight, Download, ExternalLink, FileText, Film, Image as ImageIcon, KeyRound, Loader2, Maximize2, Music, RotateCw, Wrench, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { AlertCircle, Check, Clock3, Copy, CornerDownRight, Download, ExternalLink, FileText, Film, Globe, Image as ImageIcon, KeyRound, Loader2, Maximize2, Monitor, Music, RotateCw, Wrench, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { formatBytes, formatClock } from '@/lib/format'
 import { useBotStore } from '@/store/botStore'
 import type { ChatMediaPart, ChatMessage, ChatOptionWidget, ChatRichWidget, ChatToolCall } from '@/types'
 import { getBridge } from '@/lib/bridge'
+import { ArkExportDocSvg, ArkHandoffCurveSvg, ArkShieldVaultSvg } from '@/components/ui/ArkGlyphs'
 import { ConnectorIcon } from '@/components/ui/ConnectorIcon'
+import { SwitchPill } from '@/components/ui/Controls'
+import { Select } from '@/components/ui/Select'
 import { MarkdownText } from './MarkdownText'
 import { NativeDocumentDialog, type NativeDocumentTarget } from './NativeDocumentDialog'
+import { triggerShareConversation } from './ShareConversationDialog'
 import { t } from '@/lib/i18n'
 
 interface MessageBubbleProps {
@@ -1400,9 +1404,160 @@ function RichWidgets({
             />
           )
         }
+        if (w.kind === 'session_card') {
+          return (
+            <SessionInteractiveCard
+              key={w.widgetId}
+              widget={w}
+              accountId={accountId}
+            />
+          )
+        }
         return null
       })}
     </ul>
+  )
+}
+
+function SessionInteractiveCard({
+  widget,
+  accountId
+}: {
+  widget: Extract<ChatRichWidget, { kind: 'session_card' }>
+  accountId: string
+}) {
+  const openWebSessionAt = useBotStore((s) => s.openWebSessionAt)
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (widget.cardType === 'vault') return
+    let cancelled = false
+    const muse = getBridge()?.muse
+    if (!muse?.rpc) return
+    void (async () => {
+      try {
+        let tid = widget.taskId
+        let sha = widget.previewSha256
+        if (!tid || !sha) {
+          const ctx = await muse.rpc({ accountId, method: 'computer.context', params: {} }).catch(() => null)
+          if (ctx && typeof ctx === 'object') {
+            const c = ctx as Record<string, unknown>
+            const inner = (c['context'] && typeof c['context'] === 'object' ? c['context'] : c) as Record<string, unknown>
+            const prev = (inner['preview'] && typeof inner['preview'] === 'object' ? inner['preview'] : inner) as Record<string, unknown>
+            tid = tid || (typeof inner['task_id'] === 'string' ? inner['task_id'] : undefined)
+            sha = sha || (typeof prev['sha256'] === 'string' ? prev['sha256'] : undefined)
+          }
+        }
+        if (tid && sha && !cancelled) {
+          const res = await muse.rpc({
+            accountId,
+            method: 'computer.preview',
+            params: { task_id: tid, sha256: sha }
+          })
+          if (!cancelled && res && typeof res === 'object') {
+            const o = res as Record<string, unknown>
+            if (typeof o['dataBase64'] === 'string' && o['dataBase64']) {
+              const mime = typeof o['contentType'] === 'string' ? o['contentType'] : 'image/png'
+              setPreviewSrc(`data:${mime};base64,${o['dataBase64']}`)
+            }
+          }
+        }
+      } catch {
+        /* preview optional */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [accountId, widget.cardType, widget.previewSha256, widget.taskId])
+
+  const isVault = widget.cardType === 'vault'
+  const isSaved = widget.status === '已登录'
+
+  const openInApp = () => {
+    openWebSessionAt(widget.url || null)
+  }
+
+  const openPopup = () => {
+    const targetUrl = widget.url || 'https://muse.ai'
+    void getBridge()?.webViews?.openInPartition?.({
+      accountId,
+      url: targetUrl,
+      title: widget.title
+    })
+  }
+
+  return (
+    <li className="max-w-md overflow-hidden rounded-2xl border border-line/80 bg-surface p-3.5 shadow-soft">
+      <div className="flex items-start justify-between gap-2.5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            className={cn(
+              'grid size-8 shrink-0 place-items-center rounded-xl',
+              isVault
+                ? isSaved
+                  ? 'bg-status-online/12 text-status-online-ink'
+                  : 'bg-accent-50 text-accent-600'
+                : 'bg-accent-50 text-accent-600'
+            )}
+          >
+            {isVault ? (
+              <ArkShieldVaultSvg className="size-4" />
+            ) : widget.cardType === 'computer' ? (
+              <Monitor className="size-4" />
+            ) : (
+              <Globe className="size-4" />
+            )}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[13.5px] font-semibold text-ink">{widget.title}</p>
+            <p className="truncate text-[11.5px] text-ink-muted">
+              {widget.subtitle || widget.status || (isVault ? '安全存储' : '正在工作')}
+            </p>
+          </div>
+        </div>
+        {widget.status && (
+          <span
+            className={cn(
+              'shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-medium',
+              isSaved
+                ? 'bg-status-online/12 text-status-online-ink'
+                : 'bg-hover text-ink-secondary'
+            )}
+          >
+            {widget.status}
+          </span>
+        )}
+      </div>
+
+      {previewSrc && (
+        <button
+          type="button"
+          onClick={openInApp}
+          className="mt-2.5 block w-full overflow-hidden rounded-xl border border-line bg-black/5"
+        >
+          <img src={previewSrc} alt={widget.title} className="max-h-44 w-full object-contain" />
+        </button>
+      )}
+
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={openInApp}
+          className="press flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full bg-main px-3 text-[12.5px] font-medium text-ink ring-1 ring-line-strong hover:bg-hover"
+        >
+          {widget.actionLabel || (isVault ? '在应用内填写安全卡片' : '打开浏览器')}
+        </button>
+        <button
+          type="button"
+          onClick={openPopup}
+          title="在独立安全分区窗口打开"
+          className="press-icon grid size-8 shrink-0 place-items-center rounded-full border border-line text-ink-secondary hover:bg-hover hover:text-ink"
+        >
+          <ExternalLink className="size-3.5" />
+        </button>
+      </div>
+    </li>
   )
 }
 
@@ -1524,18 +1679,13 @@ function GrokFormCard({
               {field.required && <span className="ml-0.5 text-status-error">*</span>}
             </span>
             {field.options && field.options.length > 0 ? (
-              <select
+              <Select
+                size="sm"
                 disabled={submitted || submitting}
-                value={values[field.id] ?? ''}
-                onChange={(e) => setValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
-                className="rounded-lg border border-line bg-canvas px-2.5 py-1.5 text-[12.5px] text-ink outline-none focus:border-accent-600 disabled:opacity-60"
-              >
-                {field.options.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                value={values[field.id] ?? field.options[0]?.id ?? ''}
+                onValueChange={(next) => setValues((prev) => ({ ...prev, [field.id]: next }))}
+                options={field.options.map((opt) => ({ value: opt.id, label: opt.label }))}
+              />
             ) : field.type === 'textarea' ? (
               <textarea
                 rows={3}
@@ -1560,15 +1710,10 @@ function GrokFormCard({
         ))}
 
         {hasSecretField && widget.formKind === 'user-form' && !submitted && (
-          <label className="flex items-center gap-1.5 text-[11.5px] text-ink-secondary">
-            <input
-              type="checkbox"
-              checked={saveToVault}
-              onChange={(e) => setSaveToVault(e.target.checked)}
-              className="rounded border-line"
-            />
-            保存到 Grok 安全凭据库（Secret Vault）
-          </label>
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-sunken/45 px-2.5 py-1.5 text-[11.5px] text-ink-secondary">
+            <span>存入安全凭据库（Secret Vault）</span>
+            <SwitchPill checked={saveToVault} onCheckedChange={setSaveToVault} />
+          </div>
         )}
 
         {errMsg && <p className="text-[11.5px] text-status-error">{errMsg}</p>}
@@ -1772,11 +1917,55 @@ export const MessageBubble = memo(function MessageBubble({
   const rich = (!mine && message.richWidgets) || []
   const setActiveDocument = useBotStore((s) => s.setActiveDocument)
   const setReplyTarget = useBotStore((s) => s.setReplyTarget)
+  const openWebSessionAt = useBotStore((s) => s.openWebSessionAt)
   const botMeta = useBotStore((s) => s.bots.find((b) => b.id === message.botId))
   const [docTarget, setDocTarget] = useState<NativeDocumentTarget | null>(null)
   const [articleExpanded, setArticleExpanded] = useState(false)
   const [copiedMsg, setCopiedMsg] = useState(false)
   const [reactedEmoji, setReactedEmoji] = useState<string | null>(null)
+
+  const supportsInAppWeb =
+    botMeta?.platformId === 'meta-muse' ||
+    botMeta?.platformId === 'hark' ||
+    botMeta?.platformId === 'dot' ||
+    botMeta?.platformId === 'antigravity'
+
+  /**
+   * Keep cloud browser, cloud computer, and credential vault links inside BotArk's
+   * isolated account partition (#34) instead of bouncing out to external Chrome.
+   */
+  const handleMarkdownLinkClick = (href: string, label: string): boolean => {
+    if (!supportsInAppWeb) return false
+    const isPlatformDomain = /^https?:\/\/([^/]+\.)?(muse\.ai|hark\.com|chatgpt\.com|antigravity\.google\.com)(\/|$)/i.test(href)
+    const isRelativeAction = !/^https?:\/\//i.test(href)
+    const isSessionActionLabel =
+      /登录|安全存储|安全卡片|密码|浏览器|云电脑|验证码|授权|sign\s*in|log\s*in|vault|browser/i.test(label) ||
+      /安全卡片|密码只进安全存储|打开浏览器|云浏览器|云电脑/i.test(message.text || '')
+
+    if (isPlatformDomain || isRelativeAction) {
+      openWebSessionAt(/^https?:\/\//i.test(href) ? href : null)
+      return true
+    }
+    if (isSessionActionLabel && /^https?:\/\//i.test(href)) {
+      if (getBridge()?.webViews?.openInPartition) {
+        void getBridge()!.webViews!.openInPartition({
+          accountId: message.accountId,
+          url: href,
+          title: label
+        })
+      } else {
+        openWebSessionAt(href)
+      }
+      return true
+    }
+    return false
+  }
+
+  const needsInlineSessionShortcut =
+    !mine &&
+    supportsInAppWeb &&
+    !rich.some((w) => w.kind === 'session_card') &&
+    /安全卡片|密码只进安全存储|安全存储|浏览器正在|打开浏览器|云端?浏览器|云电脑|需要你输入验证码/i.test(message.text || '')
 
   const openDocument = (target: NativeDocumentTarget) => {
     setActiveDocument({
@@ -1927,6 +2116,7 @@ export const MessageBubble = memo(function MessageBubble({
               <MarkdownText
                 text={message.text}
                 suppressWorkspaceImages={media.length > 0}
+                onLinkClick={handleMarkdownLinkClick}
                 onFileLinkClick={(path, label) =>
                   openDocument({
                     accountId: message.accountId,
@@ -1981,6 +2171,7 @@ export const MessageBubble = memo(function MessageBubble({
               <MarkdownText
                 text={message.text}
                 suppressWorkspaceImages={media.length > 0}
+                onLinkClick={handleMarkdownLinkClick}
                 onFileLinkClick={(path, label) =>
                   openDocument({
                     accountId: message.accountId,
@@ -1992,6 +2183,27 @@ export const MessageBubble = memo(function MessageBubble({
             )}
           </div>
         ))}
+
+      {/* 3b. Inline shortcut pill when assistant mentions in-page Secure Vault / Cloud Browser (#34) */}
+      {needsInlineSessionShortcut && (
+        <button
+          type="button"
+          onClick={() => openWebSessionAt(null)}
+          className="press mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 py-1 text-[12px] font-medium text-ink shadow-soft hover:bg-hover"
+        >
+          {/安全卡片|安全存储|密码/.test(message.text || '') ? (
+            <>
+              <ArkShieldVaultSvg className="size-3.5 text-accent-600" />
+              <span>在应用内打开安全卡片 / 原生页</span>
+            </>
+          ) : (
+            <>
+              <Globe className="size-3.5 text-accent-600" />
+              <span>在应用内查看实时云浏览器</span>
+            </>
+          )}
+        </button>
+      )}
 
       {/* 4. Media / File / Artifact cards below message text */}
       {!mine && media.length > 0 && (
@@ -2035,14 +2247,14 @@ export const MessageBubble = memo(function MessageBubble({
           </time>
           {mine ? (
             <div className="flex items-center gap-1.5">
-              {botMeta?.platformId === 'grok' && message.text && (
+              {message.text && (
                 <button
                   type="button"
                   onClick={quoteReplyMessage}
                   title="引用回复"
                   className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] text-ink-secondary hover:bg-hover hover:text-ink"
                 >
-                  <CornerDownRight className="size-3" />
+                  <ArkHandoffCurveSvg className="size-3" />
                   <span>引用</span>
                 </button>
               )}
@@ -2051,17 +2263,15 @@ export const MessageBubble = memo(function MessageBubble({
           ) : (
             message.text && (
               <div className="flex items-center gap-1">
-                {botMeta?.platformId === 'grok' && (
-                  <button
-                    type="button"
-                    onClick={quoteReplyMessage}
-                    title="引用此消息回复"
-                    className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-ink-secondary hover:bg-hover hover:text-ink"
-                  >
-                    <CornerDownRight className="size-3" />
-                    <span>引用</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={quoteReplyMessage}
+                  title="引用此消息回复"
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-ink-secondary hover:bg-hover hover:text-ink"
+                >
+                  <ArkHandoffCurveSvg className="size-3" />
+                  <span>引用</span>
+                </button>
                 <button
                   type="button"
                   onClick={copyMessageText}
@@ -2070,6 +2280,15 @@ export const MessageBubble = memo(function MessageBubble({
                 >
                   {copiedMsg ? <Check className="size-3 text-status-online" /> : <Copy className="size-3" />}
                   <span>{copiedMsg ? '已复制' : t('Copy')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => triggerShareConversation({ botId: message.botId, messageId: message.id })}
+                  title="生成共享页面"
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-ink-secondary hover:bg-hover hover:text-ink"
+                >
+                  <ArkExportDocSvg className="size-3" />
+                  <span>分享</span>
                 </button>
                 <button
                   type="button"

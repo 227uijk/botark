@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createId } from '@shared/id'
 import type { HermesAuthStatus } from '@shared/ipc'
-import { CheckCircle2, LogOut, Pencil, Plus, RefreshCw, Server, Trash2 } from 'lucide-react'
+import { CheckCircle2, LogOut, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { getPlatform } from '@adapters/platforms'
 import { Button } from '@/components/ui/Button'
+import { SwitchPill } from '@/components/ui/Controls'
+import { PlatformGlyph } from '@/components/ui/PlatformGlyph'
 import { StatusDot } from '@/components/ui/Status'
 import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
@@ -144,16 +147,16 @@ export function HermesAccountsSettingsPanel() {
 
   return (
     <div className="flex flex-col gap-5 animate-veil-in">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-[18px] font-semibold tracking-tight text-ink">Hermes 实例管理</h2>
           <p className="mt-0.5 text-[13px] text-ink-secondary">
-            接入本机或远程服务器上的开源 Nous Research Hermes Agent（支持多实例、Profile 前缀 `/p/&lt;name&gt;`、SSE 流式工具调用与危险命令审批）
+            接入本机或远程 Hermes Gateway，支持多实例、流式工具与审批
           </p>
         </div>
         <Button size="sm" variant="secondary" disabled={detecting} onClick={() => void detectLocal()}>
           <RefreshCw className={cn('size-3.5', detecting && 'animate-spin')} />
-          检测本机 Hermes
+          检测本机服务
         </Button>
       </div>
 
@@ -176,9 +179,9 @@ export function HermesAccountsSettingsPanel() {
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Server className="size-4 text-accent-600" />
+            <PlatformGlyph platform={getPlatform('hermes')} size="sm" className="size-4" />
             <h3 className="text-[14px] font-semibold text-ink">
-              {editingAccountId ? '编辑 Hermes 连接配置' : '添加 Hermes 实例'}
+              {editingAccountId ? '编辑 Hermes 连接' : '添加 Hermes 实例'}
             </h3>
           </div>
           {localReachable && (
@@ -245,21 +248,18 @@ export function HermesAccountsSettingsPanel() {
         </div>
 
         {hasLocalEnvKey && !apiKeyInput.trim() && (
-          <label className="flex items-center gap-2 text-[12px] text-ink-secondary">
-            <input
-              type="checkbox"
-              checked={useLocalKey}
-              onChange={(e) => setUseLocalKey(e.target.checked)}
-              className="rounded border-line"
-            />
-            <span>自动使用本机 `~/.hermes/.env` 中的 `API_SERVER_KEY`（主进程加密转存，渲染层不可见）</span>
-          </label>
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-main px-3 py-2 ring-1 ring-line/50">
+            <span className="text-[12px] text-ink-secondary">
+              自动读取本机 <code className="font-mono text-[11px] text-ink">~/.hermes/.env</code> 密钥
+            </span>
+            <SwitchPill checked={useLocalKey} onCheckedChange={setUseLocalKey} />
+          </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-          <p className="font-mono text-[11px] text-ink-muted">
-            启用方式：hermes config set API_SERVER_ENABLED true && hermes gateway
-          </p>
+          <span className="rounded-md bg-main px-2 py-1 font-mono text-[11px] text-ink-muted ring-1 ring-line/50">
+            hermes gateway
+          </span>
           <div className="flex items-center gap-2">
             {editingAccountId && (
               <Button

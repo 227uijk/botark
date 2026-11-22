@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { Button } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/Field'
+import { Select } from '@/components/ui/Select'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
 import { cleanSidebarError, isIncompatibleApiError } from '@/lib/sidebarCompat'
@@ -639,21 +640,18 @@ export function PeersSection({ accountId }: { accountId: string }) {
                           {p.trustPreset ? ` · ${p.trustPreset}` : ''}
                         </span>
                       </span>
-                      <select
-                        value={p.trustPreset ?? ''}
-                        onChange={(e) => {
-                          if (e.target.value) updateTrustPreset(p, e.target.value)
-                        }}
+                      <Select
+                        size="xs"
+                        variant="pill"
                         aria-label="Trust preset"
-                        className="rounded border border-line bg-canvas px-1.5 py-0.5 text-[11px] text-ink"
-                      >
-                        <option value="">{p.trustPreset || 'trust…'}</option>
-                        {presets.map((pr) => (
-                          <option key={pr} value={pr}>
-                            {pr}
-                          </option>
-                        ))}
-                      </select>
+                        value={p.trustPreset ?? ''}
+                        placeholder={p.trustPreset || 'trust…'}
+                        onValueChange={(next) => {
+                          if (next) updateTrustPreset(p, next)
+                        }}
+                        className="w-28 shrink-0"
+                        options={presets.map((pr) => ({ value: pr, label: pr }))}
+                      />
                     </div>
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       <Button size="sm" variant="ghost" onClick={() => void loadPeerRules(p.museId)}>
@@ -749,18 +747,17 @@ export function PeersSection({ accountId }: { accountId: string }) {
                     </div>
                     {inv.inviteB64 && otherMuseAccounts.length > 0 && (
                       <div className="flex items-center gap-1.5 border-t border-line pt-1.5">
-                        <select
+                        <Select
+                          size="xs"
                           value={targetAccountId}
-                          onChange={(e) => setTargetAccountId(e.target.value)}
-                          className="min-w-0 flex-1 rounded border border-line bg-canvas px-1.5 py-0.5 text-[11px] text-ink"
-                        >
-                          <option value="">选择本机其它 Muse 账号投递…</option>
-                          {otherMuseAccounts.map((acc) => (
-                            <option key={acc.id} value={acc.id}>
-                              {acc.displayName} ({acc.handle})
-                            </option>
-                          ))}
-                        </select>
+                          placeholder="选择本机其它 Muse 账号投递…"
+                          onValueChange={(next) => setTargetAccountId(next)}
+                          className="flex-1"
+                          options={otherMuseAccounts.map((acc) => ({
+                            value: acc.id,
+                            label: `${acc.displayName} (${acc.handle})`
+                          }))}
+                        />
                         <Button
                           size="sm"
                           disabled={!targetAccountId || Boolean(busy)}

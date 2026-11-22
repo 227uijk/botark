@@ -9,14 +9,12 @@ import {
   FolderOpen,
   Layers,
   MessageSquare,
-  PanelRight,
   Plus,
   Settings,
-  Sparkles,
-  Users,
   X
 } from 'lucide-react'
 import { getPlatformInspector } from '@/components/info/platformInspector'
+import { ArkDrawerToggleSvg, ArkPromptSparkSvg, ArkRelayOrbSvg } from '@/components/ui/ArkGlyphs'
 import { Button } from '@/components/ui/Button'
 import { GrokBotMark, type BotColorId, type BotShape } from '@/components/ui/GrokBotMark'
 import { IconButton } from '@/components/ui/IconButton'
@@ -310,20 +308,20 @@ function FullScreenGuideBody({
               {/* Left Explanation */}
               <div className="flex flex-col gap-6">
                 <div className="inline-flex w-fit items-center gap-2 rounded-full bg-surface px-3 py-1 text-[12.5px] font-medium text-ink-secondary ring-1 ring-line">
-                  <Sparkles className="size-3.5 text-accent-600" />
-                  第 1 步 · 认识三栏工作台
+                  <ArkPromptSparkSvg className="size-3.5 text-accent-600" />
+                  第 1 步 · 三栏协同工作台
                 </div>
                 <h1 className="text-[28px] leading-[1.25] font-semibold tracking-tight text-ink sm:text-[32px]">
-                  左侧按 Bot 排列对话，右侧随时展开专属操作台
+                  单聊与多 Agent 群聊合一，按需展开专属操作台
                 </h1>
-                <div className="flex flex-col gap-4 text-[14.5px] leading-6 text-ink-secondary">
+                <div className="flex flex-col gap-3.5 text-[14px] leading-6 text-ink-secondary">
                   <div className="flex items-start gap-3">
                     <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg bg-surface font-mono text-[12px] font-semibold text-ink ring-1 ring-line">
                       1
                     </span>
                     <p>
-                      <strong className="font-semibold text-ink">左侧以 Bot 为单位显示</strong>
-                      ：像 Grok Bot 一个账号下往往有多个 Bot，登录账号后名下所有 Bot 会自动逐个展示在左侧列表中，点击即可对话。
+                      <strong className="font-semibold text-ink">左侧统一编排</strong>
+                      ：置顶常用 Bot、按分组管理，并可随时组建跨平台多 Agent 协作群聊。
                     </p>
                   </div>
                   <div className="flex items-start gap-3">
@@ -331,8 +329,8 @@ function FullScreenGuideBody({
                       2
                     </span>
                     <p>
-                      <strong className="font-semibold text-ink">中间统一对话流</strong>
-                      ：所有平台的 Bot 共享简洁一致的流式聊天体验，支持拖拽分组与置顶常用 Bot。
+                      <strong className="font-semibold text-ink">中间纯净对话流</strong>
+                      ：支持流式接力、共识定稿卡片，以及白名单目录与本地 MCP 上下文注入。
                     </p>
                   </div>
                   <div className="flex items-start gap-3">
@@ -340,8 +338,8 @@ function FullScreenGuideBody({
                       3
                     </span>
                     <p>
-                      <strong className="font-semibold text-ink">右侧为操作台</strong>
-                      ：点击右上角面板按钮（或按 <kbd className="rounded border border-line bg-surface px-1.5 py-0.5 font-mono text-[12px] text-ink">{shortcutLabel('I')}</kbd>）即可开关当前 Bot 的操作台。
+                      <strong className="font-semibold text-ink">右侧专属抽屉</strong>
+                      ：按 <kbd className="rounded border border-line bg-surface px-1.5 py-0.5 font-mono text-[12px] text-ink">{shortcutLabel('I')}</kbd> 随时开关当前 Bot 或群聊的深度控制面板。
                     </p>
                   </div>
                 </div>
@@ -363,7 +361,7 @@ function FullScreenGuideBody({
                         { name: 'Researcher', tag: 'Grok', active: true, shape: 'blob' as BotShape, color: 'blue' as BotColorId },
                         { name: 'Code Helper', tag: 'Grok', active: false, shape: 'sparkle' as BotShape, color: 'violet' as BotColorId },
                         { name: 'Daily Brief', tag: 'Grok', active: false, shape: 'gem' as BotShape, color: 'green' as BotColorId },
-                        { name: 'Meta Muse', tag: 'Muse', active: false, shape: 'crystal' as BotShape, color: 'pink' as BotColorId },
+                        { name: 'Meta Muse', tag: 'Muse', active: false, shape: 'crystal' as BotShape, color: 'magenta' as BotColorId },
                         { name: 'Orbit Dot', tag: 'Dot', active: false, shape: 'star' as BotShape, color: 'orange' as BotColorId }
                       ].map((row) => (
                         <div
@@ -379,9 +377,15 @@ function FullScreenGuideBody({
                       ))}
                     </div>
 
-                    <div className="flex items-center gap-1.5 rounded-lg bg-sunken px-2 py-1.5 text-[11.5px] font-medium text-ink">
-                      <Settings className="size-3.5 text-ink-secondary" />
-                      <span>设置与账号</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium text-ink-secondary">
+                        <ArkRelayOrbSvg className="size-3.5 text-accent-600" />
+                        <span>协作群聊</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 rounded-lg bg-sunken px-2 py-1.5 text-[11.5px] font-medium text-ink">
+                        <Settings className="size-3.5 text-ink-secondary" />
+                        <span>设置与账号</span>
+                      </div>
                     </div>
                   </div>
 
@@ -389,7 +393,7 @@ function FullScreenGuideBody({
                   <div className="flex flex-col justify-between rounded-xl border border-line bg-main p-3">
                     <div className="flex items-center justify-between border-b border-line/60 pb-2">
                       <span className="text-[12px] font-semibold text-ink">Researcher</span>
-                      <PanelRight className="size-4 text-accent-600" />
+                      <ArkDrawerToggleSvg active className="size-4 text-accent-600" />
                     </div>
                     <div className="flex flex-col items-center gap-2.5 py-4 text-center">
                       <GrokBotMark
@@ -429,36 +433,36 @@ function FullScreenGuideBody({
           )}
 
           {step === 'accounts' && (
-            <div key="accounts" className="flex animate-veil-in flex-col gap-8">
-              <div className="flex flex-col gap-3">
-                <div className="inline-flex w-fit items-center gap-2 rounded-full bg-surface px-3 py-1 text-[12.5px] font-medium text-ink-secondary ring-1 ring-line">
-                  <Users className="size-3.5 text-accent-600" />
-                  第 2 步 · 在哪里导入与管理账号
+            <div key="accounts" className="flex animate-veil-in flex-col gap-5">
+              <div className="flex flex-col gap-2.5">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full bg-surface px-3 py-1 text-[12px] font-medium text-ink-secondary ring-1 ring-line">
+                  <ArkRelayOrbSvg className="size-3.5 text-accent-600" />
+                  第 2 步 · 账号接入与编排
                 </div>
-                <h1 className="text-[28px] leading-[1.25] font-semibold tracking-tight text-ink sm:text-[32px]">
-                  两个入口添加账号，集中管理四大平台
+                <h1 className="text-[26px] leading-[1.25] font-semibold tracking-tight text-ink sm:text-[30px]">
+                  两个入口接入账号，统一调度六大平台
                 </h1>
               </div>
 
-              {/* Two Clear Entry Points */}
-              <div className="grid gap-4 sm:grid-cols-2">
+              {/* Two Compact Entry Capsules */}
+              <div className="grid gap-3 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={() => dismissAndAddBot()}
-                  className="group flex items-start gap-4 rounded-2xl border border-line bg-surface p-5 text-left transition-all hover:border-line-strong hover:shadow-soft"
+                  className="group press flex items-center gap-3.5 rounded-2xl border border-line/80 bg-surface p-3.5 text-left transition-all hover:border-line-strong hover:shadow-soft"
                 >
-                  <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent-50 text-accent-600">
-                    <Plus className="size-5" />
+                  <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-50 text-accent-600">
+                    <Plus className="size-4.5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-[16px] font-semibold text-ink">入口一：左上角「＋ 新建」按钮</h3>
-                      <kbd className="rounded-md border border-line bg-canvas px-2 py-0.5 font-mono text-[11.5px] text-ink-secondary">
+                      <h3 className="text-[14.5px] font-semibold text-ink">左上角「＋ 新建」</h3>
+                      <kbd className="rounded-md border border-line bg-canvas px-1.5 py-0.5 font-mono text-[11px] text-ink-secondary">
                         {shortcutLabel('N')}
                       </kbd>
                     </div>
-                    <p className="mt-1.5 text-[13.5px] leading-5 text-ink-secondary">
-                      快速选择平台打开登录窗口、浏览器一键授权，或直接粘贴凭据添加新账号与新 Bot。
+                    <p className="mt-0.5 truncate text-[12.5px] text-ink-secondary">
+                      一键登录、浏览器授权、粘贴凭据或组建协作群聊
                     </p>
                   </div>
                 </button>
@@ -466,42 +470,43 @@ function FullScreenGuideBody({
                 <button
                   type="button"
                   onClick={() => dismissAndOpenSettings('overview')}
-                  className="group flex items-start gap-4 rounded-2xl border border-line bg-surface p-5 text-left transition-all hover:border-line-strong hover:shadow-soft"
+                  className="group press flex items-center gap-3.5 rounded-2xl border border-line/80 bg-surface p-3.5 text-left transition-all hover:border-line-strong hover:shadow-soft"
                 >
-                  <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-sunken text-ink">
-                    <Settings className="size-5" />
+                  <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-sunken text-ink">
+                    <Settings className="size-4.5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-[16px] font-semibold text-ink">入口二：左下角「设置与账号」</h3>
+                      <h3 className="text-[14.5px] font-semibold text-ink">左下角「设置与账号」</h3>
                       <ArrowRight className="size-4 text-ink-muted transition-transform group-hover:translate-x-0.5" />
                     </div>
-                    <p className="mt-1.5 text-[13.5px] leading-5 text-ink-secondary">
-                      按平台查看全部已接入账号状态、批量导入账号、一键同步 Grok 名下全部 Bot，以及管理代理池。
+                    <p className="mt-0.5 truncate text-[12.5px] text-ink-secondary">
+                      全平台健康总览、批量导入、代理池与手机无线同步
                     </p>
                   </div>
                 </button>
               </div>
 
-              {/* Four Manageable Platforms */}
-              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Balanced 3x2 Grid for All 6 Native Platforms */}
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {PLATFORM_GUIDE_ITEMS.map((item) => {
                   const descriptor = getPlatform(item.id)
                   return (
                     <div
                       key={item.id}
-                      className="flex flex-col justify-between gap-4 rounded-2xl border border-line bg-surface p-4"
+                      className="flex flex-col justify-between gap-3 rounded-2xl border border-line/80 bg-surface p-4"
                     >
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2.5">
                           <PlatformGlyph platform={descriptor} size="md" />
-                          <span className="text-[15px] font-semibold text-ink">{item.title}</span>
+                          <span className="text-[14.5px] font-semibold text-ink">{item.title}</span>
                         </div>
-                        <p className="text-[13px] leading-5 text-ink">{item.accountRule}</p>
-                        <p className="text-[12.5px] leading-5 text-ink-secondary">{item.importMethods}</p>
+                        <p className="line-clamp-2 text-[12.5px] leading-[18px] text-ink-secondary">
+                          {item.importMethods}
+                        </p>
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex items-center gap-2 pt-0.5">
                         <Button
                           size="sm"
                           variant="primary"
@@ -530,7 +535,7 @@ function FullScreenGuideBody({
               {/* Left: Platform Switcher & Clean Explanation */}
               <div className="flex flex-col gap-6">
                 <div className="inline-flex w-fit items-center gap-2 rounded-full bg-surface px-3 py-1 text-[12.5px] font-medium text-ink-secondary ring-1 ring-line">
-                  <PanelRight className="size-3.5 text-accent-600" />
+                  <ArkDrawerToggleSvg active className="size-3.5 text-accent-600" />
                   第 3 步 · 右侧操作台
                 </div>
                 <h1 className="text-[28px] leading-[1.25] font-semibold tracking-tight text-ink sm:text-[32px]">

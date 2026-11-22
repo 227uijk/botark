@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, ShieldAlert } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { adapterRegistry } from '@adapters/registry'
 import type { ApprovalDecision, MuseApproval } from '@adapters/types'
+import { ArkShieldVaultSvg } from '@/components/ui/ArkGlyphs'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/cn'
 import { t } from '@/lib/i18n'
@@ -66,7 +67,7 @@ function Card({
     >
       <div className="flex items-start gap-2.5">
         <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-status-attention/12 text-status-attention-ink">
-          <ShieldAlert className="size-4" aria-hidden />
+          <ArkShieldVaultSvg className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[14px] leading-5 font-medium text-ink">{title}</p>

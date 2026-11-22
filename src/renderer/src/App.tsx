@@ -1,4 +1,5 @@
 import { RoomView } from '@/rooms/RoomView'
+import { RoomInspectorPanel } from '@/rooms/RoomInspectorPanel'
 import { useRooms } from '@/rooms/roomStore'
 import { useEffect } from 'react'
 import { AddBotDialog } from '@/components/add-bot/AddBotDialog'
@@ -20,10 +21,14 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 export default function App() {
   const settingsOpen = useBotStore((s) => s.settingsOpen)
   const selectedBotId = useBotStore((s) => s.selectedBotId)
-  const roomSelected = useRooms((s) => selectedBotId === 'room-create' || s.rooms.some((r) => r.id === selectedBotId))
-  // Details only make sense next to a selected bot (and not while in Settings).
+  const activeRoom = useRooms((s) => s.rooms.find((r) => r.id === selectedBotId))
+  const roomSelected = selectedBotId === 'room-create' || Boolean(activeRoom)
+  // Details slide open next to a selected bot or active collaboration room (and not while in Settings).
   const infoOpen = useBotStore(
-    (s) => !s.settingsOpen && s.infoPanelOpen && s.bots.some((b) => b.id === s.selectedBotId)
+    (s) =>
+      !s.settingsOpen &&
+      s.infoPanelOpen &&
+      (s.bots.some((b) => b.id === s.selectedBotId) || Boolean(activeRoom))
   )
   const setAddBotOpen = useBotStore((s) => s.setAddBotOpen)
 
@@ -189,6 +194,7 @@ export default function App() {
     void import("@adapters/registry").then(({ adapterRegistry }) => {
       ;(window as unknown as { __bothub?: unknown }).__bothub = {
         store: useBotStore,
+        rooms: useRooms,
         prefs: usePrefsStore,
         adapterRegistry
       }
@@ -209,7 +215,7 @@ export default function App() {
           }
           aside={
             <ErrorBoundary surface="右侧面板" resetKey={selectedBotId}>
-              <InfoPanel />
+              {activeRoom ? <RoomInspectorPanel room={activeRoom} /> : <InfoPanel />}
             </ErrorBoundary>
           }
         />

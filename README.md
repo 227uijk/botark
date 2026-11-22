@@ -4,10 +4,10 @@
 
 # BotArk
 
-**All your personal AI agents, in one native desktop workspace.**
+**All your personal AI agents, in one bespoke native desktop workspace.**
 
-Stop juggling five separate apps and a dozen incognito browser profiles.<br />
-Run **Grok Bot**, **ChatGPT Dot**, **Meta Muse**, **Hark**, and open-source **Hermes** side by side on macOS & Windows.
+Stop juggling six separate apps and a dozen incognito browser profiles.<br />
+Run **Grok Bot**, **Google Antigravity**, **ChatGPT Dot**, **Meta Muse**, **Hark**, and open-source **Hermes** side by side — or orchestrate them together in **Multi-Agent Collaboration Rooms** — on macOS & Windows.
 
 <p>
   <a href="https://github.com/qybaihe/botark/releases/latest"><img src="https://img.shields.io/github/v/release/qybaihe/botark?style=flat-square&label=Release&color=2563eb" alt="Latest Release" /></a>
@@ -55,33 +55,31 @@ Run **Grok Bot**, **ChatGPT Dot**, **Meta Muse**, **Hark**, and open-source **He
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/botark-dark.webp" />
-    <img src="docs/assets/botark-light.webp" alt="BotArk three-column desktop workspace" width="100%" />
+    <img src="docs/assets/botark-light.webp" alt="BotArk bespoke three-column desktop workspace" width="100%" />
   </picture>
 </div>
 
 ---
 
-## ✨ How BotArk Works
+## ✨ Bespoke Desktop Experience, Built for Calm Speed
 
-Modern personal agents do far more than chat — they run background subagents, keep long-term memories, execute scheduled jobs, and work inside cloud sandboxes. Yet once you use more than one platform (or keep separate work and personal accounts), your workflow fragments across scattered tabs and logins.
-
-**BotArk brings the entire workflow back into one calm, predictable rhythm:**
+Every surface in BotArk is custom-crafted around a quiet, sculptural **Sand** aesthetic inspired by **Grok Bot** — zero generic web wrappers, zero cluttered chrome, and spring-driven motion throughout:
 
 <table>
   <tr>
     <td width="46%" valign="middle">
-      <h3>1. Connect any account in seconds</h3>
-      <p>Whether you prefer signing in interactively or importing credentials in bulk, BotArk gets out of your way:</p>
+      <h3>1. Connect all 6 agent platforms in seconds</h3>
+      <p>Sign in interactively or import fleets of accounts without leaving your keyboard:</p>
       <ul>
         <li><b>Window or 1-Click Browser Auth</b> that automatically respects your system proxy</li>
         <li><b>Direct Credential Paste</b> for Access Tokens, Session Cookies, JSON exports, or API Keys</li>
-        <li><b>Batch Fleet Import</b> to onboard dozens of Meta Muse or ChatGPT Dot accounts at once</li>
+        <li><b>Batch Fleet Import</b> for dozens of Meta Muse (auto-OTP) or ChatGPT Dot accounts at once</li>
       </ul>
     </td>
     <td width="54%" valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/assets/feature-platforms-dark.webp" />
-        <img src="docs/assets/feature-platforms-light.webp" alt="BotArk account onboarding and platform overview" width="100%" />
+        <img src="docs/assets/feature-platforms-light.webp" alt="BotArk 6-platform onboarding overview" width="100%" />
       </picture>
     </td>
   </tr>
@@ -89,13 +87,45 @@ Modern personal agents do far more than chat — they run background subagents, 
     <td width="54%" valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/assets/feature-accounts-dark.webp" />
-        <img src="docs/assets/feature-accounts-light.webp" alt="BotArk multi-account console and Grok multi-bot roster sync" width="100%" />
+        <img src="docs/assets/feature-accounts-light.webp" alt="BotArk 6-platform account console and Grok multi-bot sync" width="100%" />
       </picture>
     </td>
     <td width="46%" valign="middle">
-      <h3>2. Isolate accounts below, expand every bot above</h3>
-      <p>Under the hood, every account runs inside its own sandboxed Chromium partition and OS Keychain slot — so multiple accounts on the same platform never mix sessions.</p>
-      <p>On the surface, your sidebar stays organized around <b>individual bots</b>: sign into a single <b>Grok Bot</b> account and every specialized agent &amp; room on it expands into your sidebar automatically, with optional 1-to-1 <code>SOCKS5</code> / <code>HTTP</code> proxy binding per account.</p>
+      <h3>2. Hardware-isolated accounts, living 3D bot roster</h3>
+      <p>Every account runs inside its own sandboxed Chromium partition and OS Keychain slot, with optional 1-to-1 <code>SOCKS5</code> / <code>HTTP</code> fail-closed proxy binding so sessions and egress IPs never mix.</p>
+      <p>In the sidebar, interactive 3D <b>GrokBotMark</b> characters track your pointer, pin into quick-access tiles, and expand every specialized <b>Grok Bot</b> agent automatically from a single sign-in.</p>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 🤝 Multi-Agent Collaboration Rooms & Local MCP Studio
+
+Put your sharpest agents in the same room — let **Grok** review architecture, **Hermes** verify local repository boundaries via scoped MCP tools, and **Google Antigravity** synthesize the final sign-off:
+
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/feature-rooms-dark.webp" />
+    <img src="docs/assets/feature-rooms-light.webp" alt="BotArk Multi-Agent Collaboration Room with autonomous handoffs, MCP tool calls, and consensus deliverable seal" width="100%" />
+  </picture>
+</div>
+
+<br />
+
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h4>🔄 Autonomous <code>@Mention</code> Handoffs</h4>
+      Switch between <b>Autonomous Roundtable</b> (agents mention peers to pass the baton within a configurable turn cap + 1-click stop) and <b>Manual <code>@</code> Dispatch</b>. Replies starting with <code>[FINAL]</code> render as sealed <b>Consensus Deliverables</b> ready for 1-click copy or Markdown export.
+    </td>
+    <td width="33%" valign="top">
+      <h4>🗂️ Scoped Workspace &amp; MCP Hub</h4>
+      Grant explicit allowlisted local folders (<code>realpath</code>-verified, symlink-safe) for <code>@file</code> / <code>@folder</code> context injection. Import standard <code>mcpServers</code> JSON or wire local Hermes loopback tools in one click — every tool call pauses for human approval.
+    </td>
+    <td width="34%" valign="top">
+      <h4>💬 Zero-Server Slack Socket Mode</h4>
+      Optionally connect a Slack App (<code>xapp-</code> + <code>xoxb-</code>) over outbound WebSocket — no public webhook URL or cloud relay required. Map Slack channels or threads directly into Collaboration Rooms.
     </td>
   </tr>
 </table>
@@ -103,50 +133,51 @@ Modern personal agents do far more than chat — they run background subagents, 
 <table>
   <tr>
     <td width="33%" valign="top">
-      <h4>🗂️ Cross-Platform Grouping (<code>⌘K</code>)</h4>
-      Group Grok, Muse, Dot, and Hark bots together by project rather than by vendor. Pin daily drivers and switch conversations instantly from the keyboard.
+      <h4>🖼️ Native Multimedia &amp; Canvas</h4>
+      Multi-image galleries, zoom/copy/save lightbox, inline video &amp; audio players, Hark live browser stream, and a split-pane Markdown / PDF reader right beside your chat.
     </td>
     <td width="33%" valign="top">
-      <h4>🛠️ Right-Side Workbench (<code>⌘I</code>)</h4>
-      Keep the center conversation clean. Open the right panel only when you need to inspect subagent runs, edit memories &amp; skills, manage cron schedules, or download sandbox files.
+      <h4>🛠️ Adaptive Right Workbench (<code>⌘I</code>)</h4>
+      Keep the center conversation serene. Slide open the right drawer only when inspecting subagents, switching Hark projects, editing memories, or orchestrating room turns.
     </td>
     <td width="34%" valign="top">
-      <h4>🛡️ Safe Delivery &amp; Zero Telemetry</h4>
-      Every message tracks <i>sending</i>, <i>accepted</i>, or <i>failed</i> so retries never double-send. All data stays strictly on your machine with zero cloud relays or analytics.
+      <h4>🛡️ Idempotent Delivery &amp; Zero Telemetry</h4>
+      Every turn tracks <i>sending</i>, <i>accepted</i>, or <i>failed</i> so retries never double-post. 100% local storage encrypted via macOS Keychain / Windows DPAPI with zero analytics.
     </td>
   </tr>
 </table>
 
 ---
 
-## 🤖 Platform Capabilities at a Glance
+## 🤖 6 Native Platforms at a Glance
 
-Rather than wrapping web pages in generic tabs, BotArk adapts the right-side workbench (`⌘I`) to each platform's native protocol:
+Rather than wrapping web pages in generic tabs, BotArk speaks each platform's native protocol and adapts the right-side workbench (`⌘I`) accordingly:
 
 | Platform | Sign-In & Import Paths | Account → Sidebar Mapping | Native Workbench (`⌘I`) |
 | :--- | :--- | :--- | :--- |
-| <img src="src/renderer/src/assets/platforms/grok.png" width="18" height="18" align="absmiddle" /> **Grok Bot** | Login window, **1-click browser auth**, or Token / Cookie / JSON / API Key | **1 account → many bots** (auto-syncs all agents & rooms; create new bots in place) | Sessions, subagent tasks, automations, memories & skills, file library, cloud sandbox, MCP connectors & recipes |
-| <img src="src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | Partition login window or **batch email OTP auto-import** | 1 isolated account → 1 Muse bot (supports 10+ parallel accounts) | Quota monitor, Sentinel approvals, session history, cron schedules, goals, memories, skills, file preview & cloud VM |
-| <img src="src/renderer/src/assets/platforms/dot.svg" width="18" height="18" align="absmiddle" /> **ChatGPT Dot** | Web login window or **single / multi-line AT, RT & JSON import** | 1 account → 1 Dot bot with automatic Refresh Token renewal | Orbit persona switcher, Dot / Native modes, core goal editor, **1-click cross-account memory migration**, Pages & Library |
-| <img src="src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / email login window or **Session Cookie paste** | 1 account → 1 Hark bot | Workflow cards, conversation switcher, scheduled tasks, generated file library, live cloud browser view & connectors |
-| <img src="src/renderer/src/assets/platforms/hermes.png" width="18" height="18" align="absmiddle" /> **Hermes** | **Auto-detect local `~/.hermes`** or enter remote API Server URL & `API_SERVER_KEY` (Keychain-encrypted) | 1 server / profile (`/p/<name>`) → 1 Hermes bot (multi-instance) | Native Session SSE streaming & live tool calls, dangerous-command approvals, persistent session switcher, Cron jobs, Skills & Toolsets |
+| <img src="src/renderer/src/assets/platforms/grok.png" width="18" height="18" align="absmiddle" /> **Grok Bot** | Login window, **1-click browser auth**, or Token / Cookie / JSON / API Key | **1 account → many bots** (auto-syncs all agents & rooms; create/clone in place) | Sessions & rollback, subagents, automations, memories & skills, file library, cloud sandbox, MCP & recipes |
+| <img src="src/renderer/src/assets/platforms/antigravity.png" width="18" height="18" align="absmiddle" /> **Antigravity** | Isolated Google sign-in partition (`antigravity.google.com`) | 1 isolated Google account → 1 Cloud Agent bot (multi-account parallel) | Model & quota selector, cloud **Cascades** session switcher, cloud sandbox **Capsules**, Workspaces & custom Cloud Agents |
+| <img src="src/renderer/src/assets/platforms/muse.svg" width="18" height="18" align="absmiddle" /> **Meta Muse** | Partition login window or **batch email OTP auto-import** | 1 isolated account → 1 Muse bot (supports 10+ parallel accounts) | Quota monitor, Sentinel approvals, session sync, cron schedules, goals, memories, skills, rich media preview & cloud VM |
+| <img src="src/renderer/src/assets/platforms/dot.svg" width="18" height="18" align="absmiddle" /> **ChatGPT Dot** | Web login window or **single / multi-line AT, RT & JSON import** | 1 account → 1 Dot bot with automatic Refresh Token renewal | Orbit persona switcher, Dot / Native (`gpt-6-astra`) modes, core goal editor, **1-click cross-account memory migration** & Pages |
+| <img src="src/renderer/src/assets/platforms/hark.svg" width="18" height="18" align="absmiddle" /> **Hark** | Google / email login window or **Session Cookie paste** | 1 account → 1 Hark bot with **Hark Projects** switcher | **Project workspace** (create, switch & archive projects), scheduled tasks, generated artifact library, live cloud browser & connectors |
+| <img src="src/renderer/src/assets/platforms/hermes.png" width="18" height="18" align="absmiddle" /> **Hermes** | **Auto-detect local `~/.hermes`** or remote API Server URL & `API_SERVER_KEY` (Keychain-encrypted) | 1 server / profile (`/p/<name>`) → 1 Hermes bot (multi-instance) | Native Session SSE streaming & live tool calls, dangerous-command approvals, session switcher, Cron jobs, Skills & MCP loopback |
 
 ---
 
-## 📱 Native iOS & Android Companion Apps (100% Zero-Server QR Sync)
+## 📱 Native iOS & Android Apps (Standalone + Zero-Server QR Sync)
 
-Take all 5 platforms with you on **iPhone & Android** — **without deploying or trusting any cloud server**:
+Run BotArk on **iPhone & Android** — either **standalone right out of the box** or paired with your desktop over **100% zero-server LAN / Tailscale encryption**:
 
 <div align="center">
   <table>
     <tr>
       <td align="center" width="25%">
         <img src="docs/assets/ios-onboarding.png" alt="BotArk iOS QR Pairing" width="100%" /><br />
-        <sub><b>iOS · Scan QR to Pair</b><br />Zero cloud account</sub>
+        <sub><b>iOS · Standalone or QR Pair</b><br />Zero cloud account</sub>
       </td>
       <td align="center" width="25%">
-        <img src="docs/assets/ios-synced.png" alt="BotArk iOS Synced 5-Platform List" width="100%" /><br />
-        <sub><b>iOS · 5 Platforms Live</b><br />LAN / Tailscale bridge</sub>
+        <img src="docs/assets/ios-synced.png" alt="BotArk iOS Synced Multi-Platform List" width="100%" /><br />
+        <sub><b>iOS · All Platforms Live</b><br />LAN / Tailscale bridge</sub>
       </td>
       <td align="center" width="25%">
         <img src="docs/assets/android-chat.png" alt="BotArk Android Chat & Approvals" width="100%" /><br />
@@ -160,11 +191,11 @@ Take all 5 platforms with you on **iPhone & Android** — **without deploying or
   </table>
 </div>
 
-- **Zero-Server LAN / Hotspot / Tailscale Live Bridge**: Click the QR icon in BotArk Desktop's sidebar and scan with **BotArk for iOS** (SwiftUI, `ios/BotArk`) or **BotArk for Android** (Jetpack Compose, `android/BotArk` — zero GMS required). Instantly syncs all Grok Bot, Meta Muse, ChatGPT Dot, Hark & Hermes bots, streaming chats, tool calls, and 1-tap security approvals.
-- **AES-256-GCM Offline Sync Bundle (`.botark-sync`)**: Export an encrypted workspace snapshot from Desktop and transfer via AirDrop / Quick Share / USB when off the same Wi-Fi.
-- **Hermes Direct Mode (Works While Computer Is Asleep)**: Opt-in end-to-end AES-256-GCM credential handoff into iOS Keychain / Android Keystore lets your phone stream directly from remote Hermes instances even when your Mac/PC is offline.
+- **Standalone Mobile Mode**: Launch directly into any of the 6 platforms or connect a remote Hermes Gateway on iOS & Android — even if you have never installed the desktop app.
+- **Zero-Server LAN / Hotspot / Tailscale Live Bridge**: Scan the one-time QR code in BotArk Desktop (`Settings → Mobile Sync`) using **BotArk for iOS** (SwiftUI, `ios/BotArk`) or **BotArk for Android** (Jetpack Compose, `android/BotArk` — zero GMS required) for end-to-end AES-256-GCM streaming sync and remote 1-tap approvals.
+- **Offline Encrypted Bundle (`.botark-sync`) & Hermes Direct**: Transfer workspaces offline via AirDrop / Quick Share, or hand off encrypted Hermes credentials into iOS Keychain / Android Keystore so mobile chat keeps working while your computer sleeps.
 
-👉 **iOS (SwiftUI)**: [**`ios/BotArk/README.md`**](ios/BotArk/README.md) · **Android (Jetpack Compose + Direct APK)**: [**`android/BotArk/README.md`**](android/BotArk/README.md) & [**GitHub Releases**](https://github.com/qybaihe/botark/releases/latest)
+👉 **iOS (SwiftUI)**: [**`ios/BotArk/README.md`**](ios/BotArk/README.md) · **Android (Jetpack Compose + Signed APK)**: [**`android/BotArk/README.md`**](android/BotArk/README.md) & [**GitHub Releases**](https://github.com/qybaihe/botark/releases/latest)
 
 ---
 
@@ -179,14 +210,15 @@ Download the latest installer from [**GitHub Releases**](https://github.com/qyba
 | **macOS (Apple Silicon M1–M4)** | `BotArk-<version>-arm64.dmg` | ✅ **Apple Developer ID signed & notarized** — drag into `Applications` and open directly |
 | **macOS (Intel x64)** | `BotArk-<version>-x64.dmg` | ✅ **Apple Developer ID signed & notarized** — no Gatekeeper prompts |
 | **Windows 10 / 11 (64-bit)** | `BotArk-Setup-<version>-x64.exe` | One-click NSIS installer (preserves local data across upgrades) |
+| **Android 8.0+** | `BotArk-<version>-android.apk` | Signed universal APK — standalone mode + LAN QR sync |
 
-### 2. Add Your First Agent
+### 2. Add Your First Agent or Room
 
-1. Press **`⌘N` / `Ctrl+N`** (or click **`+`** at the top-left) to connect an account, or open **Settings & Accounts** at the bottom-left for batch imports and proxy pool assignment.
-2. Pick any bot in the sidebar to start chatting, and press **`⌘I` / `Ctrl+I`** whenever you want its right-side workbench.
+1. Press **`⌘N` / `Ctrl+N`** (or click **`+`** at the top-left) to connect any of the 6 platforms or launch a **Multi-Agent Collaboration Room**.
+2. Pick any bot or room in the sidebar to start chatting, click the **Workspace Vault** icon in the composer to attach scoped local files / MCP servers, and press **`⌘I` / `Ctrl+I`** whenever you want the right-side workbench.
 
 > [!TIP]
-> New to BotArk? Click the **✦ Sparkles** icon at the bottom-left of the sidebar anytime to open the built-in **Interactive Walkthrough**.
+> Click the bespoke **✦ Spark** icon at the bottom-left of the sidebar anytime to open the **3-Step Visual Guide**.
 
 ---
 
@@ -194,9 +226,9 @@ Download the latest installer from [**GitHub Releases**](https://github.com/qyba
 
 | Shortcut (macOS / Windows) | Action |
 | :--- | :--- |
-| `⌘K` / `Ctrl+K` | Open **Command Palette** to search bots, groups, messages, and actions |
-| `⌘N` / `Ctrl+N` | Add a new bot or connect an account |
-| `⌘I` / `Ctrl+I` | Show or hide the right-side workbench |
+| `⌘K` / `Ctrl+K` | Open **Command Palette** to search bots, rooms, groups, messages, and actions |
+| `⌘N` / `Ctrl+N` | Add a new bot, connect an account, or create a Collaboration Room |
+| `⌘I` / `Ctrl+I` | Show or hide the right-side workbench / room inspector |
 | `⌘[` · `⌘]` / `Ctrl+[` · `Ctrl+]` | Jump to the previous / next bot in the sidebar |
 
 ---
@@ -218,6 +250,7 @@ npm run dev
 | `npm run typecheck` | Type-check Node and renderer TypeScript targets |
 | `npm test` | Run the Vitest unit test suite |
 | `npm run build` | Build production bundles into `out/` |
+| `npm run build:site` | Build the interactive showcase website (`site/`) |
 | `npm run dist:mac` / `npm run dist:win` | Package macOS `.dmg` + `.zip` or Windows `.exe` installers |
 
 Interested in contributing or adding another agent platform? See [**CONTRIBUTING.md**](CONTRIBUTING.md) and the protocol notes in [**`docs/`**](docs/README.md).
@@ -226,18 +259,21 @@ Interested in contributing or adding another agent platform? See [**CONTRIBUTING
 
 ## 🗺️ Roadmap
 
+- [x] **Google Antigravity Native Adapter**: Multi-account isolated sign-in, Cascades cloud sessions, Sandbox Capsules & Cloud Agents.
+- [x] **Multi-Agent Collaboration Rooms & Slack Socket Mode**: Cross-platform `@mention` handoffs, `[FINAL]` consensus deliverables, and zero-server Slack channel/thread sync.
+- [x] **Scoped Local Workspace & Approval-Gated MCP Hub**: Allowlisted `@file` / `@folder` injection, custom `mcpServers` JSON, and per-call human approval.
+- [x] **Native iOS & Android Apps**: Standalone 6-platform mobile mode + zero-server LAN/Tailscale QR sync & encrypted offline bundles.
 - [ ] **Claude Duet Integration**: Native adapter & right-side workbench support for Anthropic's **Claude Duet** (proactive tasks, approvals, cloud VM files, memories & skills).
-- [ ] **Android & iOS Companion Apps**: Mobile apps for on-the-go agent chat and push alerts, with **direct account import** (Token / Cookie / encrypted local transfer from desktop).
-- [ ] **Expanded Fleet & Workflow Tools**: Richer batch import workflows, cross-platform task inbox, and continuous protocol compatibility across all platforms.
+- [ ] **Unified Cross-Platform Inbox & Triggers**: Global approval queue and cross-agent scheduled pipelines across rooms and local workspaces.
 
 ---
 
 ## ❓ FAQ
 
 <details>
-<summary><b>Is BotArk affiliated with xAI, OpenAI, Meta, or Hark?</b></summary>
+<summary><b>Is BotArk affiliated with xAI, Google, OpenAI, Meta, Hark, or Nous Research?</b></summary>
 
-No. BotArk is an independent, MIT-licensed open-source client. You sign in with your own accounts, and requests go directly from your device to each platform.
+No. BotArk is an independent, MIT-licensed open-source client. You sign in with your own accounts, and requests go directly from your device to each platform (or your self-hosted Hermes server).
 
 </details>
 
@@ -249,9 +285,9 @@ No — official macOS `.dmg` releases are signed with an **Apple Developer ID** 
 </details>
 
 <details>
-<summary><b>How are my tokens and sessions stored? What if I'm upgrading from BotHub?</b></summary>
+<summary><b>How are my tokens, local files, and MCP tools protected?</b></summary>
 
-Everything stays locally on your computer (`~/Library/Application Support/botark` on macOS, `%APPDATA%\botark` on Windows) encrypted via OS Keychain / DPAPI (`safeStorage`). If you previously used `BotHub`, BotArk automatically detects and inherits your existing local data directory with zero account loss.
+Credentials stay locally on your computer (`~/Library/Application Support/botark` on macOS, `%APPDATA%\botark` on Windows) encrypted via OS Keychain / DPAPI (`safeStorage`). Local workspace access is strictly confined to folders you explicitly allowlist (`realpath`-checked against symlink traversal), and every MCP tool call requires explicit human approval before execution. Upgrading from legacy `BotHub` automatically migrates your local profile with zero account loss.
 
 </details>
 

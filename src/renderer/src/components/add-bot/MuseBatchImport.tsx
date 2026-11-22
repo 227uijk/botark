@@ -11,6 +11,7 @@ import {
 } from '@shared/museBatch'
 import { CheckCircle2, Circle, FileUp, Loader2, ShieldAlert, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
 import { useT } from '@/lib/i18n'
@@ -303,17 +304,18 @@ export function MuseBatchImport({ onDone, onBusyChange }: { onDone: () => void; 
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1.5 text-[12px] text-ink-secondary">
-            {t('At a time')}
-            <select
-              value={concurrency}
-              onChange={(event) => setConcurrency(Number(event.target.value))}
-              className="h-7 rounded-md border border-line bg-surface px-1.5 text-[12px] text-ink"
-            >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-            </select>
-          </label>
+          <div className="flex items-center gap-2 text-[12px] text-ink-secondary">
+            <span>{t('At a time')}</span>
+            <SegmentedControl
+              size="xs"
+              value={String(concurrency)}
+              onValueChange={(v) => setConcurrency(Number(v))}
+              options={[
+                { value: '1', label: '1' },
+                { value: '2', label: '2' }
+              ]}
+            />
+          </div>
           <Button className="ml-auto" variant="primary" disabled={parsed.items.length === 0} onClick={() => void start()}>
             {t('Import {n}', { n: String(parsed.items.length) })}
           </Button>

@@ -16,11 +16,13 @@ export function MemoryEditor({ bot }: { bot: Bot }) {
     setDraft('')
   }
 
+  const items = bot.memory ?? []
+
   return (
     <div className="flex flex-col gap-2">
-      {bot.memory.length > 0 && (
+      {items.length > 0 && (
         <ul className="flex flex-wrap gap-1.5 pt-0.5">
-          {bot.memory.map((item) => (
+          {items.map((item) => (
             <li
               key={item.id}
               className="group inline-flex max-w-full animate-step-in items-center gap-0.5 rounded-md bg-hover py-0.5 pr-0.5 pl-2 text-[12px] leading-5 text-ink-secondary"

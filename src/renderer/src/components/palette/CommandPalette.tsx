@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import * as RadixDialog from '@radix-ui/react-dialog'
-import { Globe, PanelRight, Plus, RefreshCw, Search, Sparkles, X } from 'lucide-react'
+import { Globe, PanelRight, Plus, RefreshCw, Search, Sparkles, Users, X } from 'lucide-react'
 import { getPlatformInspector } from '@/components/info/platformInspector'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { useGlide } from '@/hooks/useGlide'
@@ -9,6 +9,9 @@ import { cn } from '@/lib/cn'
 import { useOverlayLock } from '@/lib/overlay'
 import { botMatches } from '@/lib/selectors'
 import { shortcutLabel } from '@/lib/shortcuts'
+import { RoomAvatarCluster } from '@/rooms/RoomAvatarCluster'
+import { NEW_ROOM_ID } from '@/rooms/RoomView'
+import { useRooms } from '@/rooms/roomStore'
 import { useBotStore } from '@/store/botStore'
 import { t } from '@/lib/i18n'
 
@@ -69,6 +72,7 @@ export function CommandPalette() {
 function PaletteBody({ onClose }: { onClose: () => void }) {
   const seed = useBotStore((s) => s.paletteQuery)
   const bots = useBotStore((s) => s.bots)
+  const rooms = useRooms((s) => s.rooms)
   const selectedBotId = useBotStore((s) => s.selectedBotId)
   const groups = useBotStore((s) => s.groups)
   const accounts = useBotStore((s) => s.accounts)
@@ -100,6 +104,22 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       }))
     if (botRows.length) out.push([t('Bots'), botRows])
 
+    const roomRows: Row[] = rooms
+      .filter(
+        (r) =>
+          !wanted ||
+          r.title.toLowerCase().includes(wanted) ||
+          r.members.some((m) => m.name.toLowerCase().includes(wanted))
+      )
+      .map((r) => ({
+        key: `room:${r.id}`,
+        title: r.title,
+        subtitle: `${r.members.length} Agents · ${r.members.map((m) => m.name).join(' · ')}`,
+        lead: <RoomAvatarCluster members={r.members.slice(0, 2)} size="xs" />,
+        run: () => selectBot(r.id)
+      }))
+    if (roomRows.length) out.push(['协作群聊', roomRows])
+
     if (wanted.length >= 2) {
       const hits: Row[] = []
       for (const bot of bots) {
@@ -129,6 +149,16 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
           </CommandIcon>
         ),
         run: () => setAddBotOpen(true)
+      },
+      {
+        key: 'cmd:new-room',
+        title: '组建多 Agent 协作群聊',
+        lead: (
+          <CommandIcon>
+            <Users />
+          </CommandIcon>
+        ),
+        run: () => selectBot(NEW_ROOM_ID)
       },
       {
         key: 'cmd:details',
@@ -186,7 +216,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     ].filter((row) => !wanted || row.title.toLowerCase().includes(wanted))
     if (commands.length) out.push([t('Commands'), commands])
     return out
-  }, [bots, selectedBotId, groups, accounts, messages, wanted, infoOpen, webOpen, selectBot, setAddBotOpen, setOnboardingOpen, toggleInfoPanel, toggleWebSession])
+  }, [bots, rooms, selectedBotId, groups, accounts, messages, wanted, infoOpen, webOpen, selectBot, setAddBotOpen, setOnboardingOpen, toggleInfoPanel, toggleWebSession])
 
   const rows = sections.flatMap(([, items]) => items)
   const active = Math.min(cursor, Math.max(rows.length - 1, 0))

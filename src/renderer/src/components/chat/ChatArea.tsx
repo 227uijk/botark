@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import type { AttachmentMeta, PlatformId } from '@adapters/types'
-import { PanelRight } from 'lucide-react'
+import { ArkDrawerToggleSvg } from '@/components/ui/ArkGlyphs'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { getPlatformInspector } from '@/components/info/platformInspector'
@@ -13,6 +13,7 @@ import { Composer } from './Composer'
 import { MessageList } from './MessageList'
 import { WebSessionPane } from './WebSessionPane'
 import { DocumentCanvasPane } from './NativeDocumentDialog'
+import { ShareConversationDialog } from './ShareConversationDialog'
 import { t } from '@/lib/i18n'
 import { ChatApprovals } from './ApprovalCard'
 
@@ -70,7 +71,7 @@ function ConversationIntro({
           </Button>
           {bot.platformId !== 'meta-muse' && onOpenInspector && (
             <Button variant="secondary" size="lg" onClick={onOpenInspector}>
-              <PanelRight className="size-4" aria-hidden />
+              <ArkDrawerToggleSvg side="right" className="size-4" />
               {t('Import token in right panel')}
             </Button>
           )}
@@ -242,6 +243,7 @@ export function ChatArea() {
           onOpenNestedDoc={(next) => setActiveDocument(next)}
         />
       )}
+      <ShareConversationDialog bot={bot} messages={messages} />
     </div>
   )
 }
