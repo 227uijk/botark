@@ -3,16 +3,16 @@
  * used to cancel the previous watch, cutting the first reply short.
  */
 export class HarkWatchRegistry {
-  private readonly byAccount = new Map<string, Map<string, { abort: () => void; target?: string }>>()
+  private readonly byAccount = new Map<string, Map<string, { abort: () => void; target?: string; conversationId?: string }>>()
   private seq = 0
   /** Replies already returned by a finished watch (bounded per account). */
   private readonly taken = new Map<string, string[]>()
 
-  add(accountId: string, abort: () => void, target?: string): string {
+  add(accountId: string, abort: () => void, target?: string, conversationId?: string): string {
     const token = `w${++this.seq}`
     let map = this.byAccount.get(accountId)
     if (!map) this.byAccount.set(accountId, (map = new Map()))
-    map.set(token, { abort, target })
+    map.set(token, { abort, target, conversationId })
     return token
   }
 
@@ -21,6 +21,15 @@ export class HarkWatchRegistry {
     if (!map) return
     map.delete(token)
     if (map.size === 0) this.byAccount.delete(accountId)
+  }
+
+  cancelConversation(accountId: string, conversationId: string): void {
+    for (const [token, watch] of this.byAccount.get(accountId) ?? []) {
+      if (watch.conversationId === conversationId) {
+        this.remove(accountId, token)
+        watch.abort()
+      }
+    }
   }
 
   /** Stop every watch of the account (stop-tool, sign-out), or '*' for all accounts. */

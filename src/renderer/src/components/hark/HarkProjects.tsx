@@ -34,6 +34,23 @@ export function HarkProjects({ botId, compact }: { botId: string; compact?: bool
     return () => { current = false }
   }, [accountId, connected, revision])
 
+  useEffect(() => {
+    const hark = getBridge()?.hark
+    const conversationId = bot.activeSessionId
+    if (!compact || !connected || !conversationId || !hark) return
+    const subscription = crypto.randomUUID()
+    const off = hark.onEvent((e) => {
+      if (e.type === 'projectHistory' && e.subscription === subscription) {
+        useBotStore.getState().applyHarkHistory(botId, accountId, conversationId, e.messages)
+      }
+    })
+    void rpc({ op: 'observeProject', accountId, conversationId, subscription }).catch((e) => setError(String(e)))
+    return () => {
+      off()
+      void rpc({ op: 'leaveProject', accountId, subscription }).catch(() => {})
+    }
+  }, [compact, connected, accountId, botId, bot.activeSessionId])
+
   async function perform(action: () => Promise<void>) {
     setBusy(true)
     setError('')

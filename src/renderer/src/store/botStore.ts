@@ -144,6 +144,7 @@ export interface BotHubState {
   cancelGeneration: (botId: string) => Promise<void>
   switchMuseSession: (botId: string, sessionId: string) => Promise<void>
   startNewMuseSession: (botId: string) => Promise<void>
+  applyHarkHistory: (botId: string, accountId: string, sessionId: string, messages: unknown[]) => void
   switchHarkSession: (botId: string, sessionId: string) => Promise<void>
   startNewHarkSession: (botId: string, title: string) => Promise<void>
   switchHermesSession: (botId: string, sessionId: string) => Promise<void>
@@ -1382,6 +1383,13 @@ export const useBotStore = create<BotHubState>()(
       if (getBotForSessionSelection(bot, selection)) setFreshSession(botId, newSessionId)
     },
 
+    applyHarkHistory: (botId, accountId, sessionId, messages) => set((s) => {
+      const bot = s.bots.find((b) => b.id === botId)
+      if (bot?.activeAccountId !== accountId || bot.activeSessionId !== sessionId) return s
+      const hydrated = harkHistory({ messages }, botId, accountId)
+      return { messages: { ...s.messages, [botId]: mergeHydratedMessages(s.messages[botId] ?? [], hydrated) } }
+    }),
+
     switchHarkSession: async (botId, sessionId) => {
       const bot = get().bots.find((b) => b.id === botId)
       if (bot) await loadHarkSession(bot, sessionId, markSessionSelection(botId))
@@ -1734,6 +1742,7 @@ export const useBotStore = create<BotHubState>()(
         if (account.platformId === 'hark' && status === 'online') {
           const bot = get().bots.find((b) => b.activeAccountId === accountId)
           if (bot) await loadHarkSession(bot, bot.activeSessionId, sessionSelections.get(bot.id))
+            .catch((error) => patchAccount(accountId, { statusDetail: errorMessage(error) }))
         } else if (account.platformId === 'dot' && status === 'online') {
           const bridge = electronBridge()
           const ownerBot =
