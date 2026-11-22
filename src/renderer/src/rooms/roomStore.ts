@@ -1,3 +1,4 @@
+import { requestedTool } from './toolRequests'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { createId } from '@shared/id'
@@ -73,10 +74,17 @@ async function memberReply(room: CollabRoom, member: RoomMember, signal: AbortSi
     if (sessionId && sessionId !== member.sessionId) update(room.id, (r) => ({
       ...r, members: r.members.map((m) => m.botId === member.botId ? { ...m, sessionId } : m)
     }))
+    let prompt = turnPrompt(room, member)
+    const hub = getBridge()?.workspace
+    const workspace = hub ? await hub.manage(room.id, { op: 'status' }) : undefined
+    if (workspace?.tools.length) {
+      prompt += '\n\nTo request one workspace tool, reply with [TOOL] followed by JSON {"name":"…","args":{…}}. A person approves each call. Available tools: ' +
+        JSON.stringify(workspace.tools.map((t) => ({ name: t.name, schema: t.inputSchema })))
+    }
     signal.throwIfAborted()
     signal.addEventListener('abort', cancel, { once: true })
     const receipt = await adapter.sendMessage({ conversationId, sessionId, accountId: member.accountId,
-      agentId: member.agentId, hermesSessionKey: room.id + '-' + member.botId, text: turnPrompt(room, member) })
+      agentId: member.agentId, hermesSessionKey: room.id + '-' + member.botId, text: prompt })
     signal.throwIfAborted()
     const text = [...replies.values()].join('\n\n')
     if (!text) throw new Error(`@${member.name} 没有返回文字回复`)
@@ -121,6 +129,16 @@ export async function submitBrief(id: string, input: string, author = 'User') {
         members: r.members.map((m) => m.botId === member.botId
           ? { ...m, cursor: r.messages.length + 1, sessionId: reply.sessionId } : m) }))
       if (done) break
+      const tool = requestedTool(post.text)
+      if (tool && turn + 1 < room.limit) {
+        const bridge = getBridge()?.workspace
+        if (!bridge) throw new Error('工作区不可用')
+        const result = await bridge.run(id, tool.name, tool.args, room.title + ' · ' + room.members.map((m) => m.name).join(', '))
+        controller.signal.throwIfAborted()
+        update(id, (r) => ({ ...r, messages: [...r.messages, { id: createId('post'), author: 'Tool', text: result }] }))
+        queue.unshift(member)
+        continue
+      }
       if (room.mode === 'auto') for (const target of mentions(post.text, room.members)) {
         if (target.botId !== member.botId && !queue.some((m) => m.botId === target.botId)) queue.push(target)
       }

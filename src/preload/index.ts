@@ -1,3 +1,4 @@
+import { WORKSPACE_CHANNEL } from '@shared/workspace'
 import { contextBridge, ipcRenderer } from 'electron'
 import type { BotHubBridge } from '@shared/bridge'
 import {
@@ -172,6 +173,10 @@ const bridge: BotHubBridge = {
       ipcRenderer.on(ANTIGRAVITY_CHANNELS.event, handler)
       return () => ipcRenderer.removeListener(ANTIGRAVITY_CHANNELS.event, handler)
     }
+  },
+  workspace: {
+    manage: (scope, request) => ipcRenderer.invoke(WORKSPACE_CHANNEL, scope, request),
+    run: (scope, tool, args, recipient) => ipcRenderer.invoke(WORKSPACE_CHANNEL, scope, { op: 'run', tool, args, recipient })
   },
   mobileSync: {
     getState: () => ipcRenderer.invoke(MOBILE_SYNC_CHANNELS.getState),

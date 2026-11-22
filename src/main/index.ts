@@ -1,3 +1,4 @@
+import { registerWorkspaceIpc, stopWorkspaces } from './mcp/hub'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, BrowserWindow, shell } from 'electron'
@@ -151,6 +152,7 @@ function createMainWindow(): BrowserWindow {
 
 app.on('before-quit', () => {
   quitting = true
+  stopWorkspaces()
   stopGrokAccountWatch('*')
   closeCelsiusWatcher('*')
   cancelHarkWatch('*')
@@ -175,6 +177,7 @@ app.whenReady().then(async () => {
   registerAntigravityIpc()
   registerMobileSyncIpc()
   registerVaultIpc()
+  registerWorkspaceIpc(() => mainWindow)
   mainWindow = createMainWindow()
   startAutoUpdater()
 
