@@ -922,7 +922,7 @@ export class MuseSessionManager {
     const client = this.native.peek(accountId)
     if (!client) return
     const agent = await createProxyAgent(accountId)
-    client.gateway.setProxyAgent(agent)
+    client.gateway.reconnectWithProxyAgent(agent)
   }
 
 
@@ -1372,8 +1372,7 @@ export class MuseSessionManager {
   }
 
   async listSessions(accountId: string): Promise<MuseChatSessionView[]> {
-    const native = await this.rpcNative(accountId, 'sessions.list', {})
-    const raw = native ? native.value : await this.rpc(accountId, 'sessions.list', {})
+    const raw = await this.rpc(accountId, 'sessions.list', {})
     const list = sessionsFromListResult(raw)
     const session = this.sessions.get(accountId)
     if (session) session.chatSessions = list
@@ -1396,8 +1395,7 @@ export class MuseSessionManager {
     } else {
       throw new TypeError('Unknown session mutation')
     }
-    const native = await this.rpcNative(accountId, method, params)
-    const raw = native ? native.value : await this.rpc(accountId, method, params)
+    const raw = await this.rpc(accountId, method, params)
     void this.listSessions(accountId)
     return raw
   }
@@ -1417,8 +1415,7 @@ export class MuseSessionManager {
   }
 
   async startSession(accountId: string): Promise<{ sessionId: string | null }> {
-    const native = await this.rpcNative(accountId, 'session.start', {})
-    const raw = native ? native.value : await this.rpc(accountId, 'session.start', {})
+    const raw = await this.rpc(accountId, 'session.start', {})
     const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
     const nested = o['session'] && typeof o['session'] === 'object' ? (o['session'] as Record<string, unknown>) : o
     const sessionId =
@@ -1437,8 +1434,7 @@ export class MuseSessionManager {
     const session = this.sessions.get(accountId)
     if (session && sessionId) session.activeSessionId = sessionId
     const params = { session_id: sessionId, limit: 100 }
-    const native = await this.rpcNative(accountId, 'chat.history', params)
-    const raw = native ? native.value : await this.rpc(accountId, 'chat.history', params)
+    const raw = await this.rpc(accountId, 'chat.history', params)
     const rows = parseHistoryTranscript(raw)
     try {
       void this.rpcNative(accountId, 'chat.mark_seen', { thread_id: sessionId, session_id: sessionId }).catch(() => undefined)

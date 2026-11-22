@@ -80,9 +80,10 @@ interface DotStoredMeta {
 }
 
 const PROXY_PLACEHOLDER = `# 支持每行一个代理（自动识别格式）：
+https://user:pass@proxy.example.com:443
+http://user:pass@127.0.0.1:7890
 socks5://user:pass@127.0.0.1:1080
 socks5h://127.0.0.1:1080
-http://user:pass@127.0.0.1:7890
 192.168.1.10:1080:username:password
 127.0.0.1:7890`
 
@@ -208,9 +209,7 @@ export function SettingsView() {
       }
       if (muse.getProxy) {
         const nextMap: Record<string, MuseProxyView> = {}
-        const allAccs = Object.values(useBotStore.getState().accounts).filter(
-          (a) => a.platformId === 'meta-muse'
-        )
+        const allAccs = Object.values(useBotStore.getState().accounts)
         await Promise.all(
           allAccs.map(async (acc) => {
             try {
@@ -300,7 +299,13 @@ export function SettingsView() {
       setRawProxyText('')
       setPool(res.items)
       const ids = museAccounts.map((a) => a.id)
-      const keepIds = [...harkAccounts, ...grokAccounts, ...dotAccounts].map((a) => a.id)
+      const keepIds = [
+        ...harkAccounts,
+        ...grokAccounts,
+        ...dotAccounts,
+        ...antigravityAccounts,
+        ...hermesAccounts
+      ].map((a) => a.id)
       if (ids.length > 0 && muse.assignProxyPool) {
         const assigned = await muse.assignProxyPool(ids, keepIds)
         setPool(assigned.items)
@@ -324,7 +329,13 @@ export function SettingsView() {
     setHint(undefined)
     try {
       const ids = museAccounts.map((a) => a.id)
-      const keepIds = [...harkAccounts, ...grokAccounts, ...dotAccounts].map((a) => a.id)
+      const keepIds = [
+        ...harkAccounts,
+        ...grokAccounts,
+        ...dotAccounts,
+        ...antigravityAccounts,
+        ...hermesAccounts
+      ].map((a) => a.id)
       const res = await muse.assignProxyPool(ids, keepIds)
       setPool(res.items)
       setHint(`已为 ${res.assignedCount} / ${ids.length} 个 Muse 账号完成一对一代理匹配`)
@@ -358,7 +369,13 @@ export function SettingsView() {
     const muse = getBridge()?.muse
     if (muse?.assignProxyPool) {
       const ids = [...museAccounts.map((a) => a.id), accountId]
-      const keepIds = [...harkAccounts, ...grokAccounts, ...dotAccounts].map((a) => a.id)
+      const keepIds = [
+        ...harkAccounts,
+        ...grokAccounts,
+        ...dotAccounts,
+        ...antigravityAccounts,
+        ...hermesAccounts
+      ].map((a) => a.id)
       await muse.assignProxyPool(ids, keepIds).catch(() => undefined)
     }
     addBot({
@@ -432,7 +449,8 @@ export function SettingsView() {
     const muse = getBridge()?.muse
     if (muse?.assignProxyPool) {
       const ids = [...museAccounts.map((a) => a.id), ...harkAccounts.map((a) => a.id), accountId]
-      await muse.assignProxyPool(ids).catch(() => undefined)
+      const keepIds = [...grokAccounts, ...dotAccounts, ...antigravityAccounts, ...hermesAccounts].map((a) => a.id)
+      await muse.assignProxyPool(ids, keepIds).catch(() => undefined)
     }
     addBot({
       id: botId,
@@ -2022,7 +2040,8 @@ export function SettingsView() {
                           options={[
                             { value: 'socks5', label: 'SOCKS5' },
                             { value: 'socks5h', label: 'SOCKS5H (远程 DNS)' },
-                            { value: 'http', label: 'HTTP / HTTPS' }
+                            { value: 'http', label: 'HTTP' },
+                            { value: 'https', label: 'HTTPS (TLS)' }
                           ]}
                         />
                       </div>

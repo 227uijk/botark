@@ -18,6 +18,7 @@ import { registerAntigravityIpc } from './antigravity/antigravityIpc'
 import { cancelAllAntigravityRuns } from './antigravity/antigravityClient'
 import { registerMobileSyncIpc, stopMobileSyncServer } from './mobileSync/mobileSyncIpc'
 import { applyAllStoredProxies } from './muse/accountProxy'
+import { closeAllLocalProxyBridges } from './localProxyBridge'
 import { hardenVaultFilePermissions, registerVaultIpc } from './securityVault'
 
 const isMac = process.platform === 'darwin'
@@ -162,6 +163,7 @@ app.on('before-quit', () => {
   cancelAllAntigravityRuns('*')
   void stopMobileSyncServer()
   disposeAllMuseManagers()
+  void closeAllLocalProxyBridges()
 })
 
 app.whenReady().then(async () => {

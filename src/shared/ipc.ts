@@ -279,7 +279,7 @@ export interface MuseOptionWidgetView {
 }
 
 
-export type MuseProxyMode = 'direct' | 'http' | 'socks5' | 'socks5h'
+export type MuseProxyMode = 'direct' | 'http' | 'https' | 'socks5' | 'socks5h'
 
 /** Renderer-safe proxy view (password never returned). */
 export interface MuseProxyView {
