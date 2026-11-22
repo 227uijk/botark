@@ -891,8 +891,9 @@ export async function decideHermesApproval(
   const acc = requireAccount(accountId)
   const list = pendingApprovals.get(accountId) ?? []
   const target = list.find((item) => item.approval.id === approvalId)
-  const runId = target?.runId || activeRuns.get(accountId)?.runId
-  if (!runId) {
+  const run = activeRuns.get(accountId)
+  const runId = target?.runId || run?.runId
+  if (!target || !run || !runId) {
     throw new HermesApiError('未找到对应的 Hermes 运行任务（审批可能已过期）', 409)
   }
   const choice = mapApprovalDecisionToHermesChoice(decision)
@@ -904,11 +905,12 @@ export async function decideHermesApproval(
     path: `/v1/runs/${encodeURIComponent(runId)}/approval`,
     body: {
       choice,
-      ...(target?.requestId ? { request_id: target.requestId } : {})
+      ...(target.requestId ? { request_id: target.requestId } : {})
     },
     timeoutMs: 12_000
   })
-  const remaining = list.filter((item) => item.approval.id !== approvalId)
+  if (activeRuns.get(accountId) !== run) return
+  const remaining = (pendingApprovals.get(accountId) ?? []).filter((item) => item !== target)
   if (remaining.length) pendingApprovals.set(accountId, remaining)
   else pendingApprovals.delete(accountId)
   onApprovalsChanged?.(remaining.map((r) => r.approval))
@@ -1045,6 +1047,7 @@ export async function streamNativeSessionTurn(args: {
   }
 
   const handleFrame = (eventName: string, rawData: string) => {
+    args.controller.signal.throwIfAborted()
     if (!rawData || rawData === '[DONE]') return
     let payload: Record<string, unknown>
     try {
@@ -1054,10 +1057,9 @@ export async function streamNativeSessionTurn(args: {
     }
 
     const runId = typeof payload['run_id'] === 'string' ? payload['run_id'] : undefined
-    if (runId) {
-      const state = activeRuns.get(args.accountId)
-      if (state) state.runId = runId
-    }
+    const state = activeRuns.get(args.accountId)
+    const ownsRun = state?.controller === args.controller
+    if (runId && ownsRun) state.runId = runId
     if (typeof payload['session_id'] === 'string' && payload['session_id']) {
       effectiveSessionId = payload['session_id']
     }
@@ -1143,7 +1145,7 @@ export async function streamNativeSessionTurn(args: {
         break
       }
       case 'approval.request': {
-        const activeRunId = runId || activeRuns.get(args.accountId)?.runId || ''
+        const activeRunId = runId || (ownsRun ? state.runId : undefined) || ''
         const requestId =
           typeof payload['request_id'] === 'string'
             ? payload['request_id']
@@ -1161,9 +1163,9 @@ export async function streamNativeSessionTurn(args: {
           decisionOptions: mapHermesChoicesToDecisions(payload['choices']),
           raw: payload
         }
-        const current = pendingApprovals.get(args.accountId) ?? []
+        const current = ownsRun ? pendingApprovals.get(args.accountId) ?? [] : []
         const next = [...current.filter((x) => x.approval.id !== requestId), { approval, runId: activeRunId, requestId }]
-        pendingApprovals.set(args.accountId, next)
+        if (ownsRun) pendingApprovals.set(args.accountId, next)
         args.callbacks.onApprovals?.(next.map((x) => x.approval))
         args.callbacks.onActivity?.({ code: 'approval', text: 'Waiting for command approval…', busy: true })
         break
@@ -1207,6 +1209,7 @@ export async function streamNativeSessionTurn(args: {
     reader.releaseLock()
   }
 
+  args.controller.signal.throwIfAborted()
   if (streamError && !completedText && !accumulated) {
     throw new HermesApiError(streamError, 502)
   }
@@ -1270,6 +1273,7 @@ export async function streamOpenAICompatTurn(args: {
   // Non-streaming JSON fallback if server returned application/json
   if (contentType.includes('application/json')) {
     const json = (await res.json()) as Record<string, unknown>
+    args.controller.signal.throwIfAborted()
     if (typeof json['id'] === 'string' && json['id']) messageId = `hermes_${json['id']}`
     const choices = Array.isArray(json['choices']) ? (json['choices'] as Array<Record<string, unknown>>) : []
     const msg = (choices[0]?.['message'] as Record<string, unknown> | undefined) ?? {}
@@ -1294,6 +1298,7 @@ export async function streamOpenAICompatTurn(args: {
       if (done) break
       const chunk = decoder.decode(value, { stream: true })
       for (const frame of parser.feed(chunk)) {
+        args.controller.signal.throwIfAborted()
         if (!frame.data || frame.data === '[DONE]') continue
         let parsed: Record<string, unknown>
         try {
@@ -1324,6 +1329,7 @@ export async function streamOpenAICompatTurn(args: {
     reader.releaseLock()
   }
 
+  args.controller.signal.throwIfAborted()
   const { text, media } = extractInlineDataUrlImages(accumulated)
   args.callbacks.onDelta({
     messageId,
@@ -1358,7 +1364,7 @@ export async function sendHermesMessage(args: {
 
   const controller = new AbortController()
   activeRuns.set(args.accountId, { controller, sessionId: args.sessionId })
-  pendingApprovals.delete(args.accountId)
+  if (pendingApprovals.delete(args.accountId)) args.callbacks.onApprovals?.([])
 
   const sessionKey = `botark:${args.sessionKey || args.botId || args.accountId}`
   const model = args.model?.trim() || acc.model
@@ -1446,11 +1452,8 @@ export async function sendHermesMessage(args: {
   } finally {
     if (activeRuns.get(args.accountId)?.controller === controller) {
       activeRuns.delete(args.accountId)
+      if (pendingApprovals.delete(args.accountId)) args.callbacks.onApprovals?.([])
+      args.callbacks.onActivity?.({ code: 'idle', busy: false })
     }
-    if (pendingApprovals.has(args.accountId)) {
-      pendingApprovals.delete(args.accountId)
-      args.callbacks.onApprovals?.([])
-    }
-    args.callbacks.onActivity?.({ code: 'idle', busy: false })
   }
 }

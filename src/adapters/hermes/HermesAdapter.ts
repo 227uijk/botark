@@ -42,6 +42,7 @@ async function invokeHermesRpc(request: HermesRpcRequest): Promise<unknown> {
 export class HermesAdapter implements PlatformAdapter {
   readonly id = 'hermes' as const
   readonly name = 'Hermes'
+  private readonly activeSends = new Map<string, { conversationId: string }>()
 
   private readonly accounts = new Map<string, PlatformAccount>()
   private readonly statuses = new Map<string, ConnectionStatus>()
@@ -237,6 +238,18 @@ export class HermesAdapter implements PlatformAdapter {
 
   async sendMessage(message: OutgoingMessage): Promise<SendReceipt> {
     this.bindBridgeEvents()
+    const previous = this.activeSends.get(message.accountId)
+    const send = { conversationId: message.conversationId }
+    this.activeSends.set(message.accountId, send)
+    if (previous && previous.conversationId !== message.conversationId) {
+      this.emit({ type: 'typing', accountId: message.accountId, isTyping: false, ...previous })
+    }
+    const finishTyping = () => {
+      if (this.activeSends.get(message.accountId) !== send) return false
+      this.activeSends.delete(message.accountId)
+      this.emit({ type: 'typing', accountId: message.accountId, isTyping: false, ...send })
+      return true
+    }
     this.setStatus(message.accountId, 'busy')
     this.emit({
       type: 'typing',
@@ -278,13 +291,7 @@ export class HermesAdapter implements PlatformAdapter {
         media?: MuseMediaPart[]
       }
 
-      this.emit({
-        type: 'typing',
-        conversationId: message.conversationId,
-        accountId: message.accountId,
-        isTyping: false
-      })
-      this.setStatus(message.accountId, 'online')
+      if (finishTyping()) this.setStatus(message.accountId, 'online')
 
       markAccepted()
       const hasPayload = Boolean(res?.text?.trim() || res?.tools?.length || res?.media?.length)
@@ -295,31 +302,28 @@ export class HermesAdapter implements PlatformAdapter {
         ...(hasPayload ? {} : { noReply: true })
       }
     } catch (error) {
-      this.emit({
-        type: 'typing',
-        conversationId: message.conversationId,
-        accountId: message.accountId,
-        isTyping: false
-      })
-      this.emit({
-        type: 'activity',
-        accountId: message.accountId,
-        activity: {
-          code: 'idle',
-          text: null,
-          emoji: null,
-          agentId: null,
-          subagents: 0,
-          busy: false
-        }
-      })
+      const current = finishTyping()
+      if (current) {
+        this.emit({
+          type: 'activity',
+          accountId: message.accountId,
+          activity: {
+            code: 'idle',
+            text: null,
+            emoji: null,
+            agentId: null,
+            subagents: 0,
+            busy: false
+          }
+        })
+      }
       const detail = error instanceof Error ? error.message : String(error)
       if (accepted && /aborted|取消|中断/i.test(detail)) {
-        this.setStatus(message.accountId, 'online')
+        if (current) this.setStatus(message.accountId, 'online')
         return { messageId: createId('msg'), acceptedAt: Date.now(), sessionId, noReply: true }
       }
       const next = statusAfterSendFailure(error)
-      this.setStatus(message.accountId, next, next === 'error' ? detail : undefined)
+      if (current) this.setStatus(message.accountId, next, next === 'error' ? detail : undefined)
       throw error instanceof AdapterError ? error : new AdapterError('network', detail)
     } finally {
       this.pendingAcceptances.delete(requestId)

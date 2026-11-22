@@ -145,10 +145,13 @@ async function runHermesRpc(req: HermesRpcRequest): Promise<HermesRpcResponse> {
           broadcast({ type: 'approvals', accountId: req.accountId, pending })
         })
         return { ok: true, data: { ok: true } }
-      case 'stopRun':
-        await stopHermesRun(req.accountId)
+      case 'stopRun': {
+        const stopping = stopHermesRun(req.accountId)
+        broadcast({ type: 'approvals', accountId: req.accountId, pending: [] })
         broadcast({ type: 'activity', accountId: req.accountId, activityCode: 'idle', busy: false })
+        await stopping
         return { ok: true, data: { ok: true } }
+      }
       case 'sendMessage': {
         const result = await sendHermesMessage({
           accountId: req.accountId,
