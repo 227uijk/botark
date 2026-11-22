@@ -137,6 +137,9 @@ fun PlatformBadgePill(platform: PlatformId) {
 
 fun decodeBase64Image(raw: String?): ImageBitmap? {
     if (raw.isNullOrBlank()) return null
+    if (!raw.startsWith("data:") && raw.length < 512 && (raw.contains('/') || raw.contains('.'))) {
+        return null
+    }
     val part = raw.substringAfter(",", raw)
     return runCatching {
         val bytes = Base64.decode(part, Base64.DEFAULT)

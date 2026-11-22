@@ -1,4 +1,5 @@
 import { BrowserWindow, session as electronSession, shell, type WebContents } from 'electron'
+import { installGoogleOAuthHeaderGuard } from '../googleOAuthUaGuard'
 import { applyProxyToPartition } from '../muse/accountProxy'
 import { partitionForAccount } from '../webContentsViewManager'
 import { setGrokMainAuth } from './grokAuthStore'
@@ -119,6 +120,9 @@ export async function openGrokLoginWindow(
 
   const partition = partitionForAccount(accountId)
   const ses = electronSession.fromPartition(partition)
+  const sessionCleanUa = cleanChromeUserAgent(ses.getUserAgent())
+  ses.setUserAgent(sessionCleanUa)
+  installGoogleOAuthHeaderGuard(ses)
   const machineId = getOrCreateGrokMachineId(accountId)
   const { verifier, challenge, uuid } = createPkce()
   const deepUrl = sandLoginUrl(challenge, uuid)
@@ -326,10 +330,38 @@ export async function openGrokLoginWindow(
     return { action: 'deny' }
   })
 
+  let handedOffToBrowser = false
+  const maybeFallbackOnGoogleBlock = async (wc: WebContents): Promise<void> => {
+    if (handedOffToBrowser || settling || aborted || wc.isDestroyed()) return
+    try {
+      const url = wc.getURL()
+      if (!/^https:\/\/accounts\.google\.com\//i.test(url)) return
+      const blocked = (await wc.executeJavaScript(
+        `(() => {
+          const text = (document.body && document.body.innerText) || '';
+          return (
+            text.includes('此浏览器或应用可能不安全') ||
+            text.includes('This browser or app may not be secure')
+          );
+        })()`,
+        true
+      )) as boolean
+      if (blocked && !handedOffToBrowser && !settling && !aborted) {
+        handedOffToBrowser = true
+        void shell.openExternal(deepUrl)
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
   win.webContents.on('did-create-window', (childWin) => {
     childPopups.add(childWin)
     childWin.webContents.setUserAgent(cleanUa)
     guardDeepLinks(childWin.webContents)
+    childWin.webContents.on('did-finish-load', () => {
+      void maybeFallbackOnGoogleBlock(childWin.webContents)
+    })
     childWin.on('closed', () => {
       childPopups.delete(childWin)
       pollWake.wake()
@@ -399,6 +431,7 @@ export async function openGrokLoginWindow(
   win.webContents.on('did-finish-load', () => {
     pollWake.wake()
     void checkCookiesAndAutoConfirm()
+    if (win && !win.isDestroyed()) void maybeFallbackOnGoogleBlock(win.webContents)
   })
   win.webContents.on('did-navigate', () => {
     pollWake.wake()

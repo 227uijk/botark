@@ -209,6 +209,27 @@ public struct SyncedMediaPart: Codable, Equatable, Sendable {
     public let path: String
     public var name: String?
     public var mimeType: String?
+
+    public init(kind: String, path: String, name: String? = nil, mimeType: String? = nil) {
+        self.kind = kind
+        self.path = path
+        self.name = name
+        self.mimeType = mimeType
+    }
+}
+
+public struct MobileOutboundAttachment: Codable, Equatable, Sendable {
+    public let name: String
+    public let mimeType: String
+    public let dataUrl: String
+    public var size: Int?
+
+    public init(name: String, mimeType: String, dataUrl: String, size: Int? = nil) {
+        self.name = name
+        self.mimeType = mimeType
+        self.dataUrl = dataUrl
+        self.size = size
+    }
 }
 
 public struct SyncedMessage: Codable, Identifiable, Equatable, Sendable {

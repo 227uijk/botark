@@ -143,10 +143,18 @@ export type MobileBridgeLiveEvent =
       pending: HermesApprovalView[]
     }
 
+export interface MobileOutboundAttachment {
+  name: string
+  mimeType: string
+  dataUrl: string
+  size?: number
+}
+
 export interface MobileSendCommand {
   botId: string
   text: string
   clientMessageId: string
+  attachments?: MobileOutboundAttachment[]
 }
 
 export type MobileSendResult =

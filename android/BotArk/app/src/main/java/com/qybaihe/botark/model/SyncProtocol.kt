@@ -127,6 +127,14 @@ data class SyncedMediaPart(
 )
 
 @Serializable
+data class MobileOutboundAttachment(
+    val name: String,
+    val mimeType: String,
+    val dataUrl: String,
+    val size: Long? = null
+)
+
+@Serializable
 data class SyncedMessage(
     val id: String,
     val botId: String,
