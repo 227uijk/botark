@@ -12,6 +12,17 @@ describe('HarkWatchRegistry', () => {
     expect([...reg.claimedByOthers('acc', t1)]).toEqual(['r2'])
   })
 
+  it('stops replies in the selected project without cancelling another project', () => {
+    const reg = new HarkWatchRegistry()
+    const first = vi.fn()
+    const second = vi.fn()
+    reg.add('account', first, undefined, 'first')
+    reg.add('account', second, undefined, 'second')
+    reg.cancelConversation('account', 'second')
+    expect(second).toHaveBeenCalledOnce()
+    expect(first).not.toHaveBeenCalled()
+  })
+
   it('cancelAll stops every watch and remove forgets one', () => {
     const reg = new HarkWatchRegistry()
     const a = vi.fn()

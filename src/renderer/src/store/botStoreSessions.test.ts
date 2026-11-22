@@ -48,6 +48,16 @@ describe('session navigation', () => {
     vi.restoreAllMocks()
   })
 
+  it('drops observer snapshots from the previous Hark session or account', () => {
+    useBotStore.setState({ bots: [{ ...bot, platformId: 'hark' }] })
+    const history = [{ id: 'visible', role: 'assistant', content: 'fixture' }]
+    store().applyHarkHistory(bot.id, bot.activeAccountId, 'old', history)
+    store().applyHarkHistory(bot.id, 'other', 'initial', history)
+    expect(store().messages[bot.id]).toBeUndefined()
+    store().applyHarkHistory(bot.id, bot.activeAccountId, 'initial', history)
+    expect(store().messages[bot.id]?.map((m) => m.id)).toEqual(['hark_visible'])
+  })
+
   it('keeps the selected Hark project when an earlier snapshot arrives late', async () => {
     useBotStore.setState({ bots: [{ ...bot, platformId: 'hark' }] })
     const pending = deferred<unknown>()

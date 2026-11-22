@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+import { setTimeout as delay } from 'node:timers/promises'
 import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from 'electron'
 import {
   HARK_CHANNELS,
@@ -31,6 +33,10 @@ import {
   watchHarkConversationSync,
   extractHandle,
   HarkApiError,
+  HarkConversationSyncState,
+  preparedSessionForAccount,
+  readHarkStream,
+  registerHarkViewStop,
   type HarkChatMessage,
   type HarkUploadedAttachment
 } from './harkClient'
@@ -90,6 +96,65 @@ function mapHarkRichWidgets(msg: HarkChatMessage): MuseRichWidgetView[] | undefi
       }))
     }
   ]
+}
+
+function historyView(messages: HarkChatMessage[]) {
+  return messages.map((m) => ({
+    ...m, media: !/^user$/i.test(m.role) ? mapHarkMedia(m) : undefined,
+    richWidgets: !/^user$/i.test(m.role) ? mapHarkRichWidgets(m) : undefined
+  }))
+}
+
+const visibleProjects = new Map<number, { subscription: string; accountId: string; stop: () => void }>()
+
+function observeProject(event: IpcMainInvokeEvent, req: Extract<HarkRpcRequest, { op: 'observeProject' }>) {
+  const sender = event.sender
+  visibleProjects.get(sender.id)?.stop()
+  const controller = new AbortController()
+  const signal = controller.signal
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const stop = () => {
+    controller.abort()
+    unregister()
+    clearTimeout(timer)
+    sender.off('destroyed', stop)
+    sender.off('did-navigate', stop)
+    visibleProjects.delete(senderId)
+  }
+  const unregister = registerHarkViewStop(req.accountId, stop)
+  const senderId = sender.id
+  visibleProjects.set(senderId, { accountId: req.accountId, subscription: req.subscription, stop })
+  sender.once('destroyed', stop)
+  sender.once('did-navigate', stop)
+  const update = (messages: HarkChatMessage[]) => {
+    if (!signal.aborted && !sender.isDestroyed()) sender.send(HARK_CHANNELS.event, {
+      type: 'projectHistory', accountId: req.accountId, conversationId: req.conversationId,
+      subscription: req.subscription, messages: historyView(messages)
+    })
+  }
+  void (async () => {
+    const session = await preparedSessionForAccount(req.accountId)
+    const manager = randomUUID()
+    let dial = 'initial'
+    const state = new HarkConversationSyncState()
+    while (!signal.aborted) {
+      try {
+        await readHarkStream(session, req.conversationId, manager, dial, signal, (frame) => {
+          if (state.applyFrame(frame) && !timer) timer = setTimeout(() => {
+            timer = undefined
+            update(state.orderedMessages())
+          }, 150)
+        })
+      } catch {
+        if (!signal.aborted) {
+          const snapshot = await fetchConversationSnapshotSummary(req.accountId, req.conversationId).catch(() => null)
+          if (snapshot) update(snapshot.messages)
+        }
+      }
+      dial = 'reconnect'
+      await delay(3000, undefined, { signal })
+    }
+  })().catch(() => { if (!signal.aborted) stop() })
 }
 
 function ownerWindow(event: IpcMainInvokeEvent): BrowserWindow | undefined {
@@ -155,11 +220,7 @@ async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {
         const convId = req.op === 'conversationSnapshot' ? req.conversationId : conversationIdFromPayload(data)
         const snap = convId ? await fetchConversationSnapshotSummary(req.accountId, convId) : null
         const rawMessages = snap && snap.messages.length > 0 ? snap.messages : extractMessages(data)
-        const messages = rawMessages.map((m) => ({
-          ...m,
-          media: !/^user$/i.test(m.role) ? mapHarkMedia(m) : undefined,
-          richWidgets: !/^user$/i.test(m.role) ? mapHarkRichWidgets(m) : undefined
-        }))
+        const messages = historyView(rawMessages)
         return {
           ok: true,
           data: {
@@ -340,7 +401,8 @@ async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {
           return { ok: false, status: 400, message: 'path required' }
         }
         if (/pause-agent|stop-tool/i.test(req.path)) {
-          cancelHarkWatch(req.accountId)
+          const sessionId = (req.body as { conversationId?: string } | undefined)?.conversationId
+          cancelHarkWatch(req.accountId, sessionId)
           broadcast({
             type: 'activity',
             accountId: req.accountId,
@@ -453,6 +515,7 @@ export function registerHarkIpc(): void {
 
   ipcMain.handle(HARK_CHANNELS.clearAuth, async (_event, accountId: unknown) => {
     if (typeof accountId !== 'string' || !accountId.trim()) throw new TypeError('Invalid accountId')
+    for (const watch of visibleProjects.values()) if (watch.accountId === accountId.trim()) watch.stop()
     await clearHarkAccount(accountId.trim())
     broadcast({
       type: 'login',
@@ -462,13 +525,22 @@ export function registerHarkIpc(): void {
     return { accountId: accountId.trim(), signedIn: false }
   })
 
-  ipcMain.handle(HARK_CHANNELS.rpc, async (_event, request: unknown) => {
+  ipcMain.handle(HARK_CHANNELS.rpc, async (event, request: unknown) => {
     if (typeof request !== 'object' || request === null) {
       return { ok: false as const, status: 0, message: 'Invalid hark rpc request' }
     }
     const req = request as HarkRpcRequest
     if (typeof req.accountId !== 'string' || typeof req.op !== 'string') {
       return { ok: false as const, status: 0, message: 'accountId and op required' }
+    }
+    if (req.op === 'observeProject') {
+      observeProject(event, req)
+      return { ok: true, data: null }
+    }
+    if (req.op === 'leaveProject') {
+      const active = visibleProjects.get(event.sender.id)
+      if (active?.subscription === req.subscription) active.stop()
+      return { ok: true, data: null }
     }
     return runHarkRpc(req)
   })

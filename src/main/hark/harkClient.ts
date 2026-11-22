@@ -134,7 +134,7 @@ async function harkFetch(
     init.body !== undefined ? { 'Content-Type': 'application/json' } : undefined
   )
   const method = init.method ?? (init.body !== undefined ? 'POST' : 'GET')
-  const maxAttempts = method === 'GET' ? 3 : 2
+  const maxAttempts = method === 'GET' ? 3 : 1
   let lastErr: unknown
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -1380,11 +1380,54 @@ export function isHarkReplyDone(msg: HarkChatMessage): boolean {
   return hasPayload
 }
 
+export async function readHarkStream(
+  ses: Session, conversationId: string, manager: string, dial: string, signal: AbortSignal,
+  onFrame: (data: string) => void
+): Promise<void> {
+  const url = new URL(HARK_API_BASE + '/sync/conversation')
+  url.search = new URLSearchParams({ conversationId, manager, dial, v: '2', mode: 'in_tab', ids: '1', beat: '5' }).toString()
+  const response = await ses.fetch(url.toString(), { signal, headers: harkClientHeaders({
+    Accept: 'text/event-stream', 'Cache-Control': 'no-cache'
+  }) })
+  if (!response.ok || !response.body || !response.headers.get('content-type')?.includes('text/event-stream')) {
+    throw new Error('Hark project stream unavailable')
+  }
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let eventType = 'message'
+  let lines: string[] = []
+  try {
+    while (!signal.aborted) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      let newline: number
+      while (!signal.aborted && (newline = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, newline).replace(/\r$/, '')
+        buffer = buffer.slice(newline + 1)
+        if (!line) {
+          if (eventType === 'message' && lines.length) onFrame(lines.join('\n'))
+          eventType = 'message'
+          lines = []
+        } else if (line.startsWith('event:')) eventType = line.slice(6).trim()
+        else if (line.startsWith('data:')) lines.push(line.slice(5).trimStart())
+      }
+    }
+  } finally { reader.releaseLock() }
+}
+
 const activeHarkWatches = new HarkWatchRegistry()
 
+export function registerHarkViewStop(accountId: string, stop: () => void): () => void {
+  const token = activeHarkWatches.add(accountId, stop)
+  return () => activeHarkWatches.remove(accountId, token)
+}
+
 /** Stop every reply watch of the account (stop-tool, pause, sign-out). */
-export function cancelHarkWatch(accountId: string): void {
-  activeHarkWatches.cancelAll(accountId)
+export function cancelHarkWatch(accountId: string, conversationId?: string): void {
+  if (conversationId) activeHarkWatches.cancelConversation(accountId, conversationId)
+  else activeHarkWatches.cancelAll(accountId)
 }
 
 /**
@@ -1417,7 +1460,7 @@ export async function watchHarkConversationSync(
     finished = true
     ac.abort()
   }
-  const watchToken = activeHarkWatches.add(accountId, abortWatch, opts.responseMessageId)
+  const watchToken = activeHarkWatches.add(accountId, abortWatch, opts.responseMessageId, conversationId)
 
   const hasPayloadOrActivity = (m?: HarkChatMessage): m is HarkChatMessage =>
     Boolean(
@@ -1515,67 +1558,11 @@ export async function watchHarkConversationSync(
     let dialMode = 'initial'
     while (Date.now() < deadline && !ac.signal.aborted && !finished) {
       try {
-        const sseUrl = new URL(`${HARK_API_BASE}/sync/conversation`)
-        sseUrl.searchParams.set('conversationId', conversationId)
-        sseUrl.searchParams.set('v', '2')
-        sseUrl.searchParams.set('manager', managerId)
-        sseUrl.searchParams.set('mode', 'in_tab')
-        sseUrl.searchParams.set('ids', '1')
-        sseUrl.searchParams.set('beat', '5')
-        sseUrl.searchParams.set('dial', dialMode)
+        const dial = dialMode
         dialMode = 'reconnect'
-
-        const res = await ses.fetch(sseUrl.toString(), {
-          method: 'GET',
-          headers: harkClientHeaders({
-            Accept: 'text/event-stream',
-            'Cache-Control': 'no-cache'
-          }),
-          signal: ac.signal
+        await readHarkStream(ses, conversationId, managerId, dial, ac.signal, (frame) => {
+          if (syncState.applyFrame(frame)) checkState()
         })
-
-        if (res.ok && res.body && res.headers.get('content-type')?.includes('text/event-stream')) {
-          const reader = res.body.getReader()
-          const decoder = new TextDecoder()
-          let buf = ''
-          let dataLines: string[] = []
-          let eventType = 'message'
-
-          try {
-            while (Date.now() < deadline && !ac.signal.aborted && !finished) {
-              const { done, value } = await reader.read()
-              if (done) break
-              buf += decoder.decode(value, { stream: true })
-              let nl: number
-              while ((nl = buf.indexOf('\n')) >= 0) {
-                const line = buf.slice(0, nl).replace(/\r$/, '')
-                buf = buf.slice(nl + 1)
-                if (line === '') {
-                  if (dataLines.length > 0) {
-                    const payload = dataLines.join('\n')
-                    dataLines = []
-                    if (eventType === 'message' && syncState.applyFrame(payload)) {
-                      if (checkState()) {
-                        return
-                      }
-                    }
-                    eventType = 'message'
-                  }
-                } else if (line.startsWith('event:')) {
-                  eventType = line.slice(6).trim()
-                } else if (line.startsWith('data:')) {
-                  dataLines.push(line.slice(5).trimStart())
-                }
-              }
-            }
-          } finally {
-            try {
-              reader.releaseLock()
-            } catch {
-              /* ignore */
-            }
-          }
-        }
       } catch {
         /* aborted or transient disconnect — retry below if still active */
       }
