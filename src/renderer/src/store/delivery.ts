@@ -166,18 +166,15 @@ function compactPersistedEnvelope(rawJson: string, maxPerBot: number, dropLargeH
     for (const [botId, list] of Object.entries(parsed.state.messages)) {
       if (!Array.isArray(list)) continue
       const sliced = list.length > maxPerBot ? list.slice(-maxPerBot) : list
-      compacted[botId] = dropLargeHtml
-        ? sliced.map((m) =>
-            m.richWidgets?.some((w) => w.kind === "html" && w.html.length > 8_192)
-              ? {
-                  ...m,
-                  richWidgets: m.richWidgets.filter(
-                    (w) => !(w.kind === "html" && w.html.length > 8_192)
-                  )
-                }
-              : m
-          )
-        : sliced
+      compacted[botId] = sliced.map((m) => {
+        const media = m.media?.filter((part) => !/^data:/i.test(part.path))
+        const richWidgets = dropLargeHtml
+          ? m.richWidgets?.filter((w) => !(w.kind === "html" && w.html.length > 8_192))
+          : m.richWidgets
+        return media?.length === m.media?.length && richWidgets?.length === m.richWidgets?.length
+          ? m
+          : { ...m, media: media?.length ? media : undefined, richWidgets }
+      })
     }
     return JSON.stringify({
       ...parsed,
@@ -190,8 +187,8 @@ function compactPersistedEnvelope(rawJson: string, maxPerBot: number, dropLargeH
 
 /**
  * localStorage that never throws out of zustand's `set()`. On quota exhaustion,
- * progressively compacts persisted message history (120 -> 30 + strip huge HTML)
- * so bots/accounts/groups/settings still persist cleanly instead of dropping saves.
+ * first removes inline media from the persisted copy, then compacts history
+ * and oversized HTML if needed to retain the rest of the workspace.
  */
 export function createSafeStorage(
   backing: () => Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | undefined,
@@ -207,27 +204,21 @@ export function createSafeStorage(
       }
     },
     setItem: (name, value) => {
-      const store = backing()
-      if (!store) return
+      let store: ReturnType<typeof backing>
       try {
-        store.setItem(name, value)
+        store = backing()
+        store?.setItem(name, value)
       } catch (error) {
-        const tier1 = compactPersistedEnvelope(value, 120, false)
-        if (tier1) {
-          try {
-            store.setItem(name, tier1)
-            return
-          } catch {
-            /* try aggressive tier2 */
-          }
-        }
-        const tier2 = compactPersistedEnvelope(value, 30, true)
-        if (tier2) {
-          try {
-            store.setItem(name, tier2)
-            return
-          } catch {
-            /* fall through to onError */
+        if (store) {
+          for (const [limit, dropLargeHtml] of [[Infinity, false], [120, false], [30, true]] as const) {
+            const compacted = compactPersistedEnvelope(value, limit, dropLargeHtml)
+            if (!compacted || compacted === value) continue
+            try {
+              store.setItem(name, compacted)
+              return
+            } catch {
+              /* try the next smaller snapshot */
+            }
           }
         }
         onError(error)

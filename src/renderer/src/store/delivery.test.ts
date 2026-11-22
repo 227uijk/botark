@@ -86,6 +86,42 @@ describe('toPersistedMessages', () => {
 })
 
 describe('createSafeStorage', () => {
+  it('keeps existing state changes usable when the localStorage getter throws', () => {
+    const onError = vi.fn()
+    const blocked = new Error('Storage access denied')
+    const storage = createSafeStorage(() => { throw blocked }, onError)
+
+    expect(() => storage.setItem('workspace', '{}')).not.toThrow()
+    expect(onError).toHaveBeenCalledExactlyOnceWith(blocked)
+  })
+
+  it('keeps the workspace and full history when inline media alone exceeds quota', () => {
+    let saved = ''
+    const storage = createSafeStorage(() => ({
+      getItem: () => saved,
+      removeItem: () => undefined,
+      setItem: (_key, value) => {
+        if (value.length > 16_000) throw new Error('QuotaExceededError')
+        saved = value
+      }
+    }))
+    const path = `data:image/png;base64,${'A'.repeat(20_000)}`
+    const media = [{ kind: 'image' as const, path }, { kind: 'file' as const, path: 'https://example.test/report.pdf' }]
+    const messages = [
+      ...Array.from({ length: 169 }, (_, i) => msg({ id: String(i), text: 'Message' })),
+      msg({ id: 'with-media', role: 'bot', media })
+    ]
+    const state = { messages: { b: messages }, selectedBotId: 'b' }
+
+    storage.setItem('workspace', JSON.stringify({ state, version: 0 }))
+
+    const restored = JSON.parse(saved).state as typeof state
+    expect(restored.selectedBotId).toBe('b')
+    expect(restored.messages.b).toHaveLength(messages.length)
+    expect(restored.messages.b.at(-1)?.media).toEqual([media[1]])
+    expect(messages.at(-1)?.media).toEqual(media)
+  })
+
   it('swallows quota errors and reports them', () => {
     const onError = vi.fn()
     const storage = createSafeStorage(
