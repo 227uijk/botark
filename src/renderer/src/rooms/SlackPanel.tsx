@@ -1,3 +1,4 @@
+import { applySlackConnection } from './slackRooms'
 import { useEffect, useState } from 'react'
 import type { SlackRequest, SlackState } from '@shared/slack'
 import { getBridge } from '@/lib/bridge'
@@ -25,13 +26,15 @@ export function SlackPanel({ id }: { id: string }) {
     setBusy(true)
     setError('')
     try {
-      setState(await bridge!.request(req))
+      const next = await bridge!.request(req)
+      applySlackConnection(bridge!, next)
+      setState(next)
       if (req.op === 'connect') { setApp(''); setBot('') }
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) }
     finally { setBusy(false) }
   }
   return <div className="shrink-0 text-xs">
-    <button aria-expanded={open} onClick={() => setOpen(!open)}>Slack 桥接{binding ? ' · ' + binding.channel : ''}</button>
+    <button aria-expanded={open} onClick={() => setOpen(!open)}>Slack 桥接（可选）{binding ? ' · ' + binding.channel : ''}</button>
     {open && <fieldset className="flex flex-wrap items-center gap-2 rounded border border-line p-2" disabled={busy}>
       {!state?.connected && <>
         <p className="w-full">开启 Slack Socket Mode，订阅 message.channels、message.groups 和 app_mention，将应用邀请到目标频道。应用需要 chat:write 和相应频道的历史读取权限。</p>

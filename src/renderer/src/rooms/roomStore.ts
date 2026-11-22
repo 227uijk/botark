@@ -8,11 +8,12 @@ import { getBridge } from '@/lib/bridge'
 import { isFinal, mentions, turnPrompt, type CollabRoom, type RoomMember, type RoomMessage } from './model'
 
 interface RoomState {
+  externalAudiences: Record<string, string | undefined>
   rooms: CollabRoom[]
   speakers: Record<string, string | undefined>
   errors: Record<string, string | undefined>
 }
-export const useRooms = create<RoomState>()(persist((): RoomState => ({ rooms: [], speakers: {}, errors: {} }), {
+export const useRooms = create<RoomState>()(persist((): RoomState => ({ rooms: [], speakers: {}, errors: {}, externalAudiences: {} }), {
   name: 'botark-collaboration-rooms', partialize: (s) => ({ rooms: s.rooms })
 }))
 const pendingTurns = new Map<string, Promise<unknown>>()
@@ -133,9 +134,7 @@ export async function submitBrief(id: string, input: string, author = 'User', me
       if (tool && turn + 1 < room.limit) {
         const bridge = getBridge()?.workspace
         if (!bridge) throw new Error('工作区不可用')
-        const slack = await getBridge()?.slack?.request({ op: 'status' })
-        const channel = slack?.bindings.find((b) => b.roomId === (room.slackParent ?? room.id))?.channel
-        const recipient = [room.title, room.members.map((m) => m.name).join(', '), channel && 'Slack ' + channel].filter(Boolean).join(' · ')
+        const recipient = [room.title, room.members.map((m) => m.name).join(', '), useRooms.getState().externalAudiences[id]].filter(Boolean).join(' · ')
         const result = await bridge.run(id, tool.name, tool.args, recipient)
         controller.signal.throwIfAborted()
         update(id, (r) => ({ ...r, messages: [...r.messages, { id: createId('post'), author: 'Tool', text: result }] }))

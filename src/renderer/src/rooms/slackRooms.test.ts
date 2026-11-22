@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { receiveSlackMessage, startSlackRooms } from './slackRooms'
+import { receiveSlackMessage, applySlackConnection } from './slackRooms'
 import { useRooms } from './roomStore'
 import type { CollabRoom } from './model'
 import type { SlackInbound } from '@shared/slack'
@@ -9,7 +9,9 @@ it('persists an inbound post once, keeps threads separate and forwards only new 
   useRooms.setState({ rooms: [room] })
   const request = vi.fn().mockResolvedValue({})
   vi.stubGlobal('window', { electron: { slack: { request, onMessage: () => () => {} } } })
-  const stop = startSlackRooms()
+  vi.stubGlobal('sessionStorage', { setItem: vi.fn(), removeItem: vi.fn() })
+  const bridge = window.electron!.slack!
+  applySlackConnection(bridge, { saved: true, connected: true, bindings: [{ roomId: 'room', channel: 'C1' }] })
   try {
     const event: SlackInbound = { id: 'slack-C1-1.0', channel: 'C1', roomId: 'room', fork: true, thread: '1.0', text: 'Review thread one', user: 'U1' }
     receiveSlackMessage(event)
@@ -19,10 +21,15 @@ it('persists an inbound post once, keeps threads separate and forwards only new 
     expect(parent?.messages).toEqual([])
     expect(one?.messages.map((m) => m.text)).toEqual(['Review thread one'])
     expect(two?.messages.map((m) => m.text)).toEqual(['Review thread two'])
+    const nativeRoom = { ...room, id: 'native-room', messages: [] }
+    useRooms.setState((s) => ({ rooms: [...s.rooms, nativeRoom] }))
+    useRooms.setState((s) => ({ rooms: s.rooms.map((r) => r.id === nativeRoom.id ? {
+      ...r, messages: [{ id: 'private', author: 'User', text: 'Only inside BotArk' }]
+    } : r) }))
     expect(request).not.toHaveBeenCalled()
     useRooms.setState((s) => ({ rooms: s.rooms.map((r) => r.id === one!.id ? {
       ...r, messages: [...r.messages, { id: 'local', author: 'Muse', text: 'Reviewed.' }]
     } : r) }))
     expect(request).toHaveBeenCalledExactlyOnceWith({ op: 'post', roomId: 'room', channel: 'C1', thread: '1.0', text: '[Muse] Reviewed.' })
-  } finally { stop(); vi.unstubAllGlobals() }
+  } finally { applySlackConnection(bridge, { connected: false, saved: false, bindings: [] }); vi.unstubAllGlobals() }
 })

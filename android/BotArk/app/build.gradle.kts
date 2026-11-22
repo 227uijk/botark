@@ -13,8 +13,8 @@ android {
         applicationId = "com.qybaihe.botark"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.11.0"
+        versionCode = 5
+        versionName = "0.11.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

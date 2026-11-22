@@ -23,7 +23,7 @@ function fixture(mode: CollabRoom['mode'], respond: (m: OutgoingMessage) => Prom
     }
   } as unknown as PlatformAdapter)
 }
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 it('routes complete names once and ignores email addresses', () => {
   expect(mentions('x@Muse.io @MuseExtra @Dot @Muse @Dot', members).map((m) => m.name)).toEqual(['Dot', 'Muse'])
 })
@@ -48,4 +48,23 @@ it('drops a result that arrives after Stop', async () => {
   finish('@Dot')
   await run
   expect(useRooms.getState().rooms[0]!.messages).toHaveLength(1)
+})
+
+it('completes a native room with an approved local tool while Slack is unavailable', async () => {
+  const slack = vi.fn().mockRejectedValue(new Error('Slack unavailable'))
+  const run = vi.fn().mockResolvedValue('Local fixture result')
+  vi.stubGlobal('window', { electron: { workspace: {
+    manage: async () => ({ tools: [{ name: 'read', inputSchema: { type: 'object' } }] }), run
+  }, slack: { request: slack, onMessage: slack } } })
+  const answers = ['@Dot review', '[TOOL] {"name":"read","args":{"path":"notes.txt"}}', '[FINAL] Accepted']
+  fixture('auto', async (msg) => {
+    if (answers.length === 1) expect(msg.text).toContain('[Tool] Local fixture result')
+    return answers.shift()!
+  })
+  await submitBrief('room', 'Review the notes')
+  const room = useRooms.getState().rooms[0]!
+  expect(room.finalId).toBe(room.messages.at(-1)?.id)
+  expect(roomMarkdown(room)).toContain('Accepted')
+  expect(run).toHaveBeenCalledOnce()
+  expect(slack).not.toHaveBeenCalled()
 })
