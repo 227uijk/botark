@@ -1,4 +1,5 @@
 import { BrowserWindow, session as electronSession, shell } from 'electron'
+import { installGoogleOAuthHeaderGuard } from '../googleOAuthUaGuard'
 import { applyProxyToPartition } from '../muse/accountProxy'
 import { partitionForAccount } from '../webContentsViewManager'
 import { DOT_ORIGIN, getStoredDotAccount, trySyncFromElectronPartition } from './dotClient'
@@ -62,6 +63,7 @@ export async function openDotLoginWindow(
   await applyProxyToPartition(accountId)
 
   const partition = partitionForAccount(accountId)
+  installGoogleOAuthHeaderGuard(electronSession.fromPartition(partition))
   const win = new BrowserWindow({
     width: 1020,
     height: 760,

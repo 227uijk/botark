@@ -200,6 +200,9 @@ struct BotAvatarView: View {
     }
 
     static func decodeBase64Image(_ raw: String) -> UIImage? {
+        if !raw.hasPrefix("data:") && raw.count < 512 && (raw.contains("/") || raw.contains(".")) {
+            return nil
+        }
         let base64Part: String
         if let commaRange = raw.range(of: ",") {
             base64Part = String(raw[commaRange.upperBound...])

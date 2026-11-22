@@ -93,6 +93,8 @@ export const MUSE_CHANNELS = {
   previewWorkspaceFile: 'bothub:muse:files:preview',
   /** Chunked fs.write eager upload → file_ref path. */
   uploadWorkspaceFile: 'bothub:muse:files:upload',
+  /** Fetch Muse virtual avatar & persona identity (identity / peers.avatar / IDENTITY.md). */
+  syncIdentity: 'bothub:muse:identity:sync',
   getProxy: 'bothub:muse:proxy:get',
   setProxy: 'bothub:muse:proxy:set',
   listProxyPool: 'bothub:muse:proxy-pool:list',
@@ -309,6 +311,13 @@ export interface MuseProxyPoolItemView {
   assignedAccountId?: string
 }
 
+export interface MuseIdentityView {
+  displayName?: string
+  emoji?: string
+  avatarDataUrl?: string
+  avatarColor?: string
+}
+
 export type MuseMainEvent =
   | { type: 'status'; status: MuseSessionStatus }
   /** The platform acknowledged the user message of the turn in flight. */
@@ -352,6 +361,7 @@ export type MuseMainEvent =
   | { type: 'sessions'; accountId: string; sessions: MuseChatSessionView[] }
   | { type: 'files'; accountId: string; files: MuseFileEntryView[] }
   | { type: 'connectors'; accountId: string; connectors: MuseConnectorView[] }
+  | { type: 'identity'; accountId: string; identity: MuseIdentityView }
 
 /** Renderer-safe quota snapshot (no cookies/tokens). */
 export interface MuseQuotaSnapshot {

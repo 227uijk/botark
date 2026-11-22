@@ -1053,12 +1053,27 @@ export const useBotStore = create<BotHubState>()(
       await deliver(botId, enqueueUserMessage(bot, trimmed, attachments))
     },
 
-    queueMobileMessage: ({ botId, text, clientMessageId }) => {
+    queueMobileMessage: ({ botId, text, clientMessageId, attachments }) => {
       const state = get()
       const bot = state.bots.find((b) => b.id === botId)
       if (!bot) return { ok: false, status: 404, message: 'Bot no longer exists on the desktop' }
       const trimmed = text.trim()
-      if (!trimmed) return { ok: false, status: 400, message: 'Message text is required' }
+      const validAttachments: AttachmentMeta[] = (attachments ?? [])
+        .filter((a) => a && typeof a.dataUrl === 'string' && a.dataUrl.startsWith('data:'))
+        .map((a, idx) => {
+          const comma = a.dataUrl.indexOf(',')
+          const dataBase64 = comma >= 0 ? a.dataUrl.slice(comma + 1) : a.dataUrl
+          return {
+            id: `${clientMessageId}_att_${idx}`,
+            name: a.name || `attachment_${idx + 1}`,
+            size: a.size ?? Math.round((dataBase64.length * 3) / 4),
+            mimeType: a.mimeType || 'application/octet-stream',
+            dataBase64
+          }
+        })
+      if (!trimmed && validAttachments.length === 0) {
+        return { ok: false, status: 400, message: 'Message text is required' }
+      }
       const existing = state.messages[botId]?.find((m) => m.id === clientMessageId)
       if (existing) {
         return existing.role === 'user' && existing.text === trimmed
@@ -1072,7 +1087,12 @@ export const useBotStore = create<BotHubState>()(
       if (!adapterRegistry.has(bot.platformId)) {
         return { ok: false, status: 503, message: 'Bot platform is unavailable on the desktop' }
       }
-      const messageId = enqueueUserMessage(bot, trimmed, undefined, clientMessageId)
+      const messageId = enqueueUserMessage(
+        bot,
+        trimmed,
+        validAttachments.length > 0 ? validAttachments : undefined,
+        clientMessageId
+      )
       void deliver(botId, messageId)
       return { ok: true, messageId }
     },

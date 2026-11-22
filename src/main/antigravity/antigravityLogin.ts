@@ -8,6 +8,7 @@
  */
 
 import { BrowserWindow, session as electronSession, shell } from 'electron'
+import { installGoogleOAuthHeaderGuard } from '../googleOAuthUaGuard'
 import { applyProxyToPartition } from '../muse/accountProxy'
 import { partitionForAccount } from '../webContentsViewManager'
 import { listAntigravityCookieNames, probeAntigravitySession } from './antigravityClient'
@@ -76,6 +77,7 @@ export async function openAntigravityLoginWindow(accountId: string, parent?: Bro
   const ses = electronSession.fromPartition(partition)
   const cleanUa = cleanAntigravityChromeUserAgent(ses.getUserAgent())
   ses.setUserAgent(cleanUa)
+  installGoogleOAuthHeaderGuard(ses)
 
   // Already signed in on this partition?
   const already = await probeAntigravitySession(accountId)

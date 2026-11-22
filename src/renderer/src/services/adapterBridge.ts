@@ -259,6 +259,31 @@ export function startAdapterBridge(): () => void {
     )
   }
 
+  const museBridge = electronBridge()?.muse
+  if (museBridge?.onEvent) {
+    unsubscribers.push(
+      museBridge.onEvent((event) => {
+        if (event.type !== "identity") return
+        const store = useBotStore.getState()
+        const { displayName, avatarDataUrl } = event.identity
+        if (displayName) {
+          store.renameAccount(event.accountId, displayName)
+        }
+        const museBots = store.bots.filter(
+          (b) => b.platformId === "meta-muse" && b.accountIds.includes(event.accountId)
+        )
+        for (const bot of museBots) {
+          if (avatarDataUrl && !bot.avatar) {
+            store.setBotAvatar(bot.id, avatarDataUrl)
+          }
+          if (displayName && /^(?:Meta Muse|Muse)(?:\s+\d+)?$/i.test(bot.name.trim())) {
+            store.renameBot(bot.id, `Muse · ${displayName}`)
+          }
+        }
+      })
+    )
+  }
+
   const watchdogTimer = setInterval(checkStalledReplies, 15_000)
 
   return () => {

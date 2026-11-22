@@ -238,6 +238,11 @@ export function registerMuseIpc(): void {
     })
   })
 
+  ipcMain.handle(MUSE_CHANNELS.syncIdentity, async (event, accountId: unknown) => {
+    if (typeof accountId !== 'string') throw new TypeError('Invalid accountId')
+    return managerFor(event).syncIdentity(accountId)
+  })
+
   ipcMain.handle(MUSE_CHANNELS.getProxy, async (_event, accountId: unknown) => {
     if (typeof accountId !== 'string') throw new TypeError('Invalid accountId')
     return getProxyView(accountId)

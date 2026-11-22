@@ -1,5 +1,6 @@
 import { BrowserWindow, Notification, session as electronSession } from 'electron'
 import type { MuseMainEvent, MuseSessionStatus, WebViewBounds } from '@shared/ipc'
+import { installGoogleOAuthHeaderGuard } from '../googleOAuthUaGuard'
 import { partitionForAccount, webViewId, WebContentsViewManager } from '../webContentsViewManager'
 import { MUSE_HOOK_SCRIPT, museDomSendScript, museRpcScript } from './hookScript'
 import {
@@ -46,12 +47,14 @@ import {
 } from '../muse-native/schedules'
 import { sessionsFromListResult, sessionIdParams } from '../muse-native/sessions'
 import { artifactsFromListResult, libraryFromResult } from '../muse-native/files'
+import { fetchMuseIdentitySnapshot } from '../muse-native/identity'
 import type {
   MuseChatSessionView,
   MuseConnectorConnectResult,
   MuseConnectorView,
   MuseFileEntryView,
   MuseHistoryMessageView,
+  MuseIdentityView,
   MuseInviteSnapshot,
   MuseQuotaSnapshot,
   MuseSchedule,
@@ -92,6 +95,8 @@ interface AccountSession {
   chatSessions?: MuseChatSessionView[]
   files?: MuseFileEntryView[]
   connectors?: MuseConnectorView[]
+  identitySynced?: boolean
+  identity?: MuseIdentityView
 }
 
 /**
@@ -510,9 +515,28 @@ export class MuseSessionManager {
     this.chatWatchBound.add(accountId)
     void client.chat.ensure().then(() => {
       client.chat.on('event', (e: MuseChatEvent) => this.onChatWatchEvent(accountId, e))
+      if (!session.identitySynced) {
+        session.identitySynced = true
+        void this.syncIdentity(accountId).catch(() => undefined)
+      }
     }).catch(() => {
       this.chatWatchBound.delete(accountId)
     })
+  }
+
+  async syncIdentity(accountId: string): Promise<MuseIdentityView> {
+    await this.ensure('muse', accountId)
+    const client = this.native.get(accountId)
+    const identity = await fetchMuseIdentitySnapshot(client.gateway, this.partitionFetch(accountId))
+    const session = this.sessions.get(accountId)
+    if (session) {
+      session.identity = identity
+      session.identitySynced = true
+    }
+    if (identity.displayName || identity.avatarDataUrl || identity.emoji) {
+      this.emit({ type: 'identity', accountId, identity })
+    }
+    return identity
   }
 
   private onChatWatchEvent(accountId: string, e: MuseChatEvent): void {
@@ -1599,6 +1623,7 @@ export class MuseSessionManager {
     const ses = electronSession.fromPartition(partition)
     const cleanUa = cleanMuseChromeUserAgent(ses.getUserAgent())
     ses.setUserAgent(cleanUa)
+    installGoogleOAuthHeaderGuard(ses)
 
     const pendingStatus: MuseSessionStatus = {
       accountId,

@@ -149,6 +149,7 @@ export interface MuseBridge {
     accountId: string,
     args: { filename: string; mimeType: string; dataBase64: string }
   ): Promise<{ path: string; filename: string; mimeType: string }>
+  syncIdentity(accountId: string): Promise<import('./ipc').MuseIdentityView>
   getProxy(accountId: string): Promise<MuseProxyView>
   setProxy(accountId: string, config: MuseProxyConfigInput): Promise<MuseProxyView>
   listProxyPool(): Promise<MuseProxyPoolItemView[]>
