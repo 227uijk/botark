@@ -380,6 +380,63 @@ export function poolAccountIds(accounts: Record<string, { id: string; platformId
   }
 }
 
+export async function cancelPlatformTurn(bot: Bot) {
+  const bridge = electronBridge()
+  if (bot.platformId === 'meta-muse' && bridge?.muse?.cancelChat) {
+    await bridge.muse.cancelChat(bot.activeAccountId, bot.activeSessionId)
+  } else if (bot.platformId === 'grok' && bot.selectedAgentId && bridge?.grok?.rpc) {
+    await bridge.grok
+      .rpc({
+        accountId: bot.activeAccountId,
+        op: 'call',
+        method: 'InterruptGrokBotAgentRun',
+        params: {
+          agent_id: bot.selectedAgentId,
+          reason: 'user_interrupt',
+          ...(bot.activeSessionId ? { session_id: bot.activeSessionId } : {})
+        }
+      })
+      .catch(() => undefined)
+  } else if (bot.platformId === 'hark' && bridge?.hark?.rpc) {
+    await Promise.all([
+      bridge.hark
+        .rpc({
+          accountId: bot.activeAccountId,
+          op: 'call',
+          method: 'POST',
+          path: '/messages/pause-agent',
+          body: bot.activeSessionId ? { conversationId: bot.activeSessionId } : {}
+        })
+        .catch(() => undefined),
+      bridge.hark
+        .rpc({
+          accountId: bot.activeAccountId,
+          op: 'call',
+          method: 'POST',
+          path: '/messages/stop-tool',
+          body: bot.activeSessionId ? { conversationId: bot.activeSessionId } : {}
+        })
+        .catch(() => undefined)
+    ])
+  } else if (bot.platformId === 'dot' && bridge?.dot?.rpc) {
+    await bridge.dot
+      .rpc({
+        accountId: bot.activeAccountId,
+        op: 'cancelTurn'
+      })
+      .catch(() => undefined)
+  } else if (bot.platformId === 'hermes' && bridge?.hermes?.rpc) {
+    await bridge.hermes
+      .rpc({
+        accountId: bot.activeAccountId,
+        op: 'stopRun'
+      })
+      .catch(() => undefined)
+  } else if (bot.platformId === 'antigravity' && bridge?.antigravity?.cancelRun) {
+    await bridge.antigravity.cancelRun(bot.activeAccountId).catch(() => undefined)
+  }
+}
+
 function harkHistory(data: unknown, botId: string, accountId: string): ChatMessage[] {
   const d = data as {
     conversationId?: string
@@ -1278,60 +1335,7 @@ export const useBotStore = create<BotHubState>()(
       get().setTyping(botId, false)
       get().setActivity(bot.activeAccountId, null)
       get().setAccountStatus(bot.activeAccountId, 'online')
-      const bridge = electronBridge()
-      if (bot.platformId === 'meta-muse' && bridge?.muse?.cancelChat) {
-        await bridge.muse.cancelChat(bot.activeAccountId, bot.activeSessionId)
-      } else if (bot.platformId === 'grok' && bot.selectedAgentId && bridge?.grok?.rpc) {
-        await bridge.grok
-          .rpc({
-            accountId: bot.activeAccountId,
-            op: 'call',
-            method: 'InterruptGrokBotAgentRun',
-            params: {
-              agent_id: bot.selectedAgentId,
-              reason: 'user_interrupt',
-              ...(bot.activeSessionId ? { session_id: bot.activeSessionId } : {})
-            }
-          })
-          .catch(() => undefined)
-      } else if (bot.platformId === 'hark' && bridge?.hark?.rpc) {
-        await Promise.all([
-          bridge.hark
-            .rpc({
-              accountId: bot.activeAccountId,
-              op: 'call',
-              method: 'POST',
-              path: '/messages/pause-agent',
-              body: bot.activeSessionId ? { conversationId: bot.activeSessionId } : {}
-            })
-            .catch(() => undefined),
-          bridge.hark
-            .rpc({
-              accountId: bot.activeAccountId,
-              op: 'call',
-              method: 'POST',
-              path: '/messages/stop-tool',
-              body: bot.activeSessionId ? { conversationId: bot.activeSessionId } : {}
-            })
-            .catch(() => undefined)
-        ])
-      } else if (bot.platformId === 'dot' && bridge?.dot?.rpc) {
-        await bridge.dot
-          .rpc({
-            accountId: bot.activeAccountId,
-            op: 'cancelTurn'
-          })
-          .catch(() => undefined)
-      } else if (bot.platformId === 'hermes' && bridge?.hermes?.rpc) {
-        await bridge.hermes
-          .rpc({
-            accountId: bot.activeAccountId,
-            op: 'stopRun'
-          })
-          .catch(() => undefined)
-      } else if (bot.platformId === 'antigravity' && bridge?.antigravity?.cancelRun) {
-        await bridge.antigravity.cancelRun(bot.activeAccountId).catch(() => undefined)
-      }
+      await cancelPlatformTurn(bot)
     },
 
     switchMuseSession: async (botId, sessionId) => {

@@ -1,3 +1,5 @@
+import { RoomView } from '@/rooms/RoomView'
+import { useRooms } from '@/rooms/roomStore'
 import { useEffect } from 'react'
 import { AddBotDialog } from '@/components/add-bot/AddBotDialog'
 import { ChatArea } from '@/components/chat/ChatArea'
@@ -18,6 +20,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 export default function App() {
   const settingsOpen = useBotStore((s) => s.settingsOpen)
   const selectedBotId = useBotStore((s) => s.selectedBotId)
+  const roomSelected = useRooms((s) => selectedBotId === 'room-create' || s.rooms.some((r) => r.id === selectedBotId))
   // Details only make sense next to a selected bot (and not while in Settings).
   const infoOpen = useBotStore(
     (s) => !s.settingsOpen && s.infoPanelOpen && s.bots.some((b) => b.id === s.selectedBotId)
@@ -190,7 +193,7 @@ export default function App() {
           sidebar={<Sidebar onAddBot={() => setAddBotOpen(true)} />}
           main={
             <ErrorBoundary surface={settingsOpen ? '管理控制台' : '对话区'} resetKey={settingsOpen ? 'settings' : selectedBotId}>
-              {settingsOpen ? <SettingsView /> : <ChatArea />}
+              {settingsOpen ? <SettingsView /> : roomSelected && selectedBotId ? <RoomView key={selectedBotId} id={selectedBotId} /> : <ChatArea />}
             </ErrorBoundary>
           }
           aside={
