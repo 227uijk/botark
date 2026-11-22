@@ -49,6 +49,7 @@ export interface AttachmentMeta {
 }
 
 export interface OutgoingMessage {
+  agentId?: string
   /** BotHub conversation id (one conversation per bot). */
   conversationId: string
   /** Account the message is sent from. */

@@ -1,3 +1,4 @@
+import { RoomList } from '@/rooms/RoomView'
 import { type KeyboardEvent } from 'react'
 import { PanelLeft, Plus, QrCode, Search, Settings, Sparkles } from 'lucide-react'
 import { hasSeenOnboarding } from '@/components/onboarding/OnboardingGuide'
@@ -63,6 +64,7 @@ export function Sidebar({ onAddBot }: SidebarProps) {
         <div className="drag-region h-[42px] w-full shrink-0" />
         <div className="flex min-h-0 w-full flex-1 flex-col items-center px-1.5 pt-1 pb-2">
           <BotList />
+          <RoomList compact />
         </div>
         <div className="no-drag flex shrink-0 flex-col items-center gap-1.5 pb-3 pt-1">
           <IconButton
@@ -131,6 +133,7 @@ export function Sidebar({ onAddBot }: SidebarProps) {
 
       <div className="flex min-h-0 flex-1 flex-col px-2 pt-0.5 pb-2">
         <BotList />
+        <RoomList />
       </div>
 
       <footer className="no-drag flex shrink-0 items-center justify-between gap-1.5 border-t border-ink/[0.06] px-2.5 py-2">
