@@ -1,4 +1,3 @@
-import { startSlackRooms } from '@/rooms/slackRooms'
 import { RoomView } from '@/rooms/RoomView'
 import { useRooms } from '@/rooms/roomStore'
 import { useEffect } from 'react'
@@ -166,7 +165,17 @@ export default function App() {
   }, [])
 
   useEffect(() => startPrefsSync(), [])
-  useEffect(startSlackRooms, [])
+  useEffect(() => {
+    // Only resume an explicitly connected bridge after a renderer reload.
+    if (sessionStorage.getItem('botark.slack.connected') !== '1') return
+    const bridge = window.electron?.slack
+    if (!bridge) return
+    let live = true
+    void Promise.all([import('@/rooms/slackRooms'), bridge.request({ op: 'status' })])
+      .then(([{ applySlackConnection }, state]) => { if (live) applySlackConnection(bridge, state) })
+      .catch(() => {})
+    return () => { live = false }
+  }, [])
   useGlobalShortcuts()
 
   // Test harness for CDP/E2E scripts (dev, or ?e2e=1 / localStorage BOTHUB_E2E).

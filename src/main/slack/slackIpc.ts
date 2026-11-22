@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
-import { SocketModeClient } from '@slack/socket-mode'
-import { WebClient } from '@slack/web-api'
+import type { SocketModeClient } from '@slack/socket-mode'
+import type { WebClient } from '@slack/web-api'
 import { createMutex } from '@shared/proxyPool'
 import { SLACK_CHANNEL, SLACK_INBOUND, type SlackBinding, type SlackRequest, type SlackState } from '@shared/slack'
 import { deleteVaultSecret, getVaultSecret, setVaultSecret } from '../securityVault'
@@ -42,6 +42,7 @@ async function start(owner: () => BrowserWindow | null, appToken?: string, botTo
   const stored = !appToken && !botToken ? await getVaultSecret(key) : null
   const tokens = stored ? JSON.parse(stored) as { appToken: string; botToken: string } : { appToken, botToken }
   if (!tokens.appToken?.startsWith('xapp-') || !tokens.botToken?.startsWith('xoxb-')) throw new Error('需要 App Token 和 Bot Token')
+  const [{ WebClient }, { SocketModeClient }] = await Promise.all([import('@slack/web-api'), import('@slack/socket-mode')])
   const web = new WebClient(tokens.botToken, { retryConfig: { retries: 1 } })
   const auth = await web.auth.test()
   if (!auth.team_id || !auth.user_id) throw new Error('Slack 无法确认工作区或应用身份')
@@ -93,10 +94,10 @@ async function publish(req: Extract<SlackRequest, { op: 'post' }>) {
 }
 
 export function registerSlackIpc(owner: () => BrowserWindow | null) {
-  prefs = readJsonFile<Preferences>(configPath(), { bindings: [] }, (raw) => Array.isArray((raw as Preferences)?.bindings))
   ipcMain.handle(SLACK_CHANNEL, async (event, req: SlackRequest) => {
     const win = owner()
     if (!win || event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame) throw new Error('Desktop window required')
+    prefs ??= readJsonFile<Preferences>(configPath(), { bindings: [] }, (raw) => Array.isArray((raw as Preferences)?.bindings))
     if (req.op === 'received') {
       const acks = pending.get(req.id)
       if (acks) {
