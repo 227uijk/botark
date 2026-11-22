@@ -1,3 +1,4 @@
+import { WorkspaceTools } from '@/rooms/WorkspaceTools'
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react'
 import type { AttachmentMeta } from '@adapters/types'
 import { ArrowUp, CornerDownRight, FileText, Film, Loader2, LogIn, Music, Plus, PlugZap, Square, X } from 'lucide-react'
@@ -208,6 +209,9 @@ export function Composer({ bot, account, typing = false, onSend, onCancel, onCon
   return (
     <div className="shrink-0 px-6 pt-2 pb-5">
       <div className="mx-auto max-w-[860px] px-2">
+        <WorkspaceTools key={bot.id + bot.activeAccountId} scope={bot.id + ':' + bot.activeAccountId} recipient={bot.name}
+          append={(value) => setText((draft) => [draft, value].filter(Boolean).join('\n\n'))}
+          hermesAccount={bot.platformId === 'hermes' ? bot.activeAccountId : undefined} />
         {account && !connected && !hideNotice && (
           <ConnectionNotice
             account={account}

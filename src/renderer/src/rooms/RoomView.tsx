@@ -1,3 +1,4 @@
+import { WorkspaceTools } from './WorkspaceTools'
 import { useEffect, useRef, useState } from 'react'
 import { Plus, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -79,6 +80,8 @@ export function RoomView({ id }: { id: string }) {
     {error && <p role="alert" className="text-sm text-status-error">{error}</p>}
     <div className="flex flex-wrap gap-2">{templates.map((v) =>
       <Button key={v} size="sm" onClick={() => setText('@' + room.members[0]!.name + ' ' + v)}>{v.split('：')[0]}</Button>)}</div>
+    <WorkspaceTools scope={id} recipient={room.title} append={(value) => setText((draft) => [draft, value].filter(Boolean).join('\n\n'))}
+      hermesAccount={room.members.find((m) => m.platform === 'hermes')?.accountId} />
     {mention && <div className="flex gap-2">{room.members.filter((m) => m.name.toLowerCase().startsWith(mention[1]!.toLowerCase())).map((m) =>
       <Button size="sm" key={m.botId} onClick={() => setText(text.slice(0, text.lastIndexOf('@')) + '@' + m.name + ' ')}>@{m.name}</Button>)}</div>}
     <form className="flex items-end gap-2" onSubmit={(e) => {
