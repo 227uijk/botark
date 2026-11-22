@@ -1,3 +1,4 @@
+import { SLACK_CHANNEL, SLACK_INBOUND, type SlackInbound } from '@shared/slack'
 import { WORKSPACE_CHANNEL } from '@shared/workspace'
 import { contextBridge, ipcRenderer } from 'electron'
 import type { BotHubBridge } from '@shared/bridge'
@@ -172,6 +173,14 @@ const bridge: BotHubBridge = {
       const handler = (_event: unknown, payload: AntigravityMainEvent) => listener(payload)
       ipcRenderer.on(ANTIGRAVITY_CHANNELS.event, handler)
       return () => ipcRenderer.removeListener(ANTIGRAVITY_CHANNELS.event, handler)
+    }
+  },
+  slack: {
+    request: (req) => ipcRenderer.invoke(SLACK_CHANNEL, req),
+    onMessage: (callback) => {
+      const handler = (_event: unknown, msg: SlackInbound) => callback(msg)
+      ipcRenderer.on(SLACK_INBOUND, handler)
+      return () => { ipcRenderer.off(SLACK_INBOUND, handler) }
     }
   },
   workspace: {

@@ -1,3 +1,4 @@
+import { startSlackRooms } from '@/rooms/slackRooms'
 import { RoomView } from '@/rooms/RoomView'
 import { useRooms } from '@/rooms/roomStore'
 import { useEffect } from 'react'
@@ -165,6 +166,7 @@ export default function App() {
   }, [])
 
   useEffect(() => startPrefsSync(), [])
+  useEffect(startSlackRooms, [])
   useGlobalShortcuts()
 
   // Test harness for CDP/E2E scripts (dev, or ?e2e=1 / localStorage BOTHUB_E2E).

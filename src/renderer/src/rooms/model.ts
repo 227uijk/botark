@@ -22,6 +22,8 @@ export interface CollabRoom {
   mode: 'manual' | 'auto'
   limit: number
   brief: string
+  slackParent?: string
+  slackThread?: string
   finalId?: string
 }
 

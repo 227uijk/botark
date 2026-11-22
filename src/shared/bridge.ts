@@ -1,3 +1,4 @@
+import type { SlackBridge } from './slack'
 import type { WorkspaceBridge } from './workspace'
 import type { MuseAutoLoginRequest, MuseAutoLoginResult } from './museBatch'
 import type {
@@ -264,6 +265,7 @@ export interface BotHubBridge {
   readonly hermes: HermesBridge
   readonly antigravity: AntigravityBridge
   readonly mobileSync?: MobileSyncBridge
+  readonly slack?: SlackBridge
   readonly workspace?: WorkspaceBridge
   readonly vault?: VaultBridge
 }

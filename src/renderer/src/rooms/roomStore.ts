@@ -96,7 +96,7 @@ async function memberReply(room: CollabRoom, member: RoomMember, signal: AbortSi
   }
 }
 
-export async function submitBrief(id: string, input: string, author = 'User') {
+export async function submitBrief(id: string, input: string, author = 'User', messageId = createId('post')) {
   const room = roomById(id)
   const text = input.trim()
   if (!room || !text) return
@@ -104,7 +104,7 @@ export async function submitBrief(id: string, input: string, author = 'User') {
   setError(id)
   const controller = new AbortController()
   runs.set(id, controller)
-  const message: RoomMessage = { id: createId('post'), author, text }
+  const message: RoomMessage = { id: messageId, author, text }
   update(id, (r) => ({ ...r, brief: text, finalId: undefined, messages: [...r.messages, message] }))
   const queue = mentions(text, room.members)
   if (!queue.length && room.mode === 'auto') queue.push(room.members[0]!)
@@ -133,7 +133,10 @@ export async function submitBrief(id: string, input: string, author = 'User') {
       if (tool && turn + 1 < room.limit) {
         const bridge = getBridge()?.workspace
         if (!bridge) throw new Error('工作区不可用')
-        const result = await bridge.run(id, tool.name, tool.args, room.title + ' · ' + room.members.map((m) => m.name).join(', '))
+        const slack = await getBridge()?.slack?.request({ op: 'status' })
+        const channel = slack?.bindings.find((b) => b.roomId === (room.slackParent ?? room.id))?.channel
+        const recipient = [room.title, room.members.map((m) => m.name).join(', '), channel && 'Slack ' + channel].filter(Boolean).join(' · ')
+        const result = await bridge.run(id, tool.name, tool.args, recipient)
         controller.signal.throwIfAborted()
         update(id, (r) => ({ ...r, messages: [...r.messages, { id: createId('post'), author: 'Tool', text: result }] }))
         queue.unshift(member)

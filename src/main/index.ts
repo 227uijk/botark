@@ -1,3 +1,4 @@
+import { registerSlackIpc, stopSlack } from './slack/slackIpc'
 import { registerWorkspaceIpc, stopWorkspaces } from './mcp/hub'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -152,6 +153,7 @@ function createMainWindow(): BrowserWindow {
 
 app.on('before-quit', () => {
   quitting = true
+  void stopSlack()
   stopWorkspaces()
   stopGrokAccountWatch('*')
   closeCelsiusWatcher('*')
@@ -178,6 +180,7 @@ app.whenReady().then(async () => {
   registerMobileSyncIpc()
   registerVaultIpc()
   registerWorkspaceIpc(() => mainWindow)
+  registerSlackIpc(() => mainWindow)
   mainWindow = createMainWindow()
   startAutoUpdater()
 

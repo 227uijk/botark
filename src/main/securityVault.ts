@@ -391,6 +391,7 @@ export function registerVaultIpc(): void {
 
   ipcMain.handle(VAULT_CHANNELS.getSecret, async (_event, key: unknown) => {
     if (typeof key !== 'string') throw new TypeError('Vault key required')
+    if (validateKey(key).startsWith('internal.')) throw new Error('Private vault key')
     return getVaultSecret(key)
   })
 
@@ -398,11 +399,13 @@ export function registerVaultIpc(): void {
     if (typeof key !== 'string' || typeof value !== 'string') {
       throw new TypeError('Vault key and string value required')
     }
+    if (validateKey(key).startsWith('internal.')) throw new Error('Private vault key')
     return setVaultSecret(key, value)
   })
 
   ipcMain.handle(VAULT_CHANNELS.deleteSecret, async (_event, key: unknown) => {
     if (typeof key !== 'string') throw new TypeError('Vault key required')
+    if (validateKey(key).startsWith('internal.')) throw new Error('Private vault key')
     await deleteVaultSecret(key)
     return { ok: true as const }
   })
