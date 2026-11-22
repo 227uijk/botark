@@ -15,6 +15,7 @@ import { getHermesAccount, listHermesAccountRecords } from '../hermes/hermesStor
 import { defaultMobileSyncDevicesPath, MobileSyncServer } from './mobileSyncServer'
 
 let syncServer: MobileSyncServer | null = null
+let initialSnapshot: MobileWorkspaceSnapshot | undefined
 let registered = false
 const pendingSends = new Map<string, { contents: WebContents; finish: (result: MobileSendResult) => void }>()
 
@@ -86,6 +87,10 @@ function ensureServer(): MobileSyncServer {
       onSendMessage: dispatchSendToRenderer,
       onStateChange: broadcastState
     })
+    if (initialSnapshot) {
+      syncServer.updateSnapshot(initialSnapshot)
+      initialSnapshot = undefined
+    }
   }
   return syncServer
 }
@@ -148,8 +153,9 @@ export function registerMobileSyncIpc(): void {
   })
 
   ipcMain.on(MOBILE_SYNC_CHANNELS.pushSnapshot, (_event, snapshot: unknown) => {
-    if (!syncServer || !snapshot || typeof snapshot !== 'object') return
-    syncServer.updateSnapshot(snapshot as MobileWorkspaceSnapshot)
+    if (!snapshot || typeof snapshot !== 'object') return
+    if (syncServer) syncServer.updateSnapshot(snapshot as MobileWorkspaceSnapshot)
+    else initialSnapshot = snapshot as MobileWorkspaceSnapshot
   })
 
   ipcMain.on(MOBILE_SYNC_CHANNELS.pushEvent, (_event, payload: unknown) => {
