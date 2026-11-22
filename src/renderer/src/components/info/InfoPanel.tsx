@@ -408,7 +408,7 @@ export function InfoPanel() {
                   agentId={bot.selectedAgentId}
                 />
               ) : bot.platformId === 'hark' ? (
-                <HarkLibrarySection accountId={bot.activeAccountId} />
+                <HarkLibrarySection botId={bot.id} key={bot.activeAccountId + (bot.activeSessionId ?? '')} accountId={bot.activeAccountId} />
               ) : (
                 <DotLibrarySection accountId={bot.activeAccountId} />
               )
@@ -440,7 +440,7 @@ export function InfoPanel() {
               ) : bot.platformId === 'antigravity' ? (
                 <AntigravityEnvironmentsSection accountId={bot.activeAccountId} />
               ) : (
-                <HarkComputerSection accountId={bot.activeAccountId} botId={bot.id} />
+                <HarkComputerSection key={bot.activeAccountId + (bot.activeSessionId ?? '')} accountId={bot.activeAccountId} botId={bot.id} />
               )
             ) : (
               /* activeTab === 'members' — Muse Sharing / Grok Agents & Rooms / Hark Devices / Antigravity Agents */

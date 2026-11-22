@@ -140,9 +140,19 @@ async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {
         return { ok: true, data: await getProfile(req.accountId) }
       case 'listConversations':
         return { ok: true, data: await listConversations(req.accountId) }
+      case 'createConversation': {
+        const result = await callHarkApi(req.accountId, {
+          path: '/conversations', method: 'POST', body: { title: req.title }
+        })
+        const conversationId = conversationIdFromPayload(result)
+        if (!conversationId) throw new Error('Hark returned no project ID')
+        return { ok: true, data: { conversationId } }
+      }
+      case 'conversationSnapshot':
       case 'mainConversation': {
-        const data = await getMainConversation(req.accountId, req.timezone ?? timezoneName())
-        const convId = conversationIdFromPayload(data)
+        const data = req.op === 'mainConversation'
+          ? await getMainConversation(req.accountId, req.timezone ?? timezoneName()) : null
+        const convId = req.op === 'conversationSnapshot' ? req.conversationId : conversationIdFromPayload(data)
         const snap = convId ? await fetchConversationSnapshotSummary(req.accountId, convId) : null
         const rawMessages = snap && snap.messages.length > 0 ? snap.messages : extractMessages(data)
         const messages = rawMessages.map((m) => ({
@@ -225,6 +235,7 @@ async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {
               broadcast({
                 type: 'activity',
                 accountId: req.accountId,
+                sessionId: req.conversationId,
                 activityCode: 'thinking',
                 activityText: activePhrase.slice(0, 120),
                 busy: true
@@ -235,6 +246,7 @@ async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {
             broadcast({
               type: 'stream',
               accountId: req.accountId,
+              sessionId: req.conversationId,
               conversationId: req.botId,
               messageId: `hark_${msg.id}`,
               text,
@@ -250,6 +262,7 @@ async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {
         broadcast({
           type: 'activity',
           accountId: req.accountId,
+          sessionId: req.conversationId,
           activityCode: 'idle',
           busy: false
         })
@@ -269,6 +282,7 @@ async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {
           broadcast({
             type: 'stream',
             accountId: req.accountId,
+            sessionId: req.conversationId,
             conversationId: req.botId,
             messageId: msgId,
             text: finalReply.content.trim(),
@@ -296,6 +310,7 @@ async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {
           broadcast({
             type: 'stream',
             accountId: req.accountId,
+            sessionId: req.conversationId,
             conversationId: req.botId,
             messageId: req.responseMessageId ? `hark_${req.responseMessageId}` : 'hark_timeout',
             text: '',

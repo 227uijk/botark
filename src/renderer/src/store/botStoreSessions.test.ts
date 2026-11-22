@@ -48,6 +48,20 @@ describe('session navigation', () => {
     vi.restoreAllMocks()
   })
 
+  it('keeps the selected Hark project when an earlier snapshot arrives late', async () => {
+    useBotStore.setState({ bots: [{ ...bot, platformId: 'hark' }] })
+    const pending = deferred<unknown>()
+    const rpc = vi.fn().mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce({ ok: true, data: { conversationId: 'new', messages: [] } })
+    vi.stubGlobal('window', { electron: { hark: { rpc } } })
+    const first = store().switchHarkSession(bot.id, 'previous')
+    await store().switchHarkSession(bot.id, 'new')
+    pending.resolve({ ok: true, data: { conversationId: 'previous', messages: [row('stale')] } })
+    await first
+    expect(store().bots[0]?.activeSessionId).toBe('new')
+    expect(store().messages[bot.id]).toEqual([])
+  })
+
   it('keeps the most recently selected Hermes history when requests finish out of order', async () => {
     const first = deferred<ReturnType<typeof hermesHistory>>()
     const second = deferred<ReturnType<typeof hermesHistory>>()

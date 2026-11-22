@@ -883,6 +883,7 @@ export type HarkMainEvent =
     }
   | {
       type: 'stream'
+      sessionId: string
       accountId: string
       conversationId?: string
       messageId: string
@@ -894,6 +895,7 @@ export type HarkMainEvent =
     }
   | {
       type: 'activity'
+      sessionId?: string
       accountId: string
       activityCode: string
       activityText?: string
@@ -924,6 +926,8 @@ export type HarkRpcRequest =
   | { accountId: string; op: 'profile' }
   | { accountId: string; op: 'listConversations' }
   | { accountId: string; op: 'mainConversation'; timezone?: string }
+  | { accountId: string; op: 'conversationSnapshot'; conversationId: string }
+  | { accountId: string; op: 'createConversation'; title: string }
   | { accountId: string; op: 'conversationStatus' }
   | {
       accountId: string
