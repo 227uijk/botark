@@ -144,6 +144,8 @@ export interface BotHubState {
   cancelGeneration: (botId: string) => Promise<void>
   switchMuseSession: (botId: string, sessionId: string) => Promise<void>
   startNewMuseSession: (botId: string) => Promise<void>
+  switchHarkSession: (botId: string, sessionId: string) => Promise<void>
+  startNewHarkSession: (botId: string, title: string) => Promise<void>
   switchHermesSession: (botId: string, sessionId: string) => Promise<void>
   startNewHermesSession: (botId: string) => Promise<boolean>
   switchAntigravitySession: (botId: string, sessionId: string) => Promise<void>
@@ -378,6 +380,76 @@ export function poolAccountIds(accounts: Record<string, { id: string; platformId
   }
 }
 
+function harkHistory(data: unknown, botId: string, accountId: string): ChatMessage[] {
+  const d = data as {
+    conversationId?: string
+    messages?: Array<{
+      id: string
+      role: string
+      content: string
+      thought?: string | null
+      narration?: string | null
+      createdAt?: string | number | null
+      toolCalls?: Array<{ dispatchId: string; name: string; status: string; url?: string }>
+      actions?: Array<{ kind: string; connector?: string; label: string }>
+      media?: ChatMessage['media']
+      richWidgets?: ChatMessage['richWidgets']
+    }>
+  }
+  return (d.messages ?? [])
+      .filter(
+        (m) =>
+          (m.content && m.content.trim()) ||
+          m.toolCalls?.length || m.narration || m.thought ||
+          (m.media && m.media.length > 0) ||
+          (m.richWidgets && m.richWidgets.length > 0)
+      )
+      .map((m) => {
+        const isUser = /^user$/i.test(m.role)
+        const ts =
+          typeof m.createdAt === 'number'
+            ? m.createdAt
+            : typeof m.createdAt === 'string'
+              ? Date.parse(m.createdAt) || Date.now()
+              : Date.now()
+        const tools: ChatMessage['tools'] =
+          m.toolCalls && m.toolCalls.length > 0
+            ? m.toolCalls.map((tc) => ({
+                id: tc.dispatchId,
+                name: tc.name,
+                status:
+                  tc.status === 'running'
+                    ? 'running'
+                    : tc.status === 'failed'
+                      ? 'errored'
+                      : 'completed',
+                summary: tc.url || m.narration || undefined
+              }))
+            : m.narration || m.thought
+              ? [
+                  {
+                    id: `hark_thought_${m.id}`,
+                    name: m.narration ? 'Agent Activity' : 'Thinking',
+                    status: 'completed',
+                    summary: (m.narration || m.thought || '').slice(0, 140)
+                  }
+                ]
+              : undefined
+        return {
+          id: isUser ? `hark_u_${m.id}` : `hark_${m.id}`,
+          botId,
+          accountId,
+          role: isUser ? 'user' : 'bot',
+          text: m.content?.trim() || '',
+          createdAt: ts,
+          delivery: isUser ? 'sent' : undefined,
+          richWidgets: m.richWidgets,
+          tools,
+          ...(m.media && m.media.length > 0 ? { media: m.media } : {})
+        }
+      })
+}
+
 export const useBotStore = create<BotHubState>()(
   persist((set, get) => {
   const updateMessage = (botId: string, messageId: string, patch: Partial<ChatMessage>) =>
@@ -414,6 +486,25 @@ export const useBotStore = create<BotHubState>()(
         : bot),
       messages: { ...state.messages, [botId]: [] }
     }))
+
+  const loadHarkSession = async (bot: Bot, sessionId: string | undefined, selection: symbol | undefined) => {
+    const accountId = bot.activeAccountId
+    const result = await electronBridge()?.hark.rpc(sessionId
+      ? { accountId, op: 'conversationSnapshot', conversationId: sessionId }
+      : { accountId, op: 'mainConversation' })
+    if (!getBotForSessionSelection(bot, selection)) return
+    if (!result?.ok) throw new Error(result?.message ?? 'Hark unavailable')
+    const id = (result.data as { conversationId?: string }).conversationId
+    if (!id) throw new Error('Hark returned no conversation ID')
+    const history = harkHistory(result.data, bot.id, accountId)
+    set((state) => ({
+      bots: state.bots.map((b) => b.id === bot.id ? { ...b, activeSessionId: id } : b),
+      messages: { ...state.messages, [bot.id]: bot.activeSessionId === id
+        ? mergeHydratedMessages(state.messages[bot.id] ?? [], history) : history },
+      typing: { ...state.typing, [bot.id]: false }
+    }))
+    get().setActivity(accountId, null)
+  }
 
   const setHermesSessionError = (botId: string, error?: string) =>
     set((state) => ({ hermesSessionErrors: { ...state.hermesSessionErrors, [botId]: error } }))
@@ -1287,6 +1378,22 @@ export const useBotStore = create<BotHubState>()(
       if (getBotForSessionSelection(bot, selection)) setFreshSession(botId, newSessionId)
     },
 
+    switchHarkSession: async (botId, sessionId) => {
+      const bot = get().bots.find((b) => b.id === botId)
+      if (bot) await loadHarkSession(bot, sessionId, markSessionSelection(botId))
+    },
+
+    startNewHarkSession: async (botId, title) => {
+      const bot = get().bots.find((b) => b.id === botId)
+      if (!bot) return
+      const selection = markSessionSelection(botId)
+      const result = await electronBridge()?.hark.rpc({ accountId: bot.activeAccountId, op: 'createConversation', title })
+      if (!result?.ok) throw new Error(result?.message ?? 'Hark unavailable')
+      if (getBotForSessionSelection(bot, selection)) {
+        setFreshSession(botId, (result.data as { conversationId: string }).conversationId)
+      }
+    },
+
     switchHermesSession: async (botId, sessionId) => {
       const bot = get().bots.find((b) => b.id === botId)
       if (!bot || bot.platformId !== 'hermes') return
@@ -1435,9 +1542,11 @@ export const useBotStore = create<BotHubState>()(
         if (!bot) return state
         if (bot.activeAccountId !== accountId) markSessionSelection(botId)
         const account = state.accounts[accountId]
+        const resetProject = bot.platformId === 'hark' && bot.activeAccountId !== accountId
         return {
+          ...(resetProject ? { messages: { ...state.messages, [botId]: [] } } : {}),
           bots: state.bots.map((b) =>
-            b.id === botId && b.accountIds.includes(accountId) ? { ...b, activeAccountId: accountId } : b
+            b.id === botId && b.accountIds.includes(accountId) ? { ...b, activeAccountId: accountId, ...(b.platformId === 'hark' && b.activeAccountId !== accountId ? { activeSessionId: undefined } : {}) } : b
           ),
           accounts: account
             ? { ...state.accounts, [accountId]: { ...account, unread: 0 } }
@@ -1619,111 +1728,8 @@ export const useBotStore = create<BotHubState>()(
         const status = await adapter.connect(accountId)
         patchAccount(accountId, { status, statusDetail: undefined })
         if (account.platformId === 'hark' && status === 'online') {
-          const bridge = electronBridge()
-          const ownerBot = get().bots.find((b) => b.accountIds.includes(accountId))
-          if (ownerBot && bridge?.hark?.rpc) {
-            void bridge.hark
-              .rpc({ accountId, op: 'mainConversation' })
-              .then((res) => {
-                if (!res.ok || !res.data || typeof res.data !== 'object') return
-                const d = res.data as {
-                  conversationId?: string
-                  messages?: Array<{
-                    id: string
-                    role: string
-                    content: string
-                    thought?: string | null
-                    narration?: string | null
-                    createdAt?: string | number | null
-                    toolCalls?: Array<{ dispatchId: string; name: string; status: string; url?: string }>
-                    actions?: Array<{ kind: string; connector?: string; label: string }>
-                    media?: ChatMessage['media']
-                    richWidgets?: ChatMessage['richWidgets']
-                  }>
-                }
-                if (d.conversationId) {
-                  patchBot(ownerBot.id, () => ({ activeSessionId: d.conversationId }))
-                }
-                if (Array.isArray(d.messages) && d.messages.length > 0) {
-                  const hydrated: ChatMessage[] = d.messages
-                    .filter(
-                      (m) =>
-                        (m.content && m.content.trim()) ||
-                        (m.actions && m.actions.length > 0) ||
-                        (m.media && m.media.length > 0) ||
-                        (m.richWidgets && m.richWidgets.length > 0)
-                    )
-                    .map((m) => {
-                      const isUser = /^user$/i.test(m.role)
-                      const ts =
-                        typeof m.createdAt === 'number'
-                          ? m.createdAt
-                          : typeof m.createdAt === 'string'
-                            ? Date.parse(m.createdAt) || Date.now()
-                            : Date.now()
-                      const combinedRich: NonNullable<ChatMessage['richWidgets']> = [
-                        ...(m.richWidgets ?? [])
-                      ]
-                      if (m.actions && m.actions.length > 0) {
-                        combinedRich.push({
-                          kind: 'text_with_button',
-                          widgetId: `hark_act_${m.id}`,
-                          text: '',
-                          buttons: m.actions.map((a) => ({
-                            label: a.label || `Connect ${a.connector ?? ''}`,
-                            actionText: a.connector ? `Connect ${a.connector}` : a.label
-                          }))
-                        })
-                      }
-                      const richWidgets = combinedRich.length > 0 ? combinedRich : undefined
-                      const tools: ChatMessage['tools'] =
-                        m.toolCalls && m.toolCalls.length > 0
-                          ? m.toolCalls.map((tc) => ({
-                              id: tc.dispatchId,
-                              name: tc.name,
-                              status:
-                                tc.status === 'running'
-                                  ? 'running'
-                                  : tc.status === 'failed'
-                                    ? 'errored'
-                                    : 'completed',
-                              summary: tc.url || m.narration || undefined
-                            }))
-                          : m.narration || m.thought
-                            ? [
-                                {
-                                  id: `hark_thought_${m.id}`,
-                                  name: m.narration ? 'Agent Activity' : 'Thinking',
-                                  status: 'completed',
-                                  summary: (m.narration || m.thought || '').slice(0, 140)
-                                }
-                              ]
-                            : undefined
-                      return {
-                        id: isUser ? `hark_u_${m.id}` : `hark_${m.id}`,
-                        botId: ownerBot.id,
-                        accountId,
-                        role: isUser ? 'user' : 'bot',
-                        text: m.content?.trim() || '',
-                        createdAt: ts,
-                        delivery: isUser ? 'sent' : undefined,
-                        richWidgets,
-                        tools,
-                        ...(m.media && m.media.length > 0 ? { media: m.media } : {})
-                      }
-                    })
-                  if (hydrated.length > 0) {
-                    set((s) => ({
-                      messages: {
-                        ...s.messages,
-                        [ownerBot.id]: mergeHydratedMessages(s.messages[ownerBot.id] ?? [], hydrated)
-                      }
-                    }))
-                  }
-                }
-              })
-              .catch(() => undefined)
-          }
+          const bot = get().bots.find((b) => b.activeAccountId === accountId)
+          if (bot) await loadHarkSession(bot, bot.activeSessionId, sessionSelections.get(bot.id))
         } else if (account.platformId === 'dot' && status === 'online') {
           const bridge = electronBridge()
           const ownerBot =

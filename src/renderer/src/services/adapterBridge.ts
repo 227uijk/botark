@@ -1,3 +1,4 @@
+import { belongsToSelectedSession } from './sessionEvents'
 import { adapterRegistry } from "@adapters/registry"
 import type { AdapterEvent } from "@adapters/types"
 import { useBotStore } from "@/store/botStore"
@@ -50,6 +51,7 @@ function electronBridge(): Window["electron"] | undefined {
 }
 
 function handleEvent(event: AdapterEvent): void {
+    if (!belongsToSelectedSession(event, useBotStore.getState().bots)) return
   const store = useBotStore.getState()
   if (event.type === "message") watchdog.touch(botIdFor(event.message.conversationId))
   else if (event.type === "typing" || event.type === "message_delta") watchdog.touch(botIdFor(event.conversationId))

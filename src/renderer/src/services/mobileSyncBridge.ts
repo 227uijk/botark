@@ -1,3 +1,4 @@
+import { belongsToSelectedSession } from './sessionEvents'
 import { adapterRegistry } from '@adapters/registry'
 import type { AdapterEvent } from '@adapters/types'
 import type { HermesApprovalView } from '@shared/ipc'
@@ -128,6 +129,7 @@ export function startMobileSyncBridge(): () => void {
 
   // Forward real-time streaming deltas, typing, status, and approvals immediately
   const handleAdapterEvent = (event: AdapterEvent) => {
+    if (!belongsToSelectedSession(event, useBotStore.getState().bots)) return
     switch (event.type) {
       case 'message_delta':
         mobileSync.pushEvent({

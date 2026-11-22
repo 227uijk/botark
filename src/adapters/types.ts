@@ -82,6 +82,7 @@ export interface SendReceipt {
 }
 
 export interface IncomingMessage {
+  sessionId?: string
   id: string
   conversationId: string
   accountId: string
@@ -267,10 +268,10 @@ export interface AgentActivity {
 
 export type AdapterEvent =
   | { type: 'message'; message: IncomingMessage & { widgets?: MuseOptionWidget[]; richWidgets?: MuseRichWidget[]; tools?: MuseToolCall[]; media?: MuseMediaPart[] } }
-  | { type: 'message_delta'; messageId: string; conversationId: string; accountId: string; text: string; widgets?: MuseOptionWidget[]; richWidgets?: MuseRichWidget[]; tools?: MuseToolCall[]; media?: MuseMediaPart[] }
-  | { type: 'typing'; conversationId: string; accountId: string; isTyping: boolean }
+  | { type: 'message_delta'; sessionId?: string; messageId: string; conversationId: string; accountId: string; text: string; widgets?: MuseOptionWidget[]; richWidgets?: MuseRichWidget[]; tools?: MuseToolCall[]; media?: MuseMediaPart[] }
+  | { type: 'typing'; sessionId?: string; conversationId: string; accountId: string; isTyping: boolean }
   | { type: 'status'; accountId: string; status: ConnectionStatus; detail?: string }
-  | { type: 'activity'; accountId: string; activity: AgentActivity }
+  | { type: 'activity'; sessionId?: string; accountId: string; activity: AgentActivity }
   | { type: 'approvals'; accountId: string; pending: MuseApproval[] }
   | {
       type: 'login'

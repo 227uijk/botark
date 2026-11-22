@@ -1,3 +1,4 @@
+import { HarkProjects } from '../hark/HarkProjects'
 import { ChevronRight, Globe, MessageSquarePlus, PanelRight, Pin, PinOff, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { PaneHeader } from '@/components/layout/PaneHeader'
@@ -123,6 +124,7 @@ export function ChatHeader({ bot, accounts: _accounts }: ChatHeaderProps) {
   return (
     <PaneHeader className="gap-3 pr-3">
       <div className="flex min-w-0 flex-1 items-center gap-2">
+        {bot.platformId === 'hark' && <HarkProjects key={bot.activeAccountId} botId={bot.id} compact />}
         {activityLine ? (
           <span
             className="hidden min-w-0 truncate text-[12px] text-ink-muted shimmer-text sm:inline"

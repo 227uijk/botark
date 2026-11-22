@@ -336,25 +336,21 @@ export async function fetchConversationSnapshotSummary(
   const ses = await preparedSessionForAccount(accountId)
   const managerId = randomUUID()
   const syncState = new HarkConversationSyncState()
-  try {
-    const pollRes = (await harkFetch(ses, '/sync/poll', {
-      method: 'GET',
-      query: {
-        conversationId,
-        v: '2',
-        manager: managerId,
-        mode: 'in_tab',
-        dial: 'initial',
-        first: '1'
-      }
-    })) as { frames?: string[] } | null
-    if (pollRes && Array.isArray(pollRes.frames)) {
-      for (const frame of pollRes.frames) {
-        syncState.applyFrame(frame)
-      }
+  const pollRes = (await harkFetch(ses, '/sync/poll', {
+    method: 'GET',
+    query: {
+      conversationId,
+      v: '2',
+      manager: managerId,
+      mode: 'in_tab',
+      dial: 'initial',
+      first: '1'
     }
-  } catch {
-    /* ignore */
+  })) as { frames?: string[] } | null
+  if (pollRes && Array.isArray(pollRes.frames)) {
+    for (const frame of pollRes.frames) {
+      syncState.applyFrame(frame)
+    }
   }
   return {
     conversationId,

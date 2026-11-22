@@ -41,7 +41,6 @@ export class HarkAdapter implements PlatformAdapter {
   private readonly accounts = new Map<string, PlatformAccount>()
   private readonly statuses = new Map<string, ConnectionStatus>()
   private readonly listeners = new Set<AdapterListener>()
-  private readonly mainConversationId = new Map<string, string>()
   private bridgeUnsub: Unsubscribe | null = null
 
   constructor() {
@@ -58,6 +57,7 @@ export class HarkAdapter implements PlatformAdapter {
     if (event.type === 'activity') {
       this.emit({
         type: 'activity',
+        sessionId: event.sessionId,
         accountId: event.accountId,
         activity: {
           code: event.activityCode,
@@ -76,6 +76,7 @@ export class HarkAdapter implements PlatformAdapter {
         this.emit({
           type: 'typing',
           conversationId: convId,
+          sessionId: event.sessionId,
           accountId: event.accountId,
           isTyping: true
         })
@@ -84,6 +85,7 @@ export class HarkAdapter implements PlatformAdapter {
             type: 'message_delta',
             messageId: event.messageId,
             conversationId: convId,
+            sessionId: event.sessionId,
             accountId: event.accountId,
             text: event.text,
             tools: event.tools,
@@ -95,11 +97,13 @@ export class HarkAdapter implements PlatformAdapter {
         this.emit({
           type: 'typing',
           conversationId: convId,
+          sessionId: event.sessionId,
           accountId: event.accountId,
           isTyping: false
         })
         this.emit({
           type: 'activity',
+          sessionId: event.sessionId,
           accountId: event.accountId,
           activity: {
             code: 'idle',
@@ -117,6 +121,7 @@ export class HarkAdapter implements PlatformAdapter {
             message: {
               id: event.messageId,
               conversationId: convId,
+              sessionId: event.sessionId,
               accountId: event.accountId,
               text: event.text,
               createdAt: Date.now(),
@@ -203,7 +208,6 @@ export class HarkAdapter implements PlatformAdapter {
         return 'offline'
       }
       this.upsert(accountId, { displayName: status.displayName, handle: status.handle })
-      await this.refreshMainConversation(accountId).catch(() => undefined)
       this.setStatus(accountId, 'online')
       return 'online'
     } catch (error) {
@@ -229,7 +233,6 @@ export class HarkAdapter implements PlatformAdapter {
       const status = await bridge.openLogin({ accountId })
       if (status.signedIn) {
         this.upsert(accountId, { displayName: status.displayName, handle: status.handle })
-        await this.refreshMainConversation(accountId).catch(() => undefined)
         this.setStatus(accountId, 'online')
         return 'online'
       }
@@ -246,39 +249,21 @@ export class HarkAdapter implements PlatformAdapter {
     await bridge?.cancelLogin?.(accountId)
     this.accounts.delete(accountId)
     this.statuses.delete(accountId)
-    this.mainConversationId.delete(accountId)
-  }
-
-  private async refreshMainConversation(accountId: string): Promise<string | undefined> {
-    const data = (await invokeHarkRpc({
-      accountId,
-      op: 'mainConversation',
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    })) as { conversationId?: string }
-    if (data?.conversationId) {
-      this.mainConversationId.set(accountId, data.conversationId)
-      return data.conversationId
-    }
-    // Fall back to list
-    const listed = await invokeHarkRpc({ accountId, op: 'listConversations' })
-    const id = pickFirstConversationId(listed)
-    if (id) this.mainConversationId.set(accountId, id)
-    return id
   }
 
   async sendMessage(message: OutgoingMessage): Promise<SendReceipt> {
     this.bindBridgeEvents()
-    let conversationId =
-      this.mainConversationId.get(message.accountId) ??
-      (await this.refreshMainConversation(message.accountId))
-    if (!conversationId) {
-      throw new AdapterError('network', 'No Hark conversation id (main/list empty)')
-    }
-
+    const before = (await invokeHarkRpc(message.sessionId
+      ? { accountId: message.accountId, op: 'conversationSnapshot', conversationId: message.sessionId }
+      : { accountId: message.accountId, op: 'mainConversation' }
+    )) as { conversationId?: string; messages: Array<{ id: string }> }
+    const conversationId = before.conversationId
+    if (!conversationId) throw new AdapterError('network', 'No Hark conversation ID')
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
     this.setStatus(message.accountId, 'busy')
     this.emit({
       type: 'typing',
+      sessionId: conversationId,
       conversationId: message.conversationId,
       accountId: message.accountId,
       isTyping: true
@@ -286,17 +271,6 @@ export class HarkAdapter implements PlatformAdapter {
 
     let accepted = false
     try {
-      const before = (await invokeHarkRpc({
-        accountId: message.accountId,
-        op: 'mainConversation',
-        timezone: timeZone
-      })) as { conversationId?: string; messages?: Array<{ id: string }> }
-      // The main conversation can change server-side (reset, new day); the
-      // cached id was never refreshed, so sends went to a stale thread.
-      if (before?.conversationId && before.conversationId !== conversationId) {
-        conversationId = before.conversationId
-        this.mainConversationId.set(message.accountId, conversationId)
-      }
       const beforeMsgs = Array.isArray(before?.messages) ? before.messages : []
       const afterIds = beforeMsgs.map((m) => m.id)
 
@@ -345,12 +319,14 @@ export class HarkAdapter implements PlatformAdapter {
 
       this.emit({
         type: 'typing',
+        sessionId: conversationId,
         conversationId: message.conversationId,
         accountId: message.accountId,
         isTyping: false
       })
       this.emit({
         type: 'activity',
+        sessionId: conversationId,
         accountId: message.accountId,
         activity: {
           code: 'idle',
@@ -379,6 +355,7 @@ export class HarkAdapter implements PlatformAdapter {
           richWidgets?: import('../types').MuseRichWidget[]
         } = {
           id: normalizedReplyId,
+          sessionId: conversationId,
           conversationId: message.conversationId,
           accountId: message.accountId,
           text: replyText,
@@ -400,12 +377,14 @@ export class HarkAdapter implements PlatformAdapter {
     } catch (error) {
       this.emit({
         type: 'typing',
+        sessionId: conversationId,
         conversationId: message.conversationId,
         accountId: message.accountId,
         isTyping: false
       })
       this.emit({
         type: 'activity',
+        sessionId: conversationId,
         accountId: message.accountId,
         activity: {
           code: 'idle',
@@ -445,19 +424,6 @@ export class HarkAdapter implements PlatformAdapter {
   getStatus(accountId: string): ConnectionStatus {
     return this.statuses.get(accountId) ?? 'offline'
   }
-}
-
-function pickFirstConversationId(payload: unknown): string | undefined {
-  if (!payload || typeof payload !== 'object') return undefined
-  const root = payload as Record<string, unknown>
-  const list =
-    (Array.isArray(root['conversations']) && root['conversations']) ||
-    (Array.isArray(root['items']) && root['items']) ||
-    (Array.isArray(payload) ? payload : null)
-  if (!Array.isArray(list) || list.length === 0) return undefined
-  const first = list[0] as Record<string, unknown>
-  const id = first?.['id'] ?? first?.['conversationId']
-  return typeof id === 'string' ? id : undefined
 }
 
 export function createHarkAdapter(): HarkAdapter {
