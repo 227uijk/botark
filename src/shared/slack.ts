@@ -7,6 +7,7 @@ export interface SlackBinding {
   defaultThread?: string
 }
 export interface SlackInbound {
+  channel: string
   id: string
   roomId: string
   thread: string
@@ -24,7 +25,7 @@ export type SlackRequest =
   | { op: 'connect'; appToken?: string; botToken?: string }
   | { op: 'bind'; roomId: string; channel: string; thread?: string }
   | { op: 'unbind'; roomId: string }
-  | { op: 'post'; roomId: string; thread?: string; text: string }
+  | { op: 'post'; roomId: string; channel?: string; thread?: string; text: string }
   | { op: 'received'; id: string }
 export interface SlackBridge {
   request(req: SlackRequest): Promise<SlackState>

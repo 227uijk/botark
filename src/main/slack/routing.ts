@@ -13,7 +13,7 @@ export function routeSlackMessage(bindings: SlackBinding[], event: SlackMessageE
   if (!binding) return
   const text = event.text.replaceAll(`<@${botUser}>`, '').trim()
   if (!text) return
-  return { roomId: binding.roomId, thread, fork: !binding.thread && binding.defaultThread !== thread && !!binding.defaultThread,
+  return { channel: event.channel, roomId: binding.roomId, thread, fork: !binding.thread && binding.defaultThread !== thread && !!binding.defaultThread,
     id: `slack-${event.channel}-${event.ts}`, user: event.user, text }
 }
 export function splitSlackText(text: string): string[] {

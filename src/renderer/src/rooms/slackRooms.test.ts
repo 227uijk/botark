@@ -11,7 +11,7 @@ it('persists an inbound post once, keeps threads separate and forwards only new 
   vi.stubGlobal('window', { electron: { slack: { request, onMessage: () => () => {} } } })
   const stop = startSlackRooms()
   try {
-    const event: SlackInbound = { id: 'slack-C1-1.0', roomId: 'room', fork: true, thread: '1.0', text: 'Review thread one', user: 'U1' }
+    const event: SlackInbound = { id: 'slack-C1-1.0', channel: 'C1', roomId: 'room', fork: true, thread: '1.0', text: 'Review thread one', user: 'U1' }
     receiveSlackMessage(event)
     receiveSlackMessage(event)
     receiveSlackMessage({ ...event, id: 'slack-C1-2.0', thread: '2.0', text: 'Review thread two' })
@@ -23,6 +23,6 @@ it('persists an inbound post once, keeps threads separate and forwards only new 
     useRooms.setState((s) => ({ rooms: s.rooms.map((r) => r.id === one!.id ? {
       ...r, messages: [...r.messages, { id: 'local', author: 'Muse', text: 'Reviewed.' }]
     } : r) }))
-    expect(request).toHaveBeenCalledExactlyOnceWith({ op: 'post', roomId: 'room', thread: '1.0', text: '[Muse] Reviewed.' })
+    expect(request).toHaveBeenCalledExactlyOnceWith({ op: 'post', roomId: 'room', channel: 'C1', thread: '1.0', text: '[Muse] Reviewed.' })
   } finally { stop(); vi.unstubAllGlobals() }
 })

@@ -80,6 +80,9 @@ async function start(owner: () => BrowserWindow | null, appToken?: string, botTo
 async function publish(req: Extract<SlackRequest, { op: 'post' }>) {
   const binding = prefs.bindings.find((b) => b.roomId === req.roomId)
   if (!binding) return
+  if (req.channel && (binding.channel !== req.channel || (binding.thread && binding.thread !== req.thread))) {
+    throw new Error('此话题的原 Slack 绑定已变更')
+  }
   if (!api || !online) throw new Error('Slack 已断开，消息保留在 BotArk')
   let thread = binding.thread ?? req.thread ?? binding.defaultThread
   for (const text of splitSlackText(req.text)) {

@@ -23,6 +23,7 @@ export interface CollabRoom {
   limit: number
   brief: string
   slackParent?: string
+  slackChannel?: string
   slackThread?: string
   finalId?: string
 }
