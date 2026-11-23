@@ -42,6 +42,7 @@ fun PlatformId.drawableRes(): Int = when (this) {
     PlatformId.HARK -> R.drawable.ic_platform_hark
     PlatformId.HERMES -> R.drawable.ic_platform_hermes
     PlatformId.ANTIGRAVITY -> R.drawable.ic_platform_antigravity
+    PlatformId.CUE -> R.drawable.ic_platform_cue
 }
 
 @Composable

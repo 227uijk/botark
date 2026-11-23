@@ -34,6 +34,12 @@ module.exports = {
   },
   files: ['out/**/*', 'package.json'],
   asar: true,
+  protocols: [
+    {
+      name: 'Cue Desktop OAuth Callback',
+      schemes: ['cuedev']
+    }
+  ],
   mac: {
     category: 'public.app-category.productivity',
     icon: 'build/icon.icns',

@@ -34,6 +34,30 @@ try {
 const isMac = process.platform === 'darwin'
 let mainWindow: BrowserWindow | null = null
 let quitting = false
+let readyForDeepLinks = false
+const pendingCueCallbacks: string[] = []
+
+function dispatchCueCallback(rawUrl: string): void {
+  if (!readyForDeepLinks) {
+    pendingCueCallbacks.push(rawUrl)
+    return
+  }
+  void handleCueDesktopCallbackUrl(rawUrl).catch((err) =>
+    console.error('[cue] desktop callback failed', err instanceof Error ? err.message : err)
+  )
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+  }
+}
+
+// macOS delivers `cuedev://oauth/desktop-callback?...` via `open-url` instead of `second-instance`.
+app.on('open-url', (event, url) => {
+  if (!url.toLowerCase().startsWith('cuedev://')) return
+  event.preventDefault()
+  dispatchCueCallback(url)
+})
 
 // Seamless upgrade from legacy "bothub" userData directory: if an existing user
 // already has accounts/sessions in Application Support/bothub and no new botark
@@ -66,9 +90,7 @@ if (!gotLock) {
     // Windows delivers `cuedev://oauth/desktop-callback?...` (Cue browser login) as an argv entry.
     const cueCallback = findCueCallbackArg(argv)
     if (cueCallback) {
-      void handleCueDesktopCallbackUrl(cueCallback).catch((err) =>
-        console.error('[cue] desktop callback failed', err instanceof Error ? err.message : err)
-      )
+      dispatchCueCallback(cueCallback)
     }
     if (!mainWindow || mainWindow.isDestroyed()) return
     if (mainWindow.isMinimized()) mainWindow.restore()
@@ -218,6 +240,13 @@ app.whenReady().then(async () => {
   registerWorkspaceIpc(() => mainWindow)
   registerSlackIpc(() => mainWindow)
   mainWindow = createMainWindow()
+  readyForDeepLinks = true
+  const initialCueCallback = findCueCallbackArg(process.argv)
+  if (initialCueCallback) pendingCueCallbacks.push(initialCueCallback)
+  while (pendingCueCallbacks.length > 0) {
+    const nextUrl = pendingCueCallbacks.shift()
+    if (nextUrl) dispatchCueCallback(nextUrl)
+  }
   startAutoUpdater()
 
   app.on('activate', () => {

@@ -7,6 +7,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
     case hark = "hark"
     case hermes = "hermes"
     case antigravity = "antigravity"
+    case cue = "cue"
 
     public var id: String { rawValue }
 
@@ -18,6 +19,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
         case .hark: return "Hark"
         case .hermes: return "Hermes"
         case .antigravity: return "Antigravity"
+        case .cue: return "Cue (Manus)"
         }
     }
 
@@ -29,6 +31,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
         case .hark: return "Hark"
         case .hermes: return "Hermes"
         case .antigravity: return "Antigravity"
+        case .cue: return "Cue"
         }
     }
 
@@ -40,6 +43,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
         case .hark: return "PlatformHark"
         case .hermes: return "PlatformHermes"
         case .antigravity: return "PlatformAntigravity"
+        case .cue: return "PlatformCue"
         }
     }
 
@@ -54,6 +58,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
         case .grok: return "https://grok.com"
         case .dot: return "https://chatgpt.com/dots"
         case .hark: return "https://app.hark.com"
+        case .cue: return "https://cue.im"
         case .hermes: return ""
         }
     }
@@ -65,6 +70,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
         case .grok: return "xAI Grok"
         case .dot: return "OpenAI Dot"
         case .hark: return "Hark 个人助手"
+        case .cue: return "Manus Cue 个人智能体"
         case .hermes: return "开源 SSE 网关"
         }
     }
@@ -74,7 +80,7 @@ public enum PlatformId: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 
     public static let pickerOrder: [PlatformId] = [
-        .antigravity, .metaMuse, .grok, .dot, .hark, .hermes
+        .antigravity, .metaMuse, .grok, .dot, .hark, .cue, .hermes
     ]
 }
 

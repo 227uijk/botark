@@ -40,10 +40,13 @@ import {
   type HarkChatMessage,
   type HarkUploadedAttachment
 } from './harkClient'
-import { cancelHarkLogin, onHarkLoginEvent, openHarkLoginWindow } from './harkLogin'
+import { cancelHarkLogin, closeHarkLoginWindow, onHarkLoginEvent, openHarkLoginWindow } from './harkLogin'
 import { loadAccountProxyUrl } from '../muse/accountProxy'
 import { guessMediaMimeFromName } from '../mediaMime'
 import { probeHarkSession } from './harkSession'
+import { harkWebViewUrlAfterSignIn } from './harkWebView'
+import { reloadAccountWebViews } from '../webViewIpc'
+import { harkCreateProjectBody } from '@shared/harkProjects'
 
 function mapHarkTools(msg: HarkChatMessage): MuseToolCallView[] | undefined {
   if (!msg.toolCalls || msg.toolCalls.length === 0) return undefined
@@ -207,7 +210,9 @@ async function runHarkRpc(req: HarkRpcRequest): Promise<HarkRpcResponse> {
         return { ok: true, data: await listConversations(req.accountId) }
       case 'createConversation': {
         const result = await callHarkApi(req.accountId, {
-          path: '/conversations', method: 'POST', body: { title: req.title }
+          path: '/conversations',
+          method: 'POST',
+          body: harkCreateProjectBody(req.title, req.timezone ?? timezoneName())
         })
         const conversationId = conversationIdFromPayload(result)
         if (!conversationId) throw new Error('Hark returned no project ID')
@@ -446,6 +451,7 @@ export function registerHarkIpc(): void {
 
   onHarkLoginEvent((event) => {
     if (event.signedIn) {
+      reloadAccountWebViews(event.accountId, harkWebViewUrlAfterSignIn)
       broadcast({
         type: 'login',
         accountId: event.accountId,
@@ -502,6 +508,9 @@ export function registerHarkIpc(): void {
     }
     const st = await statusFor(targetId)
     if (st.signedIn) {
+      if (!closeHarkLoginWindow(targetId)) {
+        reloadAccountWebViews(targetId, harkWebViewUrlAfterSignIn)
+      }
       broadcast({
         type: 'login',
         accountId: targetId,
