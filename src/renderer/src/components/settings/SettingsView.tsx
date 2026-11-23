@@ -43,6 +43,7 @@ import { StatusBadge } from '@/components/ui/Status'
 import { getBridge } from '@/lib/bridge'
 import { cn } from '@/lib/cn'
 import { useT, t } from '@/lib/i18n'
+import { importHarkCredentialsForAccount } from '@/lib/harkCredentialImport'
 import { platformIcon } from '@/lib/platformIcons'
 import { HermesAccountsSettingsPanel } from '@/components/hermes/HermesAccountsSettingsPanel'
 import { MobileSyncSettingsPanel } from '@/components/mobile-sync/MobileSyncSettingsPanel'
@@ -478,14 +479,7 @@ export function SettingsView() {
     try {
       const isNew = harkTargetAccountId === '__new__' || !accounts[harkTargetAccountId]
       const targetId = isNew ? createId('acc_hark') : harkTargetAccountId
-      const st = await hark.importCredentials({
-        accountId: targetId,
-        rawInput: harkRawInput.trim()
-      })
-      if (!st.signedIn) {
-        setError('未检测到有效 Hark 会话，请检查 Cookie（含 __Secure-hark.session_token）或 Token 是否有效')
-        return
-      }
+      const st = await importHarkCredentialsForAccount(hark, targetId, harkRawInput)
       const label = st.displayName || st.handle || `Hark ${harkBots.length + 1}`
       if (isNew) {
         addBot({

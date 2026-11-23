@@ -18,6 +18,7 @@ import { useMorphHeight } from '@/hooks/useMorphHeight'
 import { usePlatformLogin } from '@/hooks/usePlatformLogin'
 import { avatarFromFile } from '@/lib/avatarImage'
 import { getBridge } from '@/lib/bridge'
+import { importHarkCredentialsForAccount } from '@/lib/harkCredentialImport'
 import { cn } from '@/lib/cn'
 import { useBotStore } from '@/store/botStore'
 import { BLANK_TEMPLATE, BOT_TEMPLATES, localizeTemplate, type BotTemplate } from '@/data/botTemplates'
@@ -324,6 +325,7 @@ function AddBotFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
               accountId={login.accountId}
               windowClosed={phase.windowClosed}
               onReopen={login.reopen}
+              onImported={login.markSignedIn}
             />
           )}
           {!batch && phase.kind === 'signed-in' && phase.platformId === 'grok' && (
@@ -624,12 +626,15 @@ export function LoginWaiting({
   platformId,
   accountId,
   windowClosed,
-  onReopen
+  onReopen,
+  onImported
 }: {
   platformId: PlatformId
   accountId?: string
   windowClosed: boolean
   onReopen: () => void
+  /** Called after a paste-import verified the session for `accountId`. */
+  onImported?: () => void
 }) {
   const platform = getPlatform(platformId)
   const actionRef = useRef<HTMLButtonElement>(null)
@@ -711,6 +716,7 @@ export function LoginWaiting({
         return
       }
       await window.electron.dot.cancelLogin?.(accountId).catch(() => undefined)
+      onImported?.()
     } catch (e) {
       setErr(errorMessage(e))
     } finally {
@@ -719,19 +725,12 @@ export function LoginWaiting({
   }
 
   const quickImportHarkRaw = async () => {
-    if (!accountId || !rawInput.trim() || !window.electron?.hark?.importCredentials) return
+    if (!accountId || !rawInput.trim()) return
     setBusy(true)
     setErr('')
     try {
-      const st = await window.electron.hark.importCredentials({
-        accountId,
-        rawInput: rawInput.trim()
-      })
-      if (!st.signedIn) {
-        setErr('未检测到有效 Hark 会话，请检查 Cookie / Session Token')
-        return
-      }
-      await window.electron.hark.cancelLogin?.(accountId).catch(() => undefined)
+      await importHarkCredentialsForAccount(getBridge()?.hark, accountId, rawInput)
+      onImported?.()
     } catch (e) {
       setErr(errorMessage(e))
     } finally {
@@ -753,6 +752,7 @@ export function LoginWaiting({
         return
       }
       await window.electron.cue.cancelLogin?.(accountId).catch(() => undefined)
+      onImported?.()
     } catch (e) {
       setErr(errorMessage(e))
     } finally {

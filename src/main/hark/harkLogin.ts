@@ -394,6 +394,13 @@ export async function cancelHarkLogin(accountId: string): Promise<void> {
   }
 }
 
+export function closeHarkLoginWindow(accountId: string): boolean {
+  const win = loginWindows.get(accountId)
+  if (!win || win.isDestroyed()) return false
+  win.close()
+  return true
+}
+
 export function hasOpenHarkLogin(accountId: string): boolean {
   const win = loginWindows.get(accountId)
   return Boolean(win && !win.isDestroyed())

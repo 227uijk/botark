@@ -91,6 +91,7 @@ extension PlatformId {
         case .hark: return Color(red: 0.91, green: 0.40, blue: 0.16)
         case .hermes: return Color(red: 0.47, green: 0.31, blue: 0.94)
         case .antigravity: return Color(red: 0.25, green: 0.52, blue: 0.96)
+        case .cue: return Color(red: 0.26, green: 0.62, blue: 0.98)
         }
     }
 }
