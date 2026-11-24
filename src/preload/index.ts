@@ -169,6 +169,7 @@ const bridge: BotHubBridge = {
   antigravity: {
     openLogin: (request) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.openLogin, request),
     cancelLogin: (accountId) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.cancelLogin, accountId),
+    importCredentials: (request) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.importCredentials, request),
     clearAuth: (accountId) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.clearAuth, accountId),
     authStatus: (accountId) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.authStatus, accountId),
     sendMessage: (request) => ipcRenderer.invoke(ANTIGRAVITY_CHANNELS.sendMessage, request),

@@ -2,6 +2,154 @@
 
 All notable changes to **BotArk** (formerly BotHub) are documented in this file.
 
+## [0.15.0] - 2026-11-24
+
+### Added
+
+- Pin group chats and administrator dispatch rooms to the top of the sidebar.
+- Preview Muse browser activity inline in native chat.
+
+### Fixed
+
+- Room handoffs resolve full `@mentions`, survive member renames, and recover when a direct request is mislabeled `[FINAL]`. Bots can also hand off explicitly by ID, and queued members receive the original assigning message.
+- Slack replies stay in their original thread, and workspace tool arguments stay local.
+- Reduced background work from inspector polling, workspace saves, and idle mobile sync. Hardened account proxy routing and vault writes.
+
+## [0.14.1] - 2026-11-23
+
+### Fixed
+
+- Kept selected workspace excerpts separate from room routing and delivered them to late participants.
+- Recovered interrupted handoffs and isolated Hermes sessions across Slack threads.
+
+## [0.14.0] - 2026-11-23
+
+### Added
+
+- Native administrator dispatch with revocable permissions, delegation to room members, and review of their replies.
+- Scoped Hark browser previews with refresh in native conversations.
+- MCP setup for connecting authorized DS Bot teams to native rooms.
+
+### Fixed
+
+- Discarded pending turns when a room member changes account or agent.
+
+## [0.13.2] - 2026-11-23
+
+### Fixed
+
+- Corrected Muse `session.start` requests and recovered stale gateway routes after HTTP 404 or 400 responses.
+- Let room turns fall back to session creation during chat when the Muse session endpoint fails.
+
+## [0.13.1] - 2026-11-23
+
+### Fixed
+
+- Parsed Muse Sentinel approval snapshots and scopes correctly and recovered subscriptions interrupted mid-reply.
+
+## [0.13.0] - 2026-11-23
+
+### Added
+
+- Native Cue streaming chat, agent discovery, full history sync, and an inspector for credits, files, scheduled tasks, skills, and cloud computers.
+- Drag and drop bots into and between rooms, and configure workspace MCP tools from the room.
+- Recognized Cue bots in iOS and Android workspace sync.
+
+### Fixed
+
+- Improved Cue sign-in and macOS `cuedev://` handoff, Google OAuth popups, and Windows startup.
+- Kept Hark projects in sync across windows and restored automatic conversation titles.
+
+## [0.12.1] - 2026-11-22
+
+### Added
+
+- Photo and video attachments in the mobile sync apps, with fullscreen image previews and native video playback.
+- Hermes model presets and a persistent custom model ID.
+
+### Fixed
+
+- Migrated Muse session calls to `/api/session/*` and repaired avatar, persona, memory, and quota sync.
+- Added HTTPS and authenticated proxy support, and improved Google OAuth in embedded login windows.
+
+## [0.12.0] - 2026-11-22
+
+### Added
+
+- Sand desktop redesign with updated room controls, a room inspector, and a workspace MCP panel.
+- Quote replies across six platforms, HTML and Markdown conversation sharing, and in-app Cloud Browser, Cloud Computer, and Credential Vault views.
+
+### Changed
+
+- Reduced desktop memory use by starting native Muse sessions without a WebView and suspending idle embedded views.
+
+## [0.11.1] - 2026-11-22
+
+### Fixed
+
+- Native rooms run independently of the optional Slack bridge.
+
+## [0.11.0] - 2026-11-22
+
+### Added
+
+- Native collaboration rooms with bounded mention-based turns, scoped workspaces, and approval-based local MCP tools.
+- Optional Slack Socket Mode bridge for routing channels and threads into rooms.
+- Hark project selection and conversation-scoped history, with live subscriptions between sends.
+
+### Fixed
+
+- Reconciled queued mobile messages with desktop acknowledgments and kept reconnect and export snapshots current.
+- Kept Hermes approvals and activity with the current run and waited for gateway acceptance before acknowledging a send.
+
+## [0.10.1] - 2026-11-21
+
+### Added
+
+- Standalone iOS and Android bot sessions with a platform picker and isolated sign-ins.
+- Expanded image, video, and audio attachments across Hark, Dot, Grok, Hermes, and Muse, and polished PDF previews and the image lightbox.
+
+### Fixed
+
+- Assembled and previewed Muse-generated images reliably and kept old history from appearing beneath new replies.
+
+## [0.10.0] - 2026-11-20
+
+### Added
+
+- Google Antigravity Cloud Agents with native chat and a dedicated inspector.
+
+### Changed
+
+- Refreshed the mobile interface and improved Muse sign-in and Google SSO popups.
+
+## [0.9.0] - 2026-11-19
+
+### Added
+
+- Native Jetpack Compose Android companion with QR pairing, live desktop sync, and direct Hermes access.
+
+### Changed
+
+- Updated the native Android and iOS companion interfaces.
+
+## [0.8.0] - 2026-11-19
+
+### Added
+
+- Native SwiftUI iOS companion with direct QR pairing to BotArk Desktop, live chat and approvals, and encrypted offline export for direct Hermes access.
+
+## [0.7.0] - 2026-11-19
+
+### Added
+
+- Nous Research Hermes Agent integration for local and remote servers, with streaming chat, tool approvals, persistent sessions, scheduled jobs, and skills.
+- Public BotArk website on GitHub Pages.
+
+### Fixed
+
+- Restored Hark session and artifact handling.
+
 ## [0.6.0] - 2026-11-18
 
 ### Changed

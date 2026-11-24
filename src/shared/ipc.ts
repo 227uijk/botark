@@ -1563,6 +1563,7 @@ export type CueMainEvent =
 export const ANTIGRAVITY_CHANNELS = {
   openLogin: 'bothub:antigravity:open-login',
   cancelLogin: 'bothub:antigravity:cancel-login',
+  importCredentials: 'bothub:antigravity:import-credentials',
   clearAuth: 'bothub:antigravity:clear-auth',
   authStatus: 'bothub:antigravity:auth-status',
   sendMessage: 'bothub:antigravity:send-message',
@@ -1573,6 +1574,11 @@ export const ANTIGRAVITY_CHANNELS = {
 
 export interface AntigravityOpenLoginRequest {
   accountId: string
+}
+
+export interface AntigravityImportCredentialsRequest {
+  accountId: string
+  rawInput: string
 }
 
 export interface AntigravityAuthStatus {

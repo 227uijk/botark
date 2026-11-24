@@ -220,8 +220,8 @@ export function classifyRoomReply(reply: string, speakerId: string, roster: Room
   return { kind: 'post', text, botIds }
 }
 
-function messageWithReferences(message: RoomMessage): string {
-  return [message.text, ...(message.references ?? []).map((ref) =>
+function messageWithReferences(message: RoomMessage, text = message.text): string {
+  return [text, ...(message.references ?? []).map((ref) =>
     `[Reference: ${ref.label}]\n${ref.text}`
   )].join('\n\n')
 }
@@ -235,16 +235,32 @@ export function roomRecipient(room: CollabRoom, externalAudience?: string): stri
 }
 
 export function turnPrompt(room: CollabRoom, member: RoomMember, trigger?: RoomMessage): string {
+  const isCoordinator = member.botId === room.coordinatorId
+  const plainAssistant = member.platform === 'hark' && !isCoordinator
+  const formatPost = (message: RoomMessage) => {
+    const text = plainAssistant && (message.authorBotId || message.final) && isFinal(message.text)
+      ? stripFinalPrefix(message.text) : message.text
+    return `[${message.author}] ${messageWithReferences(message, text)}`
+  }
   const start = Math.max(member.cursor, room.messages.length - 20)
   const briefIndex = room.messages.findLastIndex(isHumanRoomMessage)
   const missedBrief = briefIndex >= member.cursor && briefIndex < start ? room.messages[briefIndex] : undefined
+  const brief = missedBrief ? messageWithReferences(missedBrief) : room.brief
   const recent = room.messages.slice(start)
   const context = recent
     .filter((m) => !m.authorBotId || !isToolRequest(m.text))
-    .map((m) => `[${m.author}] ${messageWithReferences(m)}`)
+    .map(formatPost)
     .join('\n')
   const missedTrigger = trigger && trigger.id !== missedBrief?.id && !recent.some((m) => m.id === trigger.id) ? trigger : undefined
-  const isCoordinator = member.botId === room.coordinatorId
+  if (plainAssistant) {
+    return [
+      'Please help with the user’s request using the discussion and references below.',
+      `User request:\n${brief}`,
+      missedTrigger && `Earlier message relevant to this request:\n${formatPost(missedTrigger)}`,
+      context && `Recent discussion:\n${context}`
+    ].filter(Boolean).join('\n\n')
+  }
+
   const canDelegate = isCoordinator || (!room.coordinatorId && room.mode === 'auto')
   return [
     `Collaboration room: ${room.title}. You are @${member.name}.`,
@@ -261,8 +277,8 @@ export function turnPrompt(room: CollabRoom, member: RoomMember, trigger?: RoomM
     ),
     (!room.coordinatorId || isCoordinator) &&
       'Use [FINAL] on its own first line only when no teammate needs to speak anymore and you are giving the final answer to the user.',
-    `Human brief: ${missedBrief ? messageWithReferences(missedBrief) : room.brief}`,
-    missedTrigger && `Message that assigned this turn: [${missedTrigger.author}] ${messageWithReferences(missedTrigger)}`,
+    `Human brief: ${brief}`,
+    missedTrigger && `Message that assigned this turn: ${formatPost(missedTrigger)}`,
     context
   ].filter(Boolean).join('\n\n')
 }

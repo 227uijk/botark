@@ -50,6 +50,7 @@ import type {
   HermesRpcRequest,
   HermesRpcResponse,
   AntigravityAuthStatus,
+  AntigravityImportCredentialsRequest,
   AntigravityMainEvent,
   AntigravityOpenLoginRequest,
   AntigravityRpcRequest,
@@ -226,6 +227,7 @@ export interface HermesBridge {
 export interface AntigravityBridge {
   openLogin(request: AntigravityOpenLoginRequest): Promise<AntigravityAuthStatus>
   cancelLogin(accountId: string): Promise<void>
+  importCredentials?(request: AntigravityImportCredentialsRequest): Promise<AntigravityAuthStatus>
   clearAuth(accountId: string): Promise<void>
   authStatus(accountId: string): Promise<AntigravityAuthStatus>
   sendMessage(request: AntigravitySendRequest): Promise<AntigravitySendResponse>

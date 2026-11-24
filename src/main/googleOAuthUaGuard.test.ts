@@ -155,7 +155,8 @@ describe('googleOAuthUaGuard', () => {
     expect(firefoxHeaders['Sec-CH-UA-Platform']).toBeUndefined()
     expect(firefoxHeaders['X-Custom']).toBe('preserved')
 
-    let capturedCb: ((details: { requestHeaders: Record<string, string> }, cb: (r: { requestHeaders: Record<string, string> }) => void) => void) | undefined
+    type RequestDetails = { url: string; requestHeaders: Record<string, string> }
+    let capturedCb: ((details: RequestDetails, cb: (r: { requestHeaders: Record<string, string> }) => void) => void) | undefined
     const mockSes = {
       webRequest: {
         onBeforeSendHeaders: (_filter: unknown, cb: typeof capturedCb) => {
@@ -163,27 +164,55 @@ describe('googleOAuthUaGuard', () => {
         }
       }
     } as unknown as Parameters<typeof installGoogleOAuthHeaderGuard>[0]
-    installGoogleOAuthHeaderGuard(mockSes)
+    installGoogleOAuthHeaderGuard(mockSes, { chromeVersion: '147.0.0.0', platform: 'win32' })
     setGoogleFirefoxCompatMode(mockSes, true)
 
-    let outHeaders: Record<string, string> = {}
-    capturedCb?.(
-      {
-        requestHeaders: {
-          'User-Agent': 'Chrome/147 Electron/45',
-          'sec-ch-ua': '"Electron";v="45"',
-          'sec-ch-ua-mobile': '?0'
-        }
-      },
-      (res) => {
-        outHeaders = res.requestHeaders
-      }
-    )
-    expect(outHeaders['User-Agent']).toContain('Firefox/')
-    expect(outHeaders['sec-ch-ua']).toBeUndefined()
-    expect(outHeaders['sec-ch-ua-mobile']).toBeUndefined()
-    expect(isGoogleAuthHostUrl('https://accounts.google.com/v3/signin/identifier')).toBe(true)
+    const requestHeaders = {
+      'User-Agent': 'Chrome/147 Electron/45',
+      'sec-ch-ua': '"Electron";v="45"',
+      'sec-ch-ua-mobile': '?0'
+    }
+    const sendTo = (url: string) => {
+      let headers: Record<string, string> = {}
+      capturedCb?.({ url, requestHeaders }, (result) => {
+        headers = result.requestHeaders
+      })
+      return headers
+    }
+    const signInUrl = 'https://accounts.google.com/v3/signin/identifier'
+    const signInHeaders = sendTo(signInUrl)
+    expect(signInHeaders['User-Agent']).toBe(buildGoogleFirefoxCompatUa('win32'))
+    expect(signInHeaders['sec-ch-ua']).toBeUndefined()
+    expect(signInHeaders['sec-ch-ua-mobile']).toBeUndefined()
+
+    for (const url of [
+      'https://accounts.youtube.com/signin',
+      'https://myaccount.google.com/',
+      'https://gds.google.com/web/chip',
+      'https://consent.google.com/',
+      'https://www.google.com/ServiceLogin'
+    ]) {
+      expect(isGoogleAuthHostUrl(url)).toBe(true)
+      expect(sendTo(url)['User-Agent']).toBe(buildGoogleFirefoxCompatUa('win32'))
+    }
+
+    for (const url of [
+      'https://aicode.clients6.google.com/$rpc/google.gca.aicode.v1alpha.JetskiRemoteAgentProxyService/GetUserProfile',
+      'https://antigravity.google.com/',
+      'https://ssl.gstatic.com/accounts/static/main.js'
+    ]) {
+      expect(isGoogleAuthHostUrl(url)).toBe(false)
+      expect(sendTo(url)).toMatchObject({
+        'User-Agent': 'Chrome/147',
+        'Sec-CH-UA-Platform': '"Windows"'
+      })
+    }
+    expect(isGoogleAuthHostUrl(signInUrl)).toBe(true)
     expect(isGoogleAuthHostUrl('https://cue.im/login')).toBe(false)
+    expect(isGoogleAuthHostUrl('https://accounts.google.com.example.net/')).toBe(false)
+
+    setGoogleFirefoxCompatMode(mockSes, false)
+    expect(sendTo(signInUrl)['User-Agent']).toBe('Chrome/147')
   })
 
   it('gracefully handles mock sessions without registerPreloadScript or nullish input', () => {
@@ -200,7 +229,7 @@ describe('googleOAuthUaGuard', () => {
   it('patches navigator.userAgent, userAgentData, and webdriver ONLY on Google origins (no-op on Turnstile)', async () => {
     const patchScript = buildGoogleOAuthMainWorldPatchScript('147.0.7103.49', 'win32')
 
-    const runInOrigin = (hostname: string) => {
+    const runInOrigin = (hostname: string, userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 BotArk/0.12.1 Chrome/147.0.7103.49 Electron/45.2.1 Safari/537.36') => {
       class MockNavigatorUAData {
         brands = [{ brand: 'Electron', version: '45' }]
         mobile = false
@@ -218,8 +247,7 @@ describe('googleOAuthUaGuard', () => {
       Object.defineProperties(MockNavigator.prototype, {
         userAgent: {
           configurable: true,
-          get: () =>
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 BotArk/0.12.1 Chrome/147.0.7103.49 Electron/45.2.1 Safari/537.36'
+          get: () => userAgent
         },
         appVersion: {
           configurable: true,
@@ -285,6 +313,15 @@ describe('googleOAuthUaGuard', () => {
     expect(cNav.userAgent).toContain('Electron/45.2.1')
     expect(cNav.webdriver).toBe(true)
     expect(cNav.userAgentData.brands[0]?.brand).toBe('Electron')
+
+    const firefoxUa = buildGoogleFirefoxCompatUa('win32')
+    expect(runInOrigin('accounts.google.com', firefoxUa).navigator).toMatchObject({
+      userAgent: firefoxUa, userAgentData: undefined
+    })
+    expect(runInOrigin('antigravity.google.com', firefoxUa).navigator).toMatchObject({
+      userAgent: expect.stringContaining('Chrome/147.0.7103.49'),
+      userAgentData: expect.objectContaining({ platform: 'Windows' })
+    })
   })
 
   it('detects Google blocked or passkey pages strictly on Google/YouTube auth hosts', () => {

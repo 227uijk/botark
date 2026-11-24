@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Copy, Cpu, ExternalLink, FileText, Link2, RefreshCw, Sparkles } from 'lucide-react'
 import type { CueAuthStatus, CueRpcRequest } from '@shared/ipc'
+import { asObj } from '@shared/parse'
 import { EmptyLine, Section } from '@/components/info/Section'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { Button } from '@/components/ui/Button'
@@ -47,12 +48,6 @@ interface CueAgentMeta {
   pcId?: string
   sessionId?: string
   lastDisplayMessage?: string
-}
-
-function asObj(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null
 }
 
 function readOptionalStr(value: unknown): string | undefined {

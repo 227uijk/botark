@@ -1,7 +1,7 @@
-import { PinnedRoomsList, RoomList } from '@/rooms/RoomView'
+import { PinnedRoomsList, RoomList } from '@/rooms/RoomSidebarList'
 import { type KeyboardEvent } from 'react'
 import { Plus, Search, Settings } from 'lucide-react'
-import { hasSeenOnboarding } from '@/components/onboarding/OnboardingGuide'
+import { hasSeenOnboarding } from '@/components/onboarding/onboardingState'
 import {
   ArkDrawerToggleSvg,
   ArkMobileLinkSvg,

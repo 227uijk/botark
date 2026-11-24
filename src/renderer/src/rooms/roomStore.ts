@@ -662,7 +662,7 @@ async function memberReply(room: CollabRoom, member: RoomMember, trigger: RoomMe
     const contextMember = member.sessionId || hermesSessionKey ? member : { ...member, cursor: 0 }
     let prompt = turnPrompt(room, contextMember, trigger)
     const hub = getBridge()?.workspace
-    const workspace = hub ? await hub.manage(room.id, { op: 'status' }) : undefined
+    const workspace = hub && member.platform !== 'hark' ? await hub.manage(room.id, { op: 'status' }) : undefined
     if (workspace?.tools.length) {
       prompt +=
         '\n\nTo request one workspace tool, reply with [TOOL] followed by JSON {"name":"…","args":{…}}. A person approves each call. ' +

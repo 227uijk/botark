@@ -61,22 +61,19 @@ export function buildGoogleFirefoxCompatUa(platform: NodeJS.Platform = process.p
 
 export const GOOGLE_FIREFOX_COMPAT_UA = buildGoogleFirefoxCompatUa()
 
+const GOOGLE_SIGN_IN_HOST = /^(?:[\w-]+\.)*(?:accounts\.(?:google|youtube)\.com|(?:myaccount|gds|consent)\.google\.com|oauth2\.googleapis\.com)$/i
+const GOOGLE_SIGN_IN_PATH = /^\/(?:o\/oauth2|v3\/signin|signin|ServiceLogin|AccountChooser)(?:\/|$)/i
+
 export function isGoogleAuthHostUrl(url: string): boolean {
   if (!url) return false
   try {
     const parsed = new URL(url)
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false
     const host = parsed.hostname.toLowerCase()
-    if (/^(?:[\w-]+\.)*(?:accounts\.(?:google|youtube)\.com|antigravity\.google\.com|oauth2\.googleapis\.com)$/i.test(host)) {
-      return true
-    }
-    if (
-      /(?:^|\.)google\.com$/i.test(host) &&
-      /^\/(?:o\/oauth2|v3\/signin|signin|ServiceLogin|AccountChooser)/i.test(parsed.pathname)
-    ) {
-      return true
-    }
-    return false
+    return GOOGLE_SIGN_IN_HOST.test(host) || (
+      (host === 'google.com' || host === 'www.google.com') &&
+      GOOGLE_SIGN_IN_PATH.test(parsed.pathname)
+    )
   } catch {
     return false
   }
@@ -277,6 +274,10 @@ export function buildGoogleOAuthMainWorldPatchScript(
     var FALLBACK_UA = ${JSON.stringify(fallbackUa)};
     var rawUa = typeof nav.userAgent === 'string' ? nav.userAgent : '';
     var isFirefoxCompat = /\\bFirefox\\/[\\d.]+/i.test(rawUa);
+    var isAuthPage = (proto === 'https:' || proto === 'http:') && (
+      ${GOOGLE_SIGN_IN_HOST}.test(host) ||
+      (host === 'google.com' || host === 'www.google.com') && ${GOOGLE_SIGN_IN_PATH}.test(loc.pathname)
+    );
 
     var defineVal = function(target, prop, getterOrVal, isGetter) {
       try {
@@ -302,7 +303,7 @@ export function buildGoogleOAuthMainWorldPatchScript(
 
     defineOnNav('webdriver', function() { return false; });
 
-    if (isFirefoxCompat) {
+    if (isFirefoxCompat && (isAuthPage || isOpaqueChild)) {
       defineOnNav('userAgentData', function() { return undefined; });
       return;
     }
@@ -630,7 +631,7 @@ export function installGoogleOAuthHeaderGuard(
               details.requestHeaders,
               opts?.chromeVersion,
               opts?.platform,
-              { firefoxCompat: firefoxCompatSessions.has(ses) }
+              { firefoxCompat: isGoogleFirefoxCompatMode(ses) && isGoogleAuthHostUrl(details.url) }
             )
           })
         }

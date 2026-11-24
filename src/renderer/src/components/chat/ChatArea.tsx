@@ -1,13 +1,15 @@
 import { HarkBrowserCard } from '../hark/HarkBrowserCard'
 import { MuseBrowserCard } from '../muse/MuseBrowserCard'
-import { memo, useCallback } from 'react'
+import { lazy, memo, Suspense, useCallback } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import type { AttachmentMeta, PlatformId } from '@adapters/types'
 import { ArkDrawerToggleSvg } from '@/components/ui/ArkGlyphs'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { getPlatformInspector } from '@/components/info/platformInspector'
-import { OnboardingStage } from '@/components/onboarding/OnboardingGuide'
+const OnboardingStage = lazy(() =>
+  import('@/components/onboarding/OnboardingGuide').then(({ OnboardingStage }) => ({ default: OnboardingStage }))
+)
 import { getBotAccounts } from '@/lib/selectors'
 import { useBotStore } from '@/store/botStore'
 import type { Bot, BotAccount, ChatMessage } from '@/types'
@@ -162,7 +164,9 @@ export function ChatArea() {
             <p className="text-[13px] text-ink-muted">{t('Select a bot')}</p>
           </div>
         ) : (
-          <OnboardingStage />
+          <Suspense fallback={null}>
+            <OnboardingStage />
+          </Suspense>
         )}
       </div>
     )
