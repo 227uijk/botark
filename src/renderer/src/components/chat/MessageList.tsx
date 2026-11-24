@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDown } from 'lucide-react'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { cn } from '@/lib/cn'
@@ -32,43 +32,62 @@ function sameRun(a: ChatMessage | undefined, b: ChatMessage | undefined): boolea
   )
 }
 
-export function MessageList({ bot, messages, accounts, typing, onRetry }: MessageListProps) {
+export const MessageList = memo(function MessageList({ bot, messages, accounts, typing, onRetry }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const transcriptRef = useRef<HTMLOListElement>(null)
+  const scrollFrame = useRef<number | null>(null)
   const stickToBottom = useRef(true)
-  const lastBotId = useRef<string | null>(null)
-
-  const accountNames = new Map(accounts.map((a) => [a.id, a.displayName]))
+  const accountNames = useMemo(() => new Map(accounts.map((a) => [a.id, a.displayName])), [accounts])
   const showAccount = bot.accountIds.length > 1
   const lastMessage = messages[messages.length - 1]
 
-  // Jump to the bottom when switching bots; follow new messages when pinned.
-  useLayoutEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const switched = lastBotId.current !== bot.id
-    lastBotId.current = bot.id
-    if (switched || stickToBottom.current || lastMessage?.role === 'user') {
-      el.scrollTo({ top: el.scrollHeight, behavior: switched ? 'instant' : 'smooth' })
-    }
-  }, [bot.id, messages.length, lastMessage?.role, lastMessage?.text, typing])
-
-  // Scrolled up: offer a way back down, and count replies that arrive meanwhile.
   const [away, setAway] = useState(false)
   const [unseen, setUnseen] = useState(0)
-  const seenCount = useRef(messages.length)
+  const previous = useRef({ bot, lastMessage, count: messages.length })
 
-  useEffect(() => {
-    setAway(false)
-    setUnseen(0)
-  }, [bot.id])
+  const followBottom = useCallback(() => {
+    if (!stickToBottom.current || scrollFrame.current !== null) return
+    scrollFrame.current = requestAnimationFrame(() => {
+      scrollFrame.current = null
+      const el = scrollRef.current
+      if (el && stickToBottom.current) el.scrollTo({ top: el.scrollHeight, behavior: 'instant' })
+    })
+  }, [])
 
-  useEffect(() => {
-    const added = messages.length - seenCount.current
-    seenCount.current = messages.length
-    if (added > 0 && !stickToBottom.current && lastMessage?.role === 'bot') setUnseen((n) => n + added)
-  }, [messages.length, lastMessage?.role])
+  useLayoutEffect(() => {
+    const transcript = transcriptRef.current
+    const view = scrollRef.current
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(followBottom)
+    if (transcript) observer?.observe(transcript)
+    if (view) observer?.observe(view)
+    return () => {
+      observer?.disconnect()
+      if (scrollFrame.current !== null) cancelAnimationFrame(scrollFrame.current)
+      scrollFrame.current = null
+    }
+  }, [followBottom])
+
+  useLayoutEffect(() => {
+    const old = previous.current
+    previous.current = { bot, lastMessage, count: messages.length }
+    const switched = old.bot.id !== bot.id || old.bot.activeAccountId !== bot.activeAccountId ||
+      old.bot.selectedAgentId !== bot.selectedAgentId || old.bot.hermesSessionKey !== bot.hermesSessionKey ||
+      (old.bot.activeSessionId !== bot.activeSessionId && old.bot.activeSessionId !== undefined)
+    const added = messages.length - old.count
+    if (switched || (lastMessage?.role === 'user' && added > 0 && lastMessage.id !== old.lastMessage?.id)) {
+      stickToBottom.current = true
+      setAway(false)
+      setUnseen(0)
+    } else if (added > 0 && !stickToBottom.current && lastMessage?.role === 'bot') {
+      setUnseen((count) => count + added)
+    }
+    followBottom()
+  }, [bot, messages.length, lastMessage, typing, followBottom])
 
   const jumpToLatest = () => {
+    if (scrollFrame.current !== null) cancelAnimationFrame(scrollFrame.current)
+    scrollFrame.current = null
+    stickToBottom.current = false
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
     setUnseen(0)
   }
@@ -86,7 +105,7 @@ export function MessageList({ bot, messages, accounts, typing, onRetry }: Messag
       }}
       className="min-h-0 flex-1 overflow-y-auto"
     >
-      <ol className="mx-auto flex max-w-[860px] flex-col px-8 py-6" aria-label={`Conversation with ${bot.name}`}>
+      <ol ref={transcriptRef} className="mx-auto flex max-w-[860px] flex-col px-8 py-6" aria-label={`Conversation with ${bot.name}`}>
         {messages.map((message, index) => {
           const prev = messages[index - 1]
           const next = messages[index + 1]
@@ -158,4 +177,4 @@ export function MessageList({ bot, messages, accounts, typing, onRetry }: Messag
       )}
     </div>
   )
-}
+})

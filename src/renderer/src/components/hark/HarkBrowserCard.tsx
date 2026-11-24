@@ -1,60 +1,61 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, Monitor } from 'lucide-react'
+import { harkRpc } from '@adapters/hark/harkRequests'
 import type { HarkBrowserPreview } from '@shared/harkBrowserPreview'
+import { createId } from '@shared/id'
 import { RefreshButton } from '@/components/muse/RefreshButton'
 import { getBridge } from '@/lib/bridge'
+import { useHarkScreenshot } from './HarkScreenshot'
 
 export function HarkBrowserCard({ accountId, sessionId }: { accountId: string; sessionId?: string }) {
+  return <HarkBrowserPreviewCard key={JSON.stringify([accountId, sessionId])} accountId={accountId} sessionId={sessionId} />
+}
+
+function HarkBrowserPreviewCard({ accountId, sessionId }: { accountId: string; sessionId?: string }) {
   const [open, setOpen] = useState(false)
   const [panel, setPanel] = useState<HarkBrowserPreview | null>(null)
-  const [image, setImage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [revision, setRevision] = useState(0)
   const streamRevision = useRef(0)
+  const snapshotRequest = useRef<AbortController | null>(null)
   const hark = getBridge()?.hark
 
   useEffect(() => hark?.onEvent((event) => {
     if (event.type === 'projectHistory' && event.accountId === accountId && event.conversationId === sessionId
       && event.browserPreview !== undefined) {
       streamRevision.current++
+      snapshotRequest.current?.abort()
+      setLoading(false)
+      setError('')
       setPanel(event.browserPreview)
     }
   }), [hark, accountId, sessionId])
 
   useEffect(() => {
     if (!open || !hark) return
-    let current = true
+    const request = new AbortController()
+    snapshotRequest.current = request
     const before = streamRevision.current
     setLoading(true)
     setError('')
-    void hark.rpc({ accountId, op: 'browserPreview', conversationId: sessionId }).then((res) => {
-      if (!current || before !== streamRevision.current) return
+    void harkRpc(hark, { accountId, op: 'browserPreview', conversationId: sessionId, requestId: createId('hark_preview') }, request.signal).then((res) => {
+      if (request.signal.aborted || before !== streamRevision.current) return
       if (!res.ok) throw new Error(res.message)
       setPanel(res.data as HarkBrowserPreview | null)
     }).catch((err) => {
-      if (current) setError(String(err instanceof Error ? err.message : err))
-    }).finally(() => { if (current) setLoading(false) })
-    return () => { current = false }
+      if (!request.signal.aborted) setError(err instanceof Error ? err.message : String(err))
+    }).finally(() => { if (!request.signal.aborted) setLoading(false) })
+    return () => {
+      request.abort()
+      if (snapshotRequest.current === request) snapshotRequest.current = null
+    }
   }, [open, hark, accountId, sessionId, revision])
 
   const key = panel?.screenshotKey
   const url = panel?.screenshotUrl
-  useEffect(() => {
-    setImage('')
-    if (!open || !hark || (!key && !url)) return
-    let current = true
-    setError('')
-    void hark.rpc({ accountId, op: 'downloadArtifact', fileId: key, url: key ? undefined : url }).then((res) => {
-      if (!res.ok) throw new Error(res.message)
-      const data = res.data as { mimeType: string; dataBase64: string }
-      if (!data?.mimeType?.startsWith('image/') || !data.dataBase64) throw new Error('截图不可用')
-      if (current) setImage(`data:${data.mimeType};base64,${data.dataBase64}`)
-    }).catch((err) => {
-      if (current) setError(String(err instanceof Error ? err.message : err))
-    })
-    return () => { current = false }
-  }, [open, hark, accountId, key, url, revision])
+  const screenshot = useHarkScreenshot(accountId, { enabled: open, key, url, generation: JSON.stringify([sessionId, revision]) })
+  const image = screenshot?.image
 
   if (!hark) return null
   return (
@@ -70,7 +71,7 @@ export function HarkBrowserCard({ accountId, sessionId }: { accountId: string; s
       </div>
       {open && <div className="pb-2">
         {image && <img src={image} alt="Hark 远程浏览器截图" className="max-h-[24vh] w-full rounded-lg bg-sunken object-contain" />}
-        <p className="truncate text-ink-muted" role="status">{error || (loading ? '正在刷新…' : panel
+        <p className="truncate text-ink-muted" role="status">{error || screenshot?.error || (loading ? '正在刷新…' : panel
           ? panel.status + (image ? '' : key || url ? ' · 正在加载截图…' : ' · 暂无截图')
           : '当前对话暂无浏览器任务')}</p>
       </div>}

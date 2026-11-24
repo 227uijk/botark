@@ -2,7 +2,9 @@
  * Per-account BotHub client egress proxy (not a Muse RPC).
  * Persist via Electron safeStorage; apply to session partition + Noise WSS agent.
  */
+import { isIP } from 'node:net'
 import { join } from "node:path"
+import { domainToASCII } from 'node:url'
 import { app, safeStorage, session as electronSession, type Session } from "electron"
 import { HttpsProxyAgent } from "https-proxy-agent"
 import { SocksProxyAgent } from "socks-proxy-agent"
@@ -28,6 +30,8 @@ export interface MuseProxyConfig {
 
 interface StoredEntry {
   enc: string
+  /** null means a manually saved configuration; undefined is the legacy format. */
+  poolItemId?: string | null
 }
 
 type StoreFile = Record<string, StoredEntry>
@@ -119,14 +123,18 @@ function normalize(cfg: MuseProxyConfig | null | undefined): MuseProxyConfig {
         mode: /^[a-z][a-z0-9+.-]*:\/\//i.test(rawHost) ? parsed.mode : cfg.mode,
         host: parsed.host,
         port: /^[a-z][a-z0-9+.-]*:\/\//i.test(rawHost) ? parsed.port : validExplicitPort ? explicitPort : parsed.port,
-        username: cfg.username?.trim() || parsed.username || undefined,
+        username: cfg.username?.trim() || parsed.username?.trim() || undefined,
         password: cfg.password || parsed.password || undefined
       }
     }
   }
 
   const host = rawHost
-  const rawPort = cfg.port ?? (cfg.mode === "https" ? 443 : undefined)
+  // A bare host must not be able to introduce URL userinfo, a path, or another port.
+  if ((host.includes(':') && isIP(host.replace(/^\[|\]$/g, '')) !== 6) || /[\s/@\\?#]/.test(host)) {
+    throw new Error('Invalid proxy host')
+  }
+  const rawPort = cfg.port ?? (cfg.mode === 'https' ? 443 : cfg.mode === 'http' ? 80 : undefined)
   const port = Number(rawPort)
   if (!host || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error("Proxy host and port (1–65535) are required")
@@ -138,6 +146,17 @@ function normalize(cfg: MuseProxyConfig | null | undefined): MuseProxyConfig {
     username: cfg.username?.trim() || undefined,
     password: cfg.password || undefined
   }
+}
+
+function proxyIdentity(cfg: MuseProxyConfig): string {
+  const rawHost = cfg.host?.trim().toLowerCase() ?? ''
+  const address = rawHost.replace(/^\[|\]$/g, '')
+  const host = isIP(address) === 6 && !address.includes('%')
+    ? new URL(`http://[${address}]`).hostname
+    : /^[\p{L}\p{N}\p{M}_.-]+$/u.test(rawHost)
+      ? (domainToASCII(rawHost) || rawHost).replace(/\.$/, '')
+      : rawHost
+  return JSON.stringify([cfg.mode, host, cfg.port, cfg.username])
 }
 
 /** Public view never returns the password; only whether one is stored. */
@@ -194,7 +213,7 @@ export async function saveProxyConfig(accountId: string, input: MuseProxyConfig)
   return withProxyStoreLock(() => saveProxyConfigUnlocked(accountId, input))
 }
 
-async function saveProxyConfigUnlocked(accountId: string, input: MuseProxyConfig): Promise<MuseProxyView> {
+async function saveProxyConfigUnlocked(accountId: string, input: MuseProxyConfig, poolItemId: string | null = null): Promise<MuseProxyView> {
   const next = normalize(input)
   const store = readStore()
   if (next.mode === "direct") {
@@ -203,17 +222,17 @@ async function saveProxyConfigUnlocked(accountId: string, input: MuseProxyConfig
     await applyProxyToPartition(accountId, next)
     return { mode: "direct", hasPassword: false }
   }
-  // Keep previous password when UI sends empty password + has existing.
-  if (!next.password) {
+  // A blank password in the editor can retain credentials for the same proxy identity.
+  if (!next.password && poolItemId === null) {
     const prev = await loadProxyConfig(accountId).catch(() => null)
-    if (prev?.password) next.password = prev.password
+    if (prev?.password && proxyIdentity(prev) === proxyIdentity(next)) next.password = prev.password
   }
   const available = await safeStorage.isAsyncEncryptionAvailable()
   if (!available) {
     throw new Error("safeStorage encryption unavailable; refusing to store proxy credentials in plaintext")
   }
   const enc = await safeStorage.encryptStringAsync(JSON.stringify(next))
-  store[accountId] = { enc: enc.toString("base64") }
+  store[accountId] = { enc: enc.toString("base64"), poolItemId }
   writeStore(store)
   await applyProxyToPartition(accountId, next)
   return {
@@ -226,12 +245,7 @@ async function saveProxyConfigUnlocked(accountId: string, input: MuseProxyConfig
 }
 
 export async function clearProxyConfig(accountId: string): Promise<void> {
-  await withProxyStoreLock(() => {
-    const store = readStore()
-    delete store[accountId]
-    writeStore(store)
-  })
-  await applyProxyToPartition(accountId, { mode: "direct" })
+  await withProxyStoreLock(() => saveProxyConfigUnlocked(accountId, { mode: "direct" }))
 }
 
 export function buildAccountProxyUrl(cfg: MuseProxyConfig): string | null {
@@ -464,6 +478,19 @@ async function decryptPoolItem(item: StoredPoolItem): Promise<MuseProxyConfig | 
   }
 }
 
+async function clearPoolConfigUnlocked(accountId: string, slot: StoredPoolItem): Promise<void> {
+  const entry = readStore()[accountId]
+  if (!entry) return
+  if (entry.poolItemId === undefined) {
+    const config = await loadProxyConfig(accountId).catch(() => null)
+    const poolConfig = await decryptPoolItem(slot)
+    if (!config || !poolConfig || proxyIdentity(config) !== proxyIdentity(poolConfig) || config.password !== poolConfig.password) return
+  } else if (entry.poolItemId !== slot.id) {
+    return
+  }
+  await saveProxyConfigUnlocked(accountId, { mode: 'direct' })
+}
+
 export async function listProxyPool(): Promise<MuseProxyPoolItemView[]> {
   const list = readPoolStore()
   const out: MuseProxyPoolItemView[] = []
@@ -505,14 +532,14 @@ async function importIntoPoolUnlocked(
   const seenKeys = new Set(
     existingConfigs
       .filter((c): c is MuseProxyConfig => Boolean(c && c.host && c.port))
-      .map((c) => `${c.mode}://${c.username || ""}@${c.host}:${c.port}`)
+      .map(proxyIdentity)
   )
 
   let added = 0
   for (const line of rawText.split(/\r?\n/)) {
     const parsed = parseProxyLine(line, defaultMode)
     if (!parsed || parsed.mode === "direct" || !parsed.host || !parsed.port) continue
-    const key = `${parsed.mode}://${parsed.username || ""}@${parsed.host}:${parsed.port}`
+    const key = proxyIdentity(normalize(parsed))
     if (seenKeys.has(key)) continue
     seenKeys.add(key)
     const enc = await safeStorage.encryptStringAsync(JSON.stringify(parsed))
@@ -544,37 +571,61 @@ export async function clearProxyPool(): Promise<MuseProxyPoolItemView[]> {
 export async function assignProxyPoolToAccounts(
   accountIds: string[],
   onAssigned?: (accountId: string) => Promise<void>,
-  keep?: (accountId: string) => boolean
+  keep?: (accountId: string) => boolean,
+  pauseAccount?: (accountId: string) => () => void
 ): Promise<{ assignedCount: number; items: MuseProxyPoolItemView[] }> {
   const configured = await withProxyStoreLock(async () => {
     const pool = readPoolStore()
-    if (pool.length === 0 || accountIds.length === 0) return [] as string[]
+    if (pool.length === 0 || accountIds.length === 0) return { changed: new Set<string>(), assignedCount: 0 }
     // Pool exhausted → the account keeps its current setting (no sharing).
     const plan = planPoolAssignment(pool, accountIds, keep)
-    const done: string[] = []
+    const plannedOwners = new Map(plan.pool.map((slot) => [slot.id, slot.assignedAccountId]))
+    const persistedSlots = new Map(pool.map((slot) => [slot.id, slot]))
+    const changed = new Set<string>()
+    let assignedCount = 0
+    for (const slot of pool) {
+      const accountId = slot.assignedAccountId
+      if (!accountId || accountId === plannedOwners.get(slot.id)) continue
+      const resume = pauseAccount?.(accountId)
+      try {
+        await clearPoolConfigUnlocked(accountId, slot)
+        slot.assignedAccountId = undefined
+        writePoolStore(pool)
+        changed.add(accountId)
+      } finally {
+        resume?.()
+      }
+    }
     for (const { accountId, slot } of plan.assigned) {
       const cfg = await decryptPoolItem(slot)
       if (cfg && cfg.mode !== "direct") {
-        await saveProxyConfigUnlocked(accountId, cfg)
-        done.push(accountId)
+        const resume = pauseAccount?.(accountId)
+        try {
+          await saveProxyConfigUnlocked(accountId, cfg, slot.id)
+          persistedSlots.get(slot.id)!.assignedAccountId = accountId
+          writePoolStore(pool)
+          changed.add(accountId)
+          assignedCount++
+        } finally {
+          resume?.()
+        }
       }
     }
-    writePoolStore(plan.pool)
-    return done
+    return { changed, assignedCount }
   })
-  for (const accountId of configured) await onAssigned?.(accountId)
-  return { assignedCount: configured.length, items: await listProxyPool() }
+  for (const accountId of configured.changed) await onAssigned?.(accountId)
+  return { assignedCount: configured.assignedCount, items: await listProxyPool() }
 }
 
 /** Give an account's pool proxy back (failed/cancelled login) and drop its config. */
 export async function releaseProxyPoolAccount(accountId: string): Promise<void> {
-  const held = await withProxyStoreLock(() => {
+  await withProxyStoreLock(async () => {
     const pool = readPoolStore()
-    if (!pool.some((p) => p.assignedAccountId === accountId)) return false
+    const held = pool.filter((slot) => slot.assignedAccountId === accountId)
+    if (!held.length) return
+    for (const slot of held) await clearPoolConfigUnlocked(accountId, slot)
     writePoolStore(releasePoolSlot(pool, accountId))
-    return true
   })
-  if (held) await clearProxyConfig(accountId)
 }
 
 /**

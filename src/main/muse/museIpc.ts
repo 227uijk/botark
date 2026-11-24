@@ -32,13 +32,21 @@ function rebindNonMuseAccountStreams(accountId: string): void {
   cancelHarkWatch(accountId)
 }
 
+function pauseMuseAccountProxy(accountId: string): () => void {
+  const resume = [...managers.values()].map((manager) => manager.pauseAccountProxy(accountId))
+  return () => { for (const finish of resume) finish() }
+}
+
 export function attachMuseSessionManager(window: BrowserWindow, views: WebContentsViewManager): MuseSessionManager {
   const manager = new MuseSessionManager(window, views)
   // Capture id before close: accessing window.webContents after 'closed' throws
   // TypeError: Object has been destroyed (seen on app quit).
   const senderId = window.webContents.id
   managers.set(senderId, manager)
-  window.on('closed', () => managers.delete(senderId))
+  window.on('closed', () => {
+    managers.delete(senderId)
+    manager.destroyAll()
+  })
 
   // Forward muse events to the renderer that owns this window.
   manager.onEvent((event) => {
@@ -80,9 +88,11 @@ export function registerMuseIpc(): void {
 
   ipcMain.handle(MUSE_CHANNELS.rpc, async (event, request: unknown) => {
     if (typeof request !== 'object' || request === null) throw new TypeError('Invalid muse rpc request')
-    const v = request as MuseRpcRequest
-    if (typeof v.accountId !== 'string' || typeof v.method !== 'string') throw new TypeError('Invalid muse rpc request')
-    return managerFor(event).rpc(v.accountId, v.method, v.params, v.conversationId)
+    const v = request as MuseRpcRequest & { sendId?: unknown }
+    if (typeof v.accountId !== 'string' || typeof v.method !== 'string' ||
+        (v.conversationId !== undefined && typeof v.conversationId !== 'string')) throw new TypeError('Invalid muse rpc request')
+    const sendId = typeof v.sendId === 'string' && v.sendId.length > 0 && v.sendId.length <= 128 ? v.sendId : undefined
+    return managerFor(event).rpc(v.accountId, v.method, v.params, v.conversationId, sendId)
   })
 
   ipcMain.handle(MUSE_CHANNELS.status, (event, accountId: unknown) => {
@@ -252,10 +262,15 @@ export function registerMuseIpc(): void {
     if (typeof accountId !== 'string') throw new TypeError('Invalid accountId')
     if (!config || typeof config !== 'object') throw new TypeError('Invalid proxy config')
     const c = config as MuseProxyConfig
-    const view = await saveProxyConfig(accountId, c)
-    await managerFor(event).applyAccountProxy(accountId)
-    rebindNonMuseAccountStreams(accountId)
-    return view
+    managerFor(event)
+    const resume = pauseMuseAccountProxy(accountId)
+    try {
+      const view = await saveProxyConfig(accountId, c)
+      rebindNonMuseAccountStreams(accountId)
+      return view
+    } finally {
+      resume()
+    }
   })
 
   ipcMain.handle(MUSE_CHANNELS.listProxyPool, async () => {
@@ -283,15 +298,15 @@ export function registerMuseIpc(): void {
     const ids = accountIds.filter((id): id is string => typeof id === 'string')
     // Accounts that hold a slot but must not be handed a new one (Hark).
     const kept = new Set(Array.isArray(keepIds) ? keepIds.filter((id): id is string => typeof id === 'string') : [])
-    const mgr = managerFor(event)
+    managerFor(event)
     return assignProxyPoolToAccounts(
       ids,
       async (accId) => {
-        await mgr.applyAccountProxy(accId).catch(() => undefined)
         rebindNonMuseAccountStreams(accId)
       },
       // Logins still in flight are not in the renderer list yet; keep their proxy.
-      (accId) => kept.has(accId) || [...managers.values()].some((m) => m.isLoginInFlight(accId))
+      (accId) => kept.has(accId) || [...managers.values()].some((m) => m.isLoginInFlight(accId)),
+      pauseMuseAccountProxy
     )
   })
 

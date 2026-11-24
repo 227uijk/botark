@@ -22,6 +22,14 @@ describe('planPoolAssignment', () => {
     expect(assigned.map((x) => x.accountId)).toEqual(['a'])
   })
 
+  it('keeps the first saved assignment and reuses duplicate slots', () => {
+    const plan = planPoolAssignment(pool('a', 'a', 'login', 'login', 'b'), ['new', 'b', 'a', 'a'], (id) => id === 'login')
+    expect(plan.pool.map((s) => s.assignedAccountId)).toEqual(['a', 'new', 'login', undefined, 'b'])
+    expect(plan.assigned.map(({ accountId, slot }) => [accountId, slot.id])).toEqual([
+      ['new', 'p1'], ['b', 'p4'], ['a', 'p0']
+    ])
+  })
+
   it('does not mutate the input', () => {
     const input = pool('x')
     planPoolAssignment(input, ['y'])

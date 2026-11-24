@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react'
+import { useLayoutEffect, useState, type RefObject } from 'react'
 import type { WebViewBounds } from '@shared/ipc'
 import { getBridge } from '@/lib/bridge'
 import { useOverlayStore } from '@/lib/overlay'
@@ -20,7 +20,19 @@ interface Options {
 
 function measure(el: HTMLElement): WebViewBounds {
   const rect = el.getBoundingClientRect()
-  return { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
+  return { x: Math.round(rect.left), y: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) }
+}
+
+// The main window has one attached view. Queue attach/detach across hook instances,
+// including when the next instance reuses the same view ID.
+let viewOperations: Promise<unknown> = Promise.resolve()
+let desiredOwner: symbol | undefined
+let attachedOwner: symbol | undefined
+
+function queueViewOperation<T>(operation: () => Promise<T>): Promise<T> {
+  const result = viewOperations.then(operation)
+  viewOperations = result.catch(() => undefined)
+  return result
 }
 
 /**
@@ -35,40 +47,70 @@ export function useWebSessionView({ botId, accountId, url, label, containerRef }
     webViews ? { status: 'loading' } : { status: 'unsupported' }
   )
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = containerRef.current
     if (!webViews || !el || overlayOpen) return
 
-    let disposed = false
+    const owner = Symbol()
+    desiredOwner = owner
+    const ownsView = () => desiredOwner === owner && attachedOwner === owner
     let viewId: string | null = null
+    let bounds: WebViewBounds | undefined
+    let frame: number | null = null
     const sync = () => {
-      if (viewId) webViews.resize(viewId, measure(el))
+      if (!ownsView() || frame !== null) return
+      frame = requestAnimationFrame(() => {
+        frame = null
+        if (!viewId || !ownsView()) return
+        const next = measure(el)
+        if (bounds?.x === next.x && bounds.y === next.y && bounds.width === next.width && bounds.height === next.height) return
+        bounds = next
+        webViews.resize(viewId, next)
+      })
     }
 
     setState((s) => (s.status === 'ready' ? s : { status: 'loading' }))
-    webViews
-      .create({ botId, accountId, url, label })
-      .then(async (info) => {
-        if (disposed) return
-        viewId = info.viewId
-        await webViews.attach(info.viewId, measure(el))
-        // Unmounted while attaching: hide it again.
-        if (disposed) void webViews.detach(info.viewId)
-        else setState({ status: 'ready', partition: info.partition })
-      })
-      .catch((error: unknown) => {
-        if (!disposed) setState({ status: 'error', message: error instanceof Error ? error.message : String(error) })
-      })
+    void queueViewOperation(async () => {
+      if (desiredOwner !== owner) return
+      const info = await webViews.create({ botId, accountId, url, label })
+      if (desiredOwner !== owner) return
+      viewId = info.viewId
+      bounds = measure(el)
+      const attached = await webViews.attach(info.viewId, bounds)
+      attachedOwner = owner
+      if (ownsView()) {
+        sync()
+        setState({ status: 'ready', partition: attached.partition })
+      }
+    }).catch((error: unknown) => {
+      if (desiredOwner === owner) {
+        setState({ status: 'error', message: error instanceof Error ? error.message : String(error) })
+      }
+    })
 
     const observer = new ResizeObserver(sync)
-    observer.observe(el)
+    for (let node: HTMLElement | null = el; node; node = node.parentElement) observer.observe(node)
+    const layoutObserver = typeof PerformanceObserver !== 'undefined' &&
+      PerformanceObserver.supportedEntryTypes?.includes('layout-shift')
+      ? new PerformanceObserver(sync) : undefined
+    layoutObserver?.observe({ type: 'layout-shift' })
     window.addEventListener('resize', sync)
+    window.addEventListener('scroll', sync, true)
+    window.addEventListener('transitionend', sync, true)
 
     return () => {
-      disposed = true
+      if (desiredOwner === owner) desiredOwner = undefined
+      if (frame !== null) cancelAnimationFrame(frame)
       observer.disconnect()
+      layoutObserver?.disconnect()
       window.removeEventListener('resize', sync)
-      if (viewId) void webViews.detach(viewId)
+      window.removeEventListener('scroll', sync, true)
+      window.removeEventListener('transitionend', sync, true)
+      void queueViewOperation(async () => {
+        if (!viewId || attachedOwner !== owner) return
+        attachedOwner = undefined
+        await webViews.detach(viewId)
+      }).catch(() => undefined)
     }
   }, [webViews, botId, accountId, url, label, containerRef, overlayOpen])
 

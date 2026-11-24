@@ -3,10 +3,14 @@ import { adapterRegistry } from '@adapters/registry'
 import type { AdapterEvent, AttachmentMeta, PlatformId } from '@adapters/types'
 import type { HermesApprovalView, MuseMediaPartView } from '@shared/ipc'
 import type {
+  MobileSendCommand,
+  MobileSendResult,
   MobileSyncedAccount,
   MobileSyncedBot,
   MobileSyncedMessage,
-  MobileWorkspaceSnapshot
+  MobileSyncStateView,
+  MobileWorkspaceSnapshot,
+  MobileWorkspaceSnapshotUpdate
 } from '@shared/mobileSync'
 import { getBridge } from '@/lib/bridge'
 import { useBotStore } from '@/store/botStore'
@@ -15,6 +19,8 @@ const MAX_MESSAGES_PER_BOT = 60
 const MAX_MEDIA_CACHE_ENTRIES = 512
 const MAX_MOBILE_IMAGE_BYTES = 6 * 1024 * 1024
 const MAX_MOBILE_VIDEO_BYTES = 8 * 1024 * 1024
+const SNAPSHOT_DEBOUNCE_MS = 750
+const SNAPSHOT_MAX_WAIT_MS = 3_000
 
 const latestApprovals: Record<string, HermesApprovalView[]> = {}
 const resolvedMediaCache = new Map<string, MuseMediaPartView>()
@@ -223,6 +229,22 @@ function botIdForEvent(idOrAccount: string): string {
     : bots.find((b) => b.accountIds.includes(idOrAccount) || b.activeAccountId === idOrAccount)?.id ?? idOrAccount
 }
 
+function queueCompanionMessage(command: MobileSendCommand): MobileSendResult {
+  const store = useBotStore.getState()
+  const existing = store.messages[command.botId]?.find((message) => message.id === command.clientMessageId)
+  if (existing?.role === 'user') {
+    const incoming = command.attachments ?? []
+    const stored = existing.attachments ?? []
+    const matches = stored.length === incoming.length && stored.every((attachment, index) => {
+      const next = incoming[index]!
+      const bytes = next.dataUrl.slice(next.dataUrl.indexOf(',') + 1)
+      return attachment.name === next.name && attachment.mimeType === next.mimeType && attachment.dataBase64 === bytes
+    })
+    if (!matches) return { ok: false, status: 409, message: 'Message ID is already in use' }
+  }
+  return store.queueMobileMessage(command)
+}
+
 /**
  * Connects BotArk Desktop's renderer store & adapters to the local zero-server
  * MobileSyncServer running in the Electron main process.
@@ -231,23 +253,32 @@ export function startMobileSyncBridge(): () => void {
   const mobileSync = getBridge()?.mobileSync
   if (!mobileSync) return () => undefined
 
+  let status: MobileSyncStateView | undefined
+  let disposed = false
   let timer: ReturnType<typeof setTimeout> | null = null
-  const scheduleSnapshotPush = () => {
+  let firstChangeAt = 0
+  const hasClients = () => !disposed && Boolean(status?.running && status.devices.some((d) => d.connected))
+  const cancelSnapshotPush = () => {
     if (timer) clearTimeout(timer)
+    timer = null
+  }
+  const scheduleSnapshotPush = () => {
+    if (!hasClients()) return
+    if (timer) clearTimeout(timer)
+    else firstChangeAt = Date.now()
+    const delay = Math.min(SNAPSHOT_DEBOUNCE_MS, Math.max(0, firstChangeAt + SNAPSHOT_MAX_WAIT_MS - Date.now()))
     timer = setTimeout(() => {
       timer = null
-      mobileSync.pushSnapshot(buildWorkspaceSnapshot(scheduleSnapshotPush))
-    }, 180)
+      if (hasClients()) mobileSync.pushSnapshot(buildWorkspaceSnapshot(scheduleSnapshotPush))
+    }, delay)
   }
 
   const publishApprovals = (accountId: string, pending: HermesApprovalView[]) => {
     latestApprovals[accountId] = pending
+    if (!hasClients()) return
     mobileSync.pushEvent({ type: 'approvals', accountId, pending })
     scheduleSnapshotPush()
   }
-
-  // Push initial snapshot right away so pairing immediately has fresh state
-  mobileSync.pushSnapshot(buildWorkspaceSnapshot(scheduleSnapshotPush))
 
   // Push whenever bots, groups, accounts, or messages change
   const unsubStore = useBotStore.subscribe((state, prev) => {
@@ -276,6 +307,7 @@ export function startMobileSyncBridge(): () => void {
     ) {
       clearFailedMediaForAccount(event.accountId)
     }
+    if (!hasClients() && event.type !== 'approvals') return
     switch (event.type) {
       case 'message_delta':
         mobileSync.pushEvent({
@@ -347,11 +379,7 @@ export function startMobileSyncBridge(): () => void {
     adapter.subscribe((event) => handleAdapterEvent(adapter.id, event))
   )
 
-  const unsubscribeSend = mobileSync.onSendCommand((cmd) => {
-    const result = useBotStore.getState().queueMobileMessage(cmd)
-    if (result.ok) mobileSync.pushSnapshot(buildWorkspaceSnapshot(scheduleSnapshotPush))
-    return result
-  })
+  const unsubscribeSend = mobileSync.onSendCommand(queueCompanionMessage)
 
   // Execute the remaining commands sent from paired devices.
   const unsubCommands = mobileSync.onCommand((cmd) => {
@@ -395,15 +423,30 @@ export function startMobileSyncBridge(): () => void {
     }
   })
 
-  // Refresh snapshot whenever sync server starts or a device pairs
   const unsubState = mobileSync.onStateChanged((st) => {
-    if (st.running) {
-      mobileSync.pushSnapshot(buildWorkspaceSnapshot(scheduleSnapshotPush))
+    status = st
+    if (!hasClients()) cancelSnapshotPush()
+    if (st.snapshotRequestId) {
+      // A pending store update can share the same snapshot as the explicit request.
+      const publishSnapshot = timer !== null
+      cancelSnapshotPush()
+      const response: MobileWorkspaceSnapshotUpdate = {
+        ...buildWorkspaceSnapshot(scheduleSnapshotPush),
+        snapshotRequestId: st.snapshotRequestId,
+        publishSnapshot
+      }
+      mobileSync.pushSnapshot(response)
     }
   })
+  void mobileSync.getState().then((st) => {
+    if (disposed || status) return
+    status = st
+    scheduleSnapshotPush()
+  }).catch(() => undefined)
 
   return () => {
-    if (timer) clearTimeout(timer)
+    disposed = true
+    cancelSnapshotPush()
     unsubStore()
     unsubscribeSend()
     unsubCommands()

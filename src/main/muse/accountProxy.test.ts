@@ -35,10 +35,14 @@ vi.mock('../webContentsViewManager', () => ({ partitionForAccount: (id: string) 
 const {
   applyAllStoredProxies,
   applyProxyToPartition,
+  assignProxyPoolToAccounts,
   buildAccountProxyUrl,
+  importProxyPool,
+  listProxyPool,
   loadProxyConfig,
   parseProxyLine,
   ProxyConfigUnreadableError,
+  releaseProxyPoolAccount,
   saveProxyConfig
 } = await import('./accountProxy')
 
@@ -52,6 +56,7 @@ beforeEach(() => {
   closeAllConnections.mockClear()
   encryptionAvailable = true
   writeFileSync(join(dir, 'muse-account-proxy.json'), JSON.stringify({ acc1: { enc: 'AAAA' } }))
+  writeFileSync(join(dir, 'muse-proxy-pool.json'), '[]')
 })
 
 describe('account proxy fails closed', () => {
@@ -166,5 +171,54 @@ describe('HTTPS and authenticated proxy support', () => {
       proxyRules: 'socks5://127.0.0.1:1080',
       proxyBypassRules: '<local>'
     })
+  })
+})
+
+describe('saved credentials and pool ownership', () => {
+  const original = { mode: 'http', host: 'proxy.example.com', port: 8080, username: 'alice', password: 'saved' } as const
+
+  it('keeps a blank password only for the same normalized proxy identity', async () => {
+    await saveProxyConfig('credentials', original)
+    await expect(saveProxyConfig('credentials', {
+      mode: 'socks5', host: ' HTTP://alice@PROXY.EXAMPLE.COM:8080 ', password: ''
+    })).resolves.toMatchObject({ hasPassword: true })
+
+    for (const change of [
+      { mode: 'socks5' } as const, { host: 'other.example.com' }, { port: 8081 }, { username: 'bob' }, { username: '' }
+    ]) {
+      await saveProxyConfig('credentials', original)
+      const view = await saveProxyConfig('credentials', { ...original, ...change, password: '' })
+      expect(view.hasPassword).toBe(false)
+      expect((await loadProxyConfig('credentials')).password).toBeUndefined()
+    }
+  })
+
+  it('serializes release and reassignment through partition setup', async () => {
+    await importProxyPool('http://proxy.example.com:8080')
+    await assignProxyPoolToAccounts(['pool-owner'])
+    let finishRelease!: () => void
+    let enteredRelease!: () => void
+    const entered = new Promise<void>((resolve) => { enteredRelease = resolve })
+    setProxy.mockImplementationOnce(async () => {
+      enteredRelease()
+      await new Promise<void>((resolve) => { finishRelease = resolve })
+    })
+    const release = releaseProxyPoolAccount('pool-owner')
+    await entered
+    const reassign = assignProxyPoolToAccounts(['pool-owner'])
+    finishRelease()
+    await Promise.all([release, reassign])
+    expect(await listProxyPool()).toMatchObject([{ assignedAccountId: 'pool-owner' }])
+    expect(await loadProxyConfig('pool-owner')).toMatchObject({ host: 'proxy.example.com', port: 8080 })
+    expect(setProxy).toHaveBeenLastCalledWith(expect.objectContaining({ proxyRules: 'http://proxy.example.com:8080' }))
+  })
+
+  it('releases a pool slot without deleting a newer manually saved configuration', async () => {
+    await importProxyPool('http://proxy.example.com:8080')
+    await assignProxyPoolToAccounts(['pool-manual'])
+    await saveProxyConfig('pool-manual', { mode: 'http', host: 'manual.example.com', port: 9999 })
+    await releaseProxyPoolAccount('pool-manual')
+    expect((await listProxyPool())[0]?.assignedAccountId).toBeUndefined()
+    expect(await loadProxyConfig('pool-manual')).toMatchObject({ host: 'manual.example.com', port: 9999 })
   })
 })

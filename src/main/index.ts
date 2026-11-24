@@ -2,7 +2,7 @@ import { registerSlackIpc, stopSlack } from './slack/slackIpc'
 import { registerWorkspaceIpc, stopWorkspaces } from './mcp/hub'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { app, BrowserWindow, shell } from 'electron'
+import { app, autoUpdater, BrowserWindow, shell } from 'electron'
 import { attachWebViewManager, registerWebViewIpc } from './webViewIpc'
 import { attachMuseSessionManager, disposeAllMuseManagers, registerMuseIpc } from './muse/museIpc'
 import { registerUpdaterIpc, startAutoUpdater } from './updater'
@@ -36,6 +36,12 @@ let mainWindow: BrowserWindow | null = null
 let quitting = false
 let readyForDeepLinks = false
 const pendingCueCallbacks: string[] = []
+
+if (isMac) {
+  autoUpdater.on('before-quit-for-update', () => {
+    quitting = true
+  })
+}
 
 function dispatchCueCallback(rawUrl: string): void {
   if (!readyForDeepLinks) {
@@ -206,26 +212,43 @@ function createMainWindow(): BrowserWindow {
   return win
 }
 
-app.on('before-quit', () => {
+let shutdownStarted = false
+let shutdownFinished = false
+
+app.on('before-quit', (event) => {
   quitting = true
-  void stopSlack()
-  stopWorkspaces()
+  if (shutdownFinished) return
+  event.preventDefault()
+  if (shutdownStarted) return
+  shutdownStarted = true
   stopGrokAccountWatch('*')
   closeCelsiusWatcher('*')
   cancelHarkWatch('*')
   cancelAllHermesRuns('*')
   cancelAllAntigravityRuns('*')
   stopCueAccountWatch('*')
-  void stopMobileSyncServer()
   disposeAllMuseManagers()
-  void closeAllLocalProxyBridges()
+  const cleanup = Promise.allSettled([
+    stopSlack(),
+    stopWorkspaces(),
+    stopMobileSyncServer(),
+    closeAllLocalProxyBridges()
+  ])
+  const deadline = new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, 2500)
+    timer.unref?.()
+  })
+  void Promise.race([cleanup, deadline]).finally(() => {
+    shutdownFinished = true
+    app.quit()
+  })
 })
 
 app.whenReady().then(async () => {
   if (!gotLock) return
   hardenVaultFilePermissions()
-  // Before any partition loads: otherwise the first requests go direct.
-  await Promise.race([applyAllStoredProxies(), new Promise((r) => setTimeout(r, 5_000))])
+  // Finish restoring the Chromium partitions before starting account clients.
+  await applyAllStoredProxies()
   registerWebViewIpc()
   registerMuseIpc()
   registerUpdaterIpc()

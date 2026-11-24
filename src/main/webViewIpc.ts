@@ -11,10 +11,14 @@ import { WebContentsViewManager } from './webContentsViewManager'
 const managers = new Map<number, WebContentsViewManager>()
 
 export function attachWebViewManager(window: BrowserWindow): WebContentsViewManager {
+  const contents = window.webContents
+  const senderId = contents.id
+  const unregister = (): void => { managers.delete(senderId) }
+  // Register cleanup before the manager's native view teardown.
+  window.once('closed', unregister)
+  contents.once('destroyed', unregister)
   const manager = new WebContentsViewManager(window)
-  const senderId = window.webContents.id
   managers.set(senderId, manager)
-  window.on('closed', () => managers.delete(senderId))
   return manager
 }
 
@@ -30,7 +34,7 @@ export function reloadAccountWebViews(
 
 function managerFor(event: IpcMainEvent | IpcMainInvokeEvent): WebContentsViewManager {
   const manager = managers.get(event.sender.id)
-  if (!manager) throw new Error('Web views are not available for this sender')
+  if (!manager?.isAlive()) throw new Error('Web views are not available for this sender')
   return manager
 }
 
@@ -83,7 +87,7 @@ export function registerWebViewIpc(): void {
   registered = true
 
   ipcMain.handle(WEB_VIEW_CHANNELS.create, (event, request: unknown) =>
-    managerFor(event).create(parseCreateRequest(request))
+    managerFor(event).createReady(parseCreateRequest(request))
   )
 
   ipcMain.handle(WEB_VIEW_CHANNELS.attach, (event, viewId: unknown, bounds: unknown) =>
@@ -92,7 +96,7 @@ export function registerWebViewIpc(): void {
 
   ipcMain.on(WEB_VIEW_CHANNELS.resize, (event, viewId: unknown, bounds: unknown) => {
     const manager = managers.get(event.sender.id)
-    if (!manager || typeof viewId !== 'string') return
+    if (!manager?.isAlive() || typeof viewId !== 'string') return
     try {
       manager.resize(viewId, parseBounds(bounds))
     } catch {

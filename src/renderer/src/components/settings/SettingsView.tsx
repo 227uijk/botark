@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   ArrowLeft,
@@ -25,12 +25,14 @@ import {
   Trash2,
   Users
 } from 'lucide-react'
+import { adapterRegistry } from '@adapters/registry'
+import { listGrokAuthAccountIds } from '@adapters/grokbot/tokenStore'
 import type { PlatformId } from '@adapters/types'
 import type { MuseProxyMode, MuseProxyPoolItemView, MuseProxyView } from '@shared/ipc'
 import { createId } from '@shared/id'
 import { SecurityVaultCenter } from '@/components/info/SecurityVaultCard'
 import { PaneHeader } from '@/components/layout/PaneHeader'
-import { MuseBatchImport } from '@/components/add-bot/MuseBatchImport'
+import { keepMuseBatchProxyAssignments, MuseBatchImport } from '@/components/add-bot/MuseBatchImport'
 import { ArkMobileLinkSvg, ArkRelayOrbSvg } from '@/components/ui/ArkGlyphs'
 import { BotAvatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
@@ -45,13 +47,15 @@ import { cn } from '@/lib/cn'
 import { useT, t } from '@/lib/i18n'
 import { importHarkCredentialsForAccount } from '@/lib/harkCredentialImport'
 import { platformIcon } from '@/lib/platformIcons'
+import { clearVaultCredentials } from '@/lib/vaultClient'
 import { HermesAccountsSettingsPanel } from '@/components/hermes/HermesAccountsSettingsPanel'
 import { MobileSyncSettingsPanel } from '@/components/mobile-sync/MobileSyncSettingsPanel'
 import { McpSettingsSection } from '@/components/settings/McpSettingsSection'
 import { NEW_ROOM_ID } from '@/rooms/RoomView'
-import { useRooms } from '@/rooms/roomStore'
-import { useBotStore } from '@/store/botStore'
+import { stopRoom, useRooms } from '@/rooms/roomStore'
+import { proxyPoolArgsForAccounts, useBotStore } from '@/store/botStore'
 import { usePrefsStore, type Locale, type ThemePref } from '@/store/prefsStore'
+import type { Bot } from '@/types'
 
 type SettingsTab =
   | 'overview'
@@ -101,6 +105,162 @@ const PLATFORM_LABELS: Record<PlatformId, string> = {
   cue: 'Cue (Manus)'
 }
 
+const PURGED_VAULT_STORES = new Set([
+  'proxy', 'proxy-pool', 'grok-tokens', 'dot-tokens', 'cue-tokens', 'hermes-accounts', 'secrets-vault'
+])
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function musePoolArgs() {
+  const { accounts } = useBotStore.getState()
+  const museIds = Object.values(accounts).filter((account) => account.platformId === 'meta-muse').map((account) => account.id)
+  return proxyPoolArgsForAccounts(accounts, museIds)
+}
+
+async function purgeCredentials() {
+  const state = useBotStore.getState()
+  const bridge = getBridge()
+  const accounts = Object.values(state.accounts)
+  const failures: string[] = []
+  const attempt = async (step: string, action: () => unknown | Promise<unknown>) => {
+    try {
+      await action()
+      return true
+    } catch (error) {
+      failures.push(`${step} — ${errorMessage(error)}`)
+      return false
+    }
+  }
+
+  // Stop room turns before clearing their accounts and persisted transcript.
+  const rooms = useRooms.getState().rooms
+  await Promise.all(rooms.map((room) => attempt(room.title, () => stopRoom(room.id))))
+  await attempt(t('Collaboration rooms'), () => {
+    useRooms.setState({ rooms: [], speakers: {}, turnProgress: {}, errors: {}, externalAudiences: {} })
+    localStorage.removeItem('botark-collaboration-rooms')
+    if (localStorage.getItem('botark-collaboration-rooms') !== null) {
+      throw new Error(t('Could not remove the saved collaboration rooms'))
+    }
+  })
+  useBotStore.setState((current) => ({
+    activeDocument: null,
+    webSessionOpen: false,
+    webSessionByBot: {},
+    webSessionTargetUrl: null,
+    ...(rooms.some((room) => room.id === current.selectedBotId) ? { selectedBotId: null } : {})
+  }))
+
+  const partitionIds = new Set(accounts.map((account) => account.id))
+  const proxyIds = new Set(partitionIds)
+  const muse = bridge?.muse
+  if (muse?.listProxyPool) {
+    await attempt(t('Proxy pool'), async () => {
+      for (const item of await muse.listProxyPool()) {
+        if (item.assignedAccountId) {
+          proxyIds.add(item.assignedAccountId)
+          partitionIds.add(item.assignedAccountId)
+        }
+      }
+    })
+  }
+
+  const authBridges = {
+    grok: bridge?.grok,
+    dot: bridge?.dot,
+    hark: bridge?.hark,
+    hermes: bridge?.hermes,
+    antigravity: bridge?.antigravity,
+    cue: bridge?.cue
+  }
+  const grokSessionIds = listGrokAuthAccountIds()
+  for (const id of grokSessionIds) {
+    partitionIds.add(id)
+    proxyIds.add(id)
+  }
+
+  // The store drains account connections and invalidates their pending work.
+  // Verify the cleanup through the bridge because the store only reports
+  // per-account failures via UI state.
+  await Promise.all(accounts.map(({ id, platformId }) =>
+    attempt(`${PLATFORM_LABELS[platformId]} (${id})`, () => state.signOutAccount(id))
+  ))
+  const grokAdapter = adapterRegistry.get('grok') as { clearAuth?: (accountId: string) => void } | undefined
+  await Promise.all(grokSessionIds.map((id) =>
+    attempt(`Grok Bot (${id})`, () => grokAdapter?.clearAuth?.(id))
+  ))
+
+  const signedOutIds = new Set<string>()
+  await Promise.all(accounts.map(async (account) => {
+    const { id, platformId } = account
+    const label = `${PLATFORM_LABELS[platformId]} (${id})`
+    const cleared = await attempt(label, async () => {
+      if (!bridge) return
+      if (platformId === 'meta-muse' && muse?.signOut) {
+        await muse.signOut(id)
+        partitionIds.delete(id)
+        return
+      }
+      const auth = platformId === 'meta-muse' ? undefined : authBridges[platformId]
+      if (!auth?.clearAuth) throw new Error(t('Desktop credential cleanup is unavailable'))
+      const status = await auth.clearAuth(id)
+      if (status?.signedIn) throw new Error(t('The account is still signed in'))
+    })
+    if (platformId === 'hermes') partitionIds.delete(id)
+    if (cleared) signedOutIds.add(id)
+  }))
+
+  if (bridge) {
+    await Promise.all([...partitionIds].map((id) => attempt(t('Browser session for {account}', { account: id }), async () => {
+      if (!bridge.webViews?.clearPartition) throw new Error(t('Desktop credential cleanup is unavailable'))
+      await bridge.webViews.clearPartition(id)
+    })))
+    // Include retained pool assignments and platform records outside the current Bot list.
+    await Promise.all((['dot', 'grok', 'cue', 'hermes'] as const).map(async (platform) => {
+      const auth = authBridges[platform]
+      if (!auth?.clearAuth) return
+      await attempt(PLATFORM_LABELS[platform], async () => {
+        if ((await auth.clearAuth('*')).signedIn) throw new Error(t('The account is still signed in'))
+      })
+    }))
+    if (muse?.setProxy) {
+      await Promise.all([...proxyIds].map((id) => attempt(t('Proxy for {account}', { account: id }), async () => {
+        const proxy = await muse.setProxy(id, { mode: 'direct' })
+        if (proxy.mode !== 'direct' || proxy.hasPassword) throw new Error(t('Proxy credentials are still present'))
+      })))
+    }
+    await attempt(t('Proxy pool'), async () => {
+      if (!muse?.clearProxyPool) throw new Error(t('Desktop credential cleanup is unavailable'))
+      if ((await muse.clearProxyPool()).length) throw new Error(t('Proxy credentials are still present'))
+    })
+  }
+
+  await attempt(t('Security vault'), clearVaultCredentials)
+  const vault = bridge?.vault
+  if (vault?.status) {
+    await attempt(t('Security vault'), async () => {
+      const { stores } = await vault.status()
+      for (const store of stores) {
+        if (PURGED_VAULT_STORES.has(store.id) && (store.entryCount > 0 || (store.exists && store.modeOctal === null))) {
+          failures.push(t('Could not verify that {file} is empty', { file: store.fileName }))
+        }
+      }
+    })
+  }
+  if (signedOutIds.size) {
+    useBotStore.setState((current) => {
+      const accounts = { ...current.accounts }
+      for (const id of signedOutIds) {
+        const account = accounts[id]
+        if (account) accounts[id] = { ...account, status: 'offline', statusDetail: 'Signed out', unread: 0 }
+      }
+      return { accounts }
+    })
+  }
+  if (failures.length) throw new Error(t('Cleanup completed with errors') + '\n' + failures.join('\n'))
+}
+
 export function SettingsView() {
   const tr = useT()
   const settingsTab = useBotStore((s) => s.settingsTab)
@@ -108,7 +268,7 @@ export function SettingsView() {
   const setOnboardingOpen = useBotStore((s) => s.setOnboardingOpen)
   const groups = useBotStore((s) => s.groups)
   const bots = useBotStore((s) => s.bots)
-  const collabRooms = useRooms((s) => s.rooms)
+  const roomCount = useRooms((s) => settingsTab === 'overview' ? s.rooms.length : 0)
   const accounts = useBotStore((s) => s.accounts)
   const addBot = useBotStore((s) => s.addBot)
   const selectBot = useBotStore((s) => s.selectBot)
@@ -128,8 +288,6 @@ export function SettingsView() {
   const syncGrokAccountBots = useBotStore((s) => s.syncGrokAccountBots)
   const signOutAccount = useBotStore((s) => s.signOutAccount)
   const removeBot = useBotStore((s) => s.removeBot)
-  const clearAllCredentials = useBotStore((s) => s.clearAllCredentials)
-  const resetWorkspace = useBotStore((s) => s.resetWorkspace)
 
   const theme = usePrefsStore((s) => s.theme)
   const setTheme = usePrefsStore((s) => s.setTheme)
@@ -181,8 +339,23 @@ export function SettingsView() {
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const dotInputRef = useRef<HTMLTextAreaElement>(null)
+  const proxyRequestId = useRef(0)
+  const dotRequestId = useRef(0)
+  const cleaning = useRef(false)
+  const checking = useRef(false)
 
   const allAccounts = useMemo(() => Object.values(accounts), [accounts])
+  const botsByAccountId = useMemo(() => {
+    const indexed = new Map<string, Bot[]>()
+    for (const bot of bots) {
+      for (const id of bot.accountIds) {
+        const owners = indexed.get(id)
+        if (owners) owners.push(bot)
+        else indexed.set(id, [bot])
+      }
+    }
+    return indexed
+  }, [bots])
   const museBots = useMemo(() => bots.filter((b) => b.platformId === 'meta-muse'), [bots])
   const museAccounts = useMemo(() => allAccounts.filter((a) => a.platformId === 'meta-muse'), [allAccounts])
   const dotBots = useMemo(() => bots.filter((b) => b.platformId === 'dot'), [bots])
@@ -212,37 +385,44 @@ export function SettingsView() {
   )
 
   const refreshProxiesAndPool = useCallback(async () => {
+    const { settingsOpen, settingsTab, accounts } = useBotStore.getState()
+    if (cleaning.current || !settingsOpen || !['overview', 'muse-accounts', 'proxy-pool'].includes(settingsTab)) return
     const muse = getBridge()?.muse
     if (!muse) return
+    const request = ++proxyRequestId.current
+    const isCurrent = () => {
+      const state = useBotStore.getState()
+      return state.settingsOpen && state.settingsTab === settingsTab && proxyRequestId.current === request
+    }
     try {
       if (muse.listProxyPool) {
         const items = await muse.listProxyPool()
+        if (!isCurrent()) return
         setPool(items)
       }
-      if (muse.getProxy) {
-        const nextMap: Record<string, MuseProxyView> = {}
-        const allAccs = Object.values(useBotStore.getState().accounts)
-        await Promise.all(
-          allAccs.map(async (acc) => {
-            try {
-              nextMap[acc.id] = await muse.getProxy(acc.id)
-            } catch {
-              /* ignore */
-            }
-          })
-        )
-        setAccountProxies(nextMap)
+      if (settingsTab === 'muse-accounts' && muse.getProxy) {
+        const ids = Object.values(accounts).filter((account) => account.platformId === 'meta-muse').map((account) => account.id)
+        const results = await Promise.allSettled(ids.map(async (id) => [id, await muse.getProxy(id)] as const))
+        if (!isCurrent()) return
+        setAccountProxies(Object.fromEntries(
+          results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
+        ))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      if (isCurrent()) setError(errorMessage(err))
     }
   }, [])
 
   const refreshDotStoredMeta = useCallback(async () => {
+    const { settingsOpen, settingsTab } = useBotStore.getState()
+    if (cleaning.current || !settingsOpen || (settingsTab !== 'overview' && settingsTab !== 'dot-accounts')) return
     const dot = getBridge()?.dot
     if (!dot?.rpc) return
+    const request = ++dotRequestId.current
     try {
       const res = await dot.rpc({ accountId: '_', op: 'listStoredAccounts' })
+      const current = useBotStore.getState()
+      if (!current.settingsOpen || current.settingsTab !== settingsTab || dotRequestId.current !== request) return
       if (res.ok && Array.isArray(res.data)) {
         const map: Record<string, DotStoredMeta> = {}
         for (const item of res.data as DotStoredMeta[]) {
@@ -257,9 +437,16 @@ export function SettingsView() {
     }
   }, [])
 
+  useLayoutEffect(() => {
+    return () => {
+      proxyRequestId.current++
+      dotRequestId.current++
+    }
+  }, [settingsTab])
+
   useEffect(() => {
     void refreshProxiesAndPool()
-  }, [refreshProxiesAndPool, museAccounts.length])
+  }, [refreshProxiesAndPool, settingsTab, museAccounts.length])
 
   useEffect(() => {
     void refreshDotStoredMeta()
@@ -267,12 +454,32 @@ export function SettingsView() {
 
   useEffect(() => {
     const updates = getBridge()?.updates
-    if (!updates) return
-    void updates.version().then(setVersion)
-    return updates.onEvent((ev) => setCheckingUpdate(ev.type === 'checking'))
+    if (updates?.version) void updates.version().then(setVersion, () => {})
   }, [])
 
+  const handleCheckForUpdates = async () => {
+    if (checking.current) return
+    const updates = getBridge()?.updates
+    setHint(undefined)
+    setError(undefined)
+    if (!updates?.check) {
+      setError(tr('Update checks require the desktop app'))
+      return
+    }
+    checking.current = true
+    setCheckingUpdate(true)
+    try {
+      if (!(await updates.check()).ok) throw new Error(tr('Something went wrong.'))
+    } catch (err) {
+      setError(tr('Could not check for updates: {reason}', { reason: errorMessage(err) }))
+    } finally {
+      checking.current = false
+      setCheckingUpdate(false)
+    }
+  }
+
   const filteredBots = useMemo(() => {
+    if (settingsTab !== 'overview') return []
     const q = searchQuery.trim().toLowerCase()
     return bots.filter((bot) => {
       if (platformFilter !== 'all' && bot.platformId !== platformFilter) return false
@@ -284,7 +491,7 @@ export function SettingsView() {
       const hay = `${bot.name} ${acc?.displayName ?? ''} ${acc?.handle ?? ''} ${bot.activeAccountId}`.toLowerCase()
       return hay.includes(q)
     })
-  }, [bots, accounts, searchQuery, platformFilter, statusFilter])
+  }, [settingsTab, bots, accounts, searchQuery, platformFilter, statusFilter])
 
   const handleReconnectAll = async (onlyOffline = false) => {
     setBusy(true)
@@ -310,20 +517,15 @@ export function SettingsView() {
       const res = await muse.importProxyPool(rawProxyText, defaultMode)
       setRawProxyText('')
       setPool(res.items)
-      const ids = museAccounts.map((a) => a.id)
-      const keepIds = [
-        ...harkAccounts,
-        ...grokAccounts,
-        ...dotAccounts,
-        ...antigravityAccounts,
-        ...hermesAccounts
-      ].map((a) => a.id)
-      if (ids.length > 0 && muse.assignProxyPool) {
-        const assigned = await muse.assignProxyPool(ids, keepIds)
+      const { accountIds, keepIds } = musePoolArgs()
+      if (accountIds.length > 0 && muse.assignProxyPool) {
+        const assigned = await muse.assignProxyPool(accountIds, keepMuseBatchProxyAssignments(keepIds))
         setPool(assigned.items)
-        setHint(`已导入 ${res.added} 个代理（池共 ${res.total} 个），并已自动为 ${assigned.assignedCount} 个 Muse 账号一对一绑定代理`)
+        setHint(tr('Imported {added} proxies ({total} in pool) and assigned {assigned} to Muse accounts', {
+          added: res.added, total: res.total, assigned: assigned.assignedCount
+        }))
       } else {
-        setHint(`已导入 ${res.added} 个代理（池共 ${res.total} 个）；新建或导入 Muse 账号时将自动一对一分配`)
+        setHint(tr('Imported {added} proxies ({total} in pool)', { added: res.added, total: res.total }))
       }
       await refreshProxiesAndPool()
     } catch (err) {
@@ -333,24 +535,19 @@ export function SettingsView() {
     }
   }
 
-  const handleAutoAssignAll = async () => {
+  const handleAutoAssignMuse = async () => {
     const muse = getBridge()?.muse
     if (!muse?.assignProxyPool) return
     setBusy(true)
     setError(undefined)
     setHint(undefined)
     try {
-      const ids = museAccounts.map((a) => a.id)
-      const keepIds = [
-        ...harkAccounts,
-        ...grokAccounts,
-        ...dotAccounts,
-        ...antigravityAccounts,
-        ...hermesAccounts
-      ].map((a) => a.id)
-      const res = await muse.assignProxyPool(ids, keepIds)
+      const { accountIds, keepIds } = musePoolArgs()
+      const res = await muse.assignProxyPool(accountIds, keepMuseBatchProxyAssignments(keepIds))
       setPool(res.items)
-      setHint(`已为 ${res.assignedCount} / ${ids.length} 个 Muse 账号完成一对一代理匹配`)
+      setHint(tr('Assigned proxies to {assigned} of {total} Muse accounts', {
+        assigned: res.assignedCount, total: accountIds.length
+      }))
       await refreshProxiesAndPool()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -374,30 +571,38 @@ export function SettingsView() {
     setHint('已清空代理池')
   }
 
-  const handleQuickAddMuseAccount = async () => {
-    const accountId = createId('acc')
-    const botId = createId('bot')
-    const index = museBots.length + 1
-    const muse = getBridge()?.muse
-    if (muse?.assignProxyPool) {
-      const ids = [...museAccounts.map((a) => a.id), accountId]
-      const keepIds = [
-        ...harkAccounts,
-        ...grokAccounts,
-        ...dotAccounts,
-        ...antigravityAccounts,
-        ...hermesAccounts
-      ].map((a) => a.id)
-      await muse.assignProxyPool(ids, keepIds).catch(() => undefined)
+  const quickAddProxyAccount = async (
+    platformId: 'meta-muse' | 'hark' | 'cue',
+    baseName: string,
+    index: number
+  ) => {
+    if (busy) return
+    setBusy(true)
+    const accountId = createId(platformId === 'cue' ? 'acc_cue' : 'acc')
+    const name = platformId === 'cue' && index === 1 ? baseName : `${baseName} ${index}`
+    try {
+      const muse = getBridge()?.muse
+      if (muse?.assignProxyPool) {
+        const args = proxyPoolArgsForAccounts(useBotStore.getState().accounts, [accountId])
+        await muse.assignProxyPool(args.accountIds, keepMuseBatchProxyAssignments(args.keepIds)).catch(() => undefined)
+      }
+      addBot({
+        id: createId('bot'),
+        platformId,
+        name,
+        accounts: [{ key: accountId, accountId, displayName: name, handle: '' }],
+        background: true
+      })
+      return accountId
+    } finally {
+      setBusy(false)
     }
-    addBot({
-      id: botId,
-      platformId: 'meta-muse',
-      name: `Muse ${index}`,
-      accounts: [{ key: accountId, accountId, displayName: `Muse ${index}`, handle: '' }],
-      background: true
-    })
-    await refreshProxiesAndPool()
+  }
+
+  const handleQuickAddMuseAccount = async () => {
+    const accountId = await quickAddProxyAccount('meta-muse', 'Muse', museBots.length + 1)
+    if (!accountId) return
+    void refreshProxiesAndPool()
     void openMuseLogin(accountId)
   }
 
@@ -450,24 +655,8 @@ export function SettingsView() {
   }
 
   const handleQuickAddHarkAccount = async () => {
-    const accountId = createId('acc')
-    const botId = createId('bot')
-    const index = harkBots.length + 1
-    const muse = getBridge()?.muse
-    if (muse?.assignProxyPool) {
-      const ids = [...museAccounts.map((a) => a.id), ...harkAccounts.map((a) => a.id), accountId]
-      const keepIds = [...grokAccounts, ...dotAccounts, ...antigravityAccounts, ...hermesAccounts].map((a) => a.id)
-      await muse.assignProxyPool(ids, keepIds).catch(() => undefined)
-    }
-    addBot({
-      id: botId,
-      platformId: 'hark',
-      name: `Hark ${index}`,
-      accounts: [{ key: accountId, accountId, displayName: `Hark ${index}`, handle: '' }],
-      background: true
-    })
-    await refreshProxiesAndPool()
-    void openHarkLogin(accountId)
+    const accountId = await quickAddProxyAccount('hark', 'Hark', harkBots.length + 1)
+    if (accountId) void openHarkLogin(accountId)
   }
 
   const handleImportHarkCredentials = async () => {
@@ -520,24 +709,8 @@ export function SettingsView() {
   }
 
   const handleQuickAddCueAccount = async (openInBrowser = false) => {
-    const accountId = createId('acc_cue')
-    const botId = createId('bot')
-    const index = cueBots.length + 1
-    const muse = getBridge()?.muse
-    if (muse?.assignProxyPool) {
-      const ids = [...museAccounts.map((a) => a.id), ...harkAccounts.map((a) => a.id), ...cueAccounts.map((a) => a.id), accountId]
-      const keepIds = [...grokAccounts, ...dotAccounts, ...antigravityAccounts, ...hermesAccounts].map((a) => a.id)
-      await muse.assignProxyPool(ids, keepIds).catch(() => undefined)
-    }
-    addBot({
-      id: botId,
-      platformId: 'cue',
-      name: index === 1 ? 'Cue' : `Cue ${index}`,
-      accounts: [{ key: accountId, accountId, displayName: index === 1 ? 'Cue' : `Cue ${index}`, handle: '' }],
-      background: true
-    })
-    await refreshProxiesAndPool()
-    void openCueLogin(accountId, openInBrowser)
+    const accountId = await quickAddProxyAccount('cue', 'Cue', cueBots.length + 1)
+    if (accountId) void openCueLogin(accountId, openInBrowser)
   }
 
   const handleImportDotCredentials = async () => {
@@ -634,7 +807,7 @@ export function SettingsView() {
         })
       } else {
         renameAccount(accountId, label)
-        const ownerBot = bots.find((b) => b.accountIds.includes(accountId))
+        const ownerBot = botsByAccountId.get(accountId)?.[0]
         if (ownerBot && ownerBot.name.startsWith('Dot')) {
           renameBot(ownerBot.id, `Dot · ${label}`)
         }
@@ -693,20 +866,8 @@ export function SettingsView() {
       setConfirmWipeCreds(true)
       return
     }
-    setBusy(true)
-    setError(undefined)
-    try {
-      await clearAllCredentials()
-      setPool([])
-      setAccountProxies({})
-      setDotMetaMap({})
-      setConfirmWipeCreds(false)
-      setHint('已彻底清除所有平台的登录凭据、OAuth Token、会话 Cookie 与代理池密码')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setBusy(false)
-    }
+    setConfirmWipeCreds(false)
+    await handleCleanup(false)
   }
 
   const handleFactoryReset = async () => {
@@ -714,24 +875,57 @@ export function SettingsView() {
       setConfirmResetAll(true)
       return
     }
+    setConfirmResetAll(false)
+    await handleCleanup(true)
+  }
+
+  const handleCleanup = async (factoryReset: boolean) => {
+    if (cleaning.current) return
+    cleaning.current = true
     setBusy(true)
+    setHint(undefined)
     setError(undefined)
+    proxyRequestId.current++
+    dotRequestId.current++
     try {
-      await resetWorkspace()
+      await purgeCredentials()
+      if (factoryReset) {
+        const workspace = useBotStore.getState()
+        await workspace.resetWorkspace()
+        localStorage.removeItem('bothub-workspace-v1')
+        if (localStorage.getItem('bothub-workspace-v1') !== null) {
+          throw new Error(tr('Could not remove the saved workspace'))
+        }
+      }
       setPool([])
       setAccountProxies({})
       setDotMetaMap({})
-      setConfirmResetAll(false)
-      setHint('已清空全部敏感凭据、测试账号与对话记录，应用已恢复至可发布的纯净初始状态')
+      setGrokTokenInput('')
+      setGrokRefreshInput('')
+      setGrokTargetAccountId('__new__')
+      setDotRawInput('')
+      setDotRefreshInput('')
+      setDotTargetAccountId('__new__')
+      setHarkRawInput('')
+      setHarkTargetAccountId('__new__')
+      setCueCredentialInput('')
+      setCueTargetAccountId('__new__')
+      setRawProxyText('')
+      setHint(factoryReset
+        ? tr('Workspace, collaboration rooms, and saved credentials cleared')
+        : tr('Saved account credentials, browser sessions, proxies, and collaboration rooms cleared'))
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(errorMessage(err))
     } finally {
+      cleaning.current = false
+      void refreshProxiesAndPool()
+      void refreshDotStoredMeta()
       setBusy(false)
     }
   }
 
   const NAV: Array<{ id: SettingsTab; label: string; icon: typeof Users; platformId?: PlatformId; count?: number }> = [
-    { id: 'overview', label: '总览', icon: LayoutDashboard, count: bots.length },
+    { id: 'overview', label: tr('Overview'), icon: LayoutDashboard, count: bots.length },
     { id: 'muse-accounts', label: 'Meta Muse', icon: Users, platformId: 'meta-muse', count: museAccounts.length },
     { id: 'dot-accounts', label: 'ChatGPT Dot', icon: Users, platformId: 'dot', count: dotAccounts.length },
     { id: 'grok-accounts', label: 'Grok Bot', icon: Users, platformId: 'grok', count: grokAccounts.length },
@@ -751,10 +945,10 @@ export function SettingsView() {
       platformId: 'cue',
       count: cueAccounts.length
     },
-    { id: 'mcp-hub', label: 'MCP 与工作区', icon: Server },
-    { id: 'mobile-sync', label: '手机同步', icon: Smartphone },
-    { id: 'proxy-pool', label: '代理池', icon: Server, count: pool.length },
-    { id: 'general', label: '常规与安全', icon: Settings }
+    { id: 'mcp-hub', label: tr('MCP & Workspace'), icon: Server },
+    { id: 'mobile-sync', label: tr('Mobile Sync'), icon: Smartphone },
+    { id: 'proxy-pool', label: tr('Proxy pool'), icon: Server, count: pool.length },
+    { id: 'general', label: tr('General & Security'), icon: Settings }
   ]
 
   return (
@@ -767,9 +961,9 @@ export function SettingsView() {
             className="no-drag press inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13px] font-medium text-ink shadow-soft hover:bg-hover"
           >
             <ArrowLeft className="size-3.5" aria-hidden />
-            返回
+            {tr('Back')}
           </button>
-          <h1 className="text-[15px] font-semibold tracking-tight text-ink">设置与账号</h1>
+          <h1 className="text-[15px] font-semibold tracking-tight text-ink">{tr('Settings & Accounts')}</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -778,7 +972,7 @@ export function SettingsView() {
             disabled={busy || allAccounts.length === 0}
             onClick={() => void handleReconnectAll(false)}
           >
-            <Activity className={cn('size-3.5', busy && 'animate-spin')} /> 健康巡检
+            <Activity className={cn('size-3.5', busy && 'animate-spin')} /> {tr('Check account connections')}
           </Button>
         </div>
       </PaneHeader>
@@ -834,7 +1028,7 @@ export function SettingsView() {
         <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
           <div className="mx-auto max-w-[820px]">
             {error && (
-              <div className="mb-4 rounded-xl border border-status-error/25 bg-status-error/8 px-3.5 py-2.5 text-[13px] text-status-error">
+              <div role="alert" className="mb-4 whitespace-pre-line rounded-xl border border-status-error/25 bg-status-error/8 px-3.5 py-2.5 text-[13px] text-status-error">
                 {error}
               </div>
             )}
@@ -847,7 +1041,7 @@ export function SettingsView() {
             {settingsTab === 'overview' && (
               <div className="flex flex-col gap-4 animate-veil-in">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-[17px] font-semibold tracking-tight text-ink">总览</h2>
+                  <h2 className="text-[17px] font-semibold tracking-tight text-ink">{tr('Overview')}</h2>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Button
                       size="sm"
@@ -873,8 +1067,8 @@ export function SettingsView() {
                     </p>
                   </div>
                   <div className="rounded-2xl border border-line bg-surface px-4 py-3 shadow-hairline">
-                    <p className="text-[11.5px] text-ink-muted">协作群聊</p>
-                    <p className="mt-1 text-[22px] font-semibold tabular-nums text-ink">{collabRooms.length}</p>
+                    <p className="text-[11.5px] text-ink-muted">{tr('Collaboration rooms')}</p>
+                    <p className="mt-1 text-[22px] font-semibold tabular-nums text-ink">{roomCount}</p>
                   </div>
                   <div className="rounded-2xl border border-line bg-surface px-4 py-3 shadow-hairline">
                     <p className="text-[11.5px] text-ink-muted">加密代理池</p>
@@ -949,7 +1143,7 @@ export function SettingsView() {
                       <ArkRelayOrbSvg active className="size-4" />
                     </span>
                     <span className="truncate text-[13.5px] font-medium text-ink">
-                      多 Agent 协作群聊{collabRooms.length > 0 ? ` · ${collabRooms.length} 个房间` : ''}
+                      {tr('Multi-agent collaboration')}{roomCount > 0 ? ` · ${tr('{count} rooms', { count: roomCount })}` : ''}
                     </span>
                   </div>
                   <Button
@@ -961,7 +1155,7 @@ export function SettingsView() {
                     }}
                   >
                     <Plus className="size-3.5" />
-                    新建群聊
+                    {tr('Create collaboration room')}
                   </Button>
                 </div>
 
@@ -1190,10 +1384,10 @@ export function SettingsView() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button variant="secondary" size="sm" onClick={() => setBatchOpen(true)}>
+                    <Button variant="secondary" size="sm" disabled={busy} onClick={() => setBatchOpen(true)}>
                       批量导入账号 (邮箱 | 收件箱)
                     </Button>
-                    <Button variant="primary" size="sm" onClick={() => void handleQuickAddMuseAccount()}>
+                    <Button variant="primary" size="sm" disabled={busy} onClick={() => void handleQuickAddMuseAccount()}>
                       <Plus className="size-3.5" /> 新增 Muse 账号
                     </Button>
                   </div>
@@ -1222,7 +1416,7 @@ export function SettingsView() {
                         onClick={() => setSettingsOpen(true, 'proxy-pool')}
                         className="text-[12px] font-medium text-accent-600 hover:underline"
                       >
-                        配置代理池 →
+                        {tr('Configure proxy pool')} →
                       </button>
                     </p>
                   </div>
@@ -1239,7 +1433,7 @@ export function SettingsView() {
                       <Button variant="secondary" size="sm" onClick={() => setSettingsOpen(true, 'proxy-pool')}>
                         先导入代理池
                       </Button>
-                      <Button variant="primary" size="sm" onClick={() => setBatchOpen(true)}>
+                      <Button variant="primary" size="sm" disabled={busy} onClick={() => setBatchOpen(true)}>
                         批量导入 Muse 账号
                       </Button>
                     </div>
@@ -1250,7 +1444,7 @@ export function SettingsView() {
                       <span>账号与对应 Bot</span>
                       <div className="flex items-center gap-2">
                         {pool.length > 0 && (
-                          <Button size="sm" variant="secondary" disabled={busy} onClick={() => void handleAutoAssignAll()}>
+                          <Button size="sm" variant="secondary" disabled={busy} onClick={() => void handleAutoAssignMuse()}>
                             <Shuffle className="size-3.5" /> 一键按代理池重新一对一匹配
                           </Button>
                         )}
@@ -1261,7 +1455,7 @@ export function SettingsView() {
                     </div>
                     <ul className="divide-y divide-line">
                       {museAccounts.map((acc) => {
-                        const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
+                        const ownerBot = botsByAccountId.get(acc.id)?.[0]
                         const px = accountProxies[acc.id]
                         const hasProxy = px && px.mode !== 'direct' && px.host && px.port
                         return (
@@ -1368,7 +1562,7 @@ export function SettingsView() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button variant="primary" size="sm" onClick={handleQuickAddDotAccount}>
+                    <Button variant="primary" size="sm" disabled={busy} onClick={handleQuickAddDotAccount}>
                       <Plus className="size-3.5" /> 网页登录新增 Dot 账号
                     </Button>
                   </div>
@@ -1413,7 +1607,7 @@ export function SettingsView() {
                         options={[
                           { value: '__new__', label: '+ 新建独立 Dot Bot（支持多行批量导入）' },
                           ...dotAccounts.map((acc) => {
-                            const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
+                            const ownerBot = botsByAccountId.get(acc.id)?.[0]
                             return {
                               value: acc.id,
                               label: `替换凭据：${ownerBot?.name || acc.displayName} (${acc.handle || acc.id})`
@@ -1489,7 +1683,7 @@ export function SettingsView() {
                     </div>
                     <ul className="divide-y divide-line">
                       {dotAccounts.map((acc) => {
-                        const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
+                        const ownerBot = botsByAccountId.get(acc.id)?.[0]
                         const meta = dotMetaMap[acc.id]
                         return (
                           <li key={acc.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-hover/30">
@@ -1615,10 +1809,10 @@ export function SettingsView() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="primary" size="sm" onClick={() => handleQuickAddGrokAccount(false)}>
+                    <Button variant="primary" size="sm" disabled={busy} onClick={() => handleQuickAddGrokAccount(false)}>
                       <Plus className="size-3.5" /> 登录窗口添加账号
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => handleQuickAddGrokAccount(true)}>
+                    <Button variant="secondary" size="sm" disabled={busy} onClick={() => handleQuickAddGrokAccount(true)}>
                       <Globe className="size-3.5" /> 默认浏览器授权
                     </Button>
                   </div>
@@ -1683,9 +1877,7 @@ export function SettingsView() {
                   <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-soft">
                     <ul className="divide-y divide-line">
                       {grokAccounts.map((acc) => {
-                        const accountBots = bots.filter(
-                          (b) => b.platformId === 'grok' && b.accountIds.includes(acc.id)
-                        )
+                        const accountBots = (botsByAccountId.get(acc.id) ?? []).filter((b) => b.platformId === 'grok')
                         const ownerBot = accountBots[0]
                         return (
                           <li key={acc.id} className="flex flex-col gap-2.5 px-4 py-3.5 hover:bg-hover/30">
@@ -1811,7 +2003,7 @@ export function SettingsView() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="primary" size="sm" onClick={() => void handleQuickAddHarkAccount()}>
+                    <Button variant="primary" size="sm" disabled={busy} onClick={() => void handleQuickAddHarkAccount()}>
                       <Plus className="size-3.5" /> 网页登录新增 Hark 账号
                     </Button>
                   </div>
@@ -1830,7 +2022,7 @@ export function SettingsView() {
                       options={[
                         { value: '__new__', label: '+ 新建独立 Hark Bot' },
                         ...harkAccounts.map((acc) => {
-                          const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
+                          const ownerBot = botsByAccountId.get(acc.id)?.[0]
                           return {
                             value: acc.id,
                             label: `更新会话：${ownerBot?.name || acc.displayName} (${acc.handle || acc.id})`
@@ -1876,7 +2068,7 @@ export function SettingsView() {
                   <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-soft">
                     <ul className="divide-y divide-line">
                       {harkAccounts.map((acc) => {
-                        const ownerBot = bots.find((b) => b.accountIds.includes(acc.id))
+                        const ownerBot = botsByAccountId.get(acc.id)?.[0]
                         return (
                           <li key={acc.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-hover/30">
                             <div className="flex min-w-0 items-center gap-3">
@@ -1984,7 +2176,7 @@ export function SettingsView() {
                   <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-soft">
                     <ul className="divide-y divide-line">
                       {antigravityAccounts.map((acc) => {
-                        const bot = antigravityBots.find((b) => b.accountIds.includes(acc.id))
+                        const bot = botsByAccountId.get(acc.id)?.find((b) => b.platformId === 'antigravity')
                         const online =
                           acc.status === 'online' || acc.status === 'busy' || acc.status === 'attention'
                         return (
@@ -2048,14 +2240,14 @@ export function SettingsView() {
               <div className="flex flex-col gap-5 animate-veil-in">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">代理池</h2>
+                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">{tr('Proxy pool')}</h2>
                     <p className="mt-1 text-[13px] text-ink-secondary">
                       批量导入代理并按「一号一代理」自动分配，本地钥匙串加密保存。
                     </p>
                   </div>
                   {pool.length > 0 && museAccounts.length > 0 && (
-                    <Button variant="primary" size="sm" disabled={busy} onClick={() => void handleAutoAssignAll()}>
-                      <Shuffle className="size-3.5" /> 一键匹配给全部 Muse 账号 ({museAccounts.length})
+                    <Button variant="primary" size="sm" disabled={busy} onClick={() => void handleAutoAssignMuse()}>
+                      <Shuffle className="size-3.5" /> {tr('Assign proxies to Muse accounts ({count})', { count: museAccounts.length })}
                     </Button>
                   )}
                 </div>
@@ -2145,7 +2337,7 @@ export function SettingsView() {
                       {pool.map((item, idx) => {
                         const assignedAcc = item.assignedAccountId ? accounts[item.assignedAccountId] : undefined
                         const ownerBot = item.assignedAccountId
-                          ? bots.find((b) => b.accountIds.includes(item.assignedAccountId!))
+                          ? botsByAccountId.get(item.assignedAccountId)?.[0]
                           : undefined
                         return (
                           <li key={item.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
@@ -2190,9 +2382,9 @@ export function SettingsView() {
             {settingsTab === 'general' && (
               <div className="flex flex-col gap-5 animate-veil-in">
                 <div>
-                  <h2 className="text-[17px] font-semibold tracking-tight text-ink">常规、侧栏分组与凭据安全</h2>
+                  <h2 className="text-[17px] font-semibold tracking-tight text-ink">{tr('General & Security')}</h2>
                   <p className="mt-1 text-[13px] text-ink-secondary">
-                    调整界面外观、管理侧边栏分组，以及在发布/交付前一键脱敏或清除所有本机敏感凭据。
+                    {tr('Adjust the appearance, manage sidebar groups, and clear local credentials.')}
                   </p>
                 </div>
 
@@ -2201,7 +2393,7 @@ export function SettingsView() {
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div>
                       <p className="text-[14px] font-medium text-ink">{tr('Appearance')}</p>
-                      <p className="text-[12px] text-ink-muted">Grok Bot Sand Light / Sand Dark 配色系统</p>
+                      <p className="text-[12px] text-ink-muted">{tr('Grok Bot Sand Light and Sand Dark themes')}</p>
                     </div>
                     <SegmentedControl<ThemePref>
                       size="sm"
@@ -2218,7 +2410,7 @@ export function SettingsView() {
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div>
                       <p className="text-[14px] font-medium text-ink">{tr('Language')}</p>
-                      <p className="text-[12px] text-ink-muted">切换界面显示语言</p>
+                      <p className="text-[12px] text-ink-muted">{tr('Choose the display language')}</p>
                     </div>
                     <SegmentedControl<Locale>
                       size="sm"
@@ -2237,17 +2429,14 @@ export function SettingsView() {
 
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div>
-                      <p className="text-[14px] font-medium text-ink">当前版本</p>
+                      <p className="text-[14px] font-medium text-ink">{tr('Current version')}</p>
                       <p className="font-mono text-[12px] text-ink-muted">BotArk {version || '0.11.1'}</p>
                     </div>
                     <Button
                       size="sm"
                       variant="secondary"
                       disabled={checkingUpdate}
-                      onClick={() => {
-                        setCheckingUpdate(true)
-                        void getBridge()?.updates?.check()
-                      }}
+                      onClick={() => void handleCheckForUpdates()}
                     >
                       <RefreshCw className={cn('size-3.5', checkingUpdate && 'animate-spin')} />
                       {tr('Check for updates')}
@@ -2256,9 +2445,9 @@ export function SettingsView() {
 
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div>
-                      <p className="text-[14px] font-medium text-ink">新手引导与产品架构导览</p>
+                      <p className="text-[14px] font-medium text-ink">{tr('BotArk guide')}</p>
                       <p className="text-[12px] text-ink-muted">
-                        查看六大原生协议、多 Agent 协作群聊、受控本地 MCP 与钥匙串加密沙盒架构指南
+                        {tr('Learn how BotArk connects accounts, runs collaboration rooms, and uses MCP tools.')}
                       </p>
                     </div>
                     <Button
@@ -2267,7 +2456,7 @@ export function SettingsView() {
                       onClick={() => setOnboardingOpen(true)}
                     >
                       <Sparkles className="size-3.5 text-accent-600" />
-                      打开新手引导
+                      {tr('Open the onboarding guide')}
                     </Button>
                   </div>
                 </div>
@@ -2363,30 +2552,30 @@ export function SettingsView() {
                   <div className="border-b border-line bg-status-error/5 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <ShieldAlert className="size-4 text-status-error" />
-                      <h3 className="text-[14px] font-semibold text-ink">凭据安全与上线前一键脱敏</h3>
+                      <h3 className="text-[14px] font-semibold text-ink">{tr('Credential security')}</h3>
                     </div>
                     <p className="mt-1 text-[12px] text-ink-secondary">
-                      所有 OAuth Token、Refresh Token 与代理密码均通过系统 Keychain (`safeStorage` + `0600` 权限) 加密保存。在打包分发或推送上线前，可在此一键抹除所有本机测试凭据。
+                      {tr('BotArk encrypts OAuth tokens, refresh tokens, and proxy passwords using system secure storage.')}
                     </p>
                   </div>
                   <div className="divide-y divide-line">
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
                       <div>
-                        <p className="text-[13.5px] font-medium text-ink">导出脱敏工作区结构</p>
+                        <p className="text-[13.5px] font-medium text-ink">{tr('Export sanitized workspace metadata')}</p>
                         <p className="text-[12px] text-ink-muted">
-                          仅导出分组与 Bot 列表元数据（自动剥离所有 Token、Cookie、聊天隐私与代理密码）
+                          {tr('The export contains group, bot, and account metadata.')}
                         </p>
                       </div>
                       <Button size="sm" variant="secondary" onClick={handleExportSanitizedConfig}>
-                        <Download className="size-3.5" /> 导出脱敏 JSON
+                        <Download className="size-3.5" /> {tr('Export sanitized JSON')}
                       </Button>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
                       <div>
-                        <p className="text-[13.5px] font-medium text-ink">移除所有敏感凭据（保留 Bot 列表）</p>
+                        <p className="text-[13.5px] font-medium text-ink">{tr('Clear saved credentials')}</p>
                         <p className="text-[12px] text-ink-muted">
-                          一键退出全部平台账号并清空本机 `dot-accounts.json`、`grok-sand-tokens.json`、浏览器分区 Cookie 与代理池
+                          {tr('Sign out of all accounts and clear saved credentials, browser sessions, proxies, and collaboration rooms.')}
                         </p>
                       </div>
                       <Button
@@ -2397,15 +2586,15 @@ export function SettingsView() {
                         className={cn(confirmWipeCreds && 'bg-status-error text-white hover:bg-status-error/90')}
                       >
                         <Trash2 className="size-3.5" />
-                        {confirmWipeCreds ? '确认清除所有凭据' : '清除全部敏感凭据'}
+                        {tr(confirmWipeCreds ? 'Confirm credential cleanup' : 'Clear saved credentials')}
                       </Button>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
                       <div>
-                        <p className="text-[13.5px] font-medium text-ink">恢复出厂纯净状态（清空工作区 + 全部凭据）</p>
+                        <p className="text-[13.5px] font-medium text-ink">{tr('Factory reset')}</p>
                         <p className="text-[12px] text-ink-muted">
-                          彻底删除本机所有测试 Bot、账号、聊天记录与加密凭据，恢复至首次安装时的空白工作区
+                          {tr('Delete local bots, accounts, chat history, collaboration rooms, and saved credentials.')}
                         </p>
                       </div>
                       <Button
@@ -2416,7 +2605,7 @@ export function SettingsView() {
                         className={cn(confirmResetAll && 'bg-status-error text-white hover:bg-status-error/90')}
                       >
                         <Trash2 className="size-3.5" />
-                        {confirmResetAll ? '再次点击确认恢复出厂' : '恢复出厂设置'}
+                        {tr(confirmResetAll ? 'Confirm factory reset' : 'Factory reset')}
                       </Button>
                     </div>
                   </div>
@@ -2433,10 +2622,10 @@ export function SettingsView() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="primary" size="sm" onClick={() => void handleQuickAddCueAccount(false)}>
+                    <Button variant="primary" size="sm" disabled={busy} onClick={() => void handleQuickAddCueAccount(false)}>
                       <Plus className="size-3.5" /> 网页登录新增 Cue 账号
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => void handleQuickAddCueAccount(true)}>
+                    <Button variant="secondary" size="sm" disabled={busy} onClick={() => void handleQuickAddCueAccount(true)}>
                       <Globe className="size-3.5" /> 系统浏览器登录
                     </Button>
                   </div>
@@ -2510,9 +2699,7 @@ export function SettingsView() {
                   <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-soft">
                     <ul className="divide-y divide-line">
                       {cueAccounts.map((acc) => {
-                        const accountBots = bots.filter(
-                          (b) => b.platformId === 'cue' && b.accountIds.includes(acc.id)
-                        )
+                        const accountBots = (botsByAccountId.get(acc.id) ?? []).filter((b) => b.platformId === 'cue')
                         const ownerBot = accountBots[0]
                         return (
                           <li key={acc.id} className="flex flex-col gap-2.5 px-4 py-3.5 hover:bg-hover/30">
