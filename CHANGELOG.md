@@ -2,6 +2,24 @@
 
 All notable changes to **BotArk** (formerly BotHub) are documented in this file.
 
+## [0.15.1] - 2026-11-25
+
+### Added
+
+- Antigravity universal credential paste import (Cookie header, Bash / Windows cURL, and Cookie-Editor JSON) with verification and rollback on failure.
+- Incremental 80-message windowing in long chats with scroll preservation and automatic search expansion.
+- Collaboration room search in Command Palette (`⌘K`) with pinned rooms prioritized first.
+
+### Fixed
+
+- Hardened Google OAuth desktop browser fingerprinting across Windows, macOS, and Linux (`window.chrome`, PDF plugins/MIME types, full high-entropy `Sec-CH-UA-*` / `userAgentData`, native `Function.prototype.toString` masking, synchronous iframe realm patching, and Firefox compatibility fingerprint with stale rejection cookie cleanup) to resolve Antigravity Windows login blocks and recognition (#63).
+- Persisted verified Antigravity Google `authuser` indices across restarts and kept compatibility mode intact during sign-in polling.
+- Used plain-language collaboration room framing for Hark members and allowed `blob:`/`data:` media playback in renderer CSP.
+
+### Changed
+
+- Refactored major monoliths (`SettingsView`, `muse-native/chat`, `MessageBubble`, `dotClient`, `RoomView`, `botStore`), deduplicated inspector parsers into shared helpers, removed unused `AddAccountsDialog`, and code-split non-startup panels into `React.lazy` chunks (−15.6% initial web JS).
+
 ## [0.15.0] - 2026-11-24
 
 ### Added
