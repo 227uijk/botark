@@ -311,7 +311,7 @@ export async function probeAntigravitySession(
     return { signedIn: false, reason: 'network', message: '无法读取 Antigravity 的 Google 账号索引。请重试。' }
   }
   const selectedAuthUser = parseAntigravityAuthUser(preferredAuthUser) ?? savedAuthUser
-  const authUserIndices = selectedAuthUser === undefined ? ['0', '1'] : [selectedAuthUser]
+  const authUserIndices = selectedAuthUser === undefined ? ['0', '1', '2'] : [selectedAuthUser]
   let message = 'Antigravity 未返回可验证的用户资料。'
 
   for (const authUser of authUserIndices) {

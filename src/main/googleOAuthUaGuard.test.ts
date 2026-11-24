@@ -316,12 +316,197 @@ describe('googleOAuthUaGuard', () => {
 
     const firefoxUa = buildGoogleFirefoxCompatUa('win32')
     expect(runInOrigin('accounts.google.com', firefoxUa).navigator).toMatchObject({
-      userAgent: firefoxUa, userAgentData: undefined
+      userAgent: firefoxUa,
+      userAgentData: undefined,
+      vendor: '',
+      productSub: '20100101',
+      buildID: '20181001000000',
+      oscpu: 'Windows NT 10.0; Win64; x64'
     })
     expect(runInOrigin('antigravity.google.com', firefoxUa).navigator).toMatchObject({
       userAgent: expect.stringContaining('Chrome/147.0.7103.49'),
       userAgentData: expect.objectContaining({ platform: 'Windows' })
     })
+  })
+
+  it('hardens full desktop browser fingerprint (window.chrome, plugins, high-entropy hints, native toString, iframe realms)', async () => {
+    const patchScript = buildGoogleOAuthMainWorldPatchScript('147.0.7103.49', 'win32', 'x64')
+
+    // 1. High-entropy HTTP Client Hints match JS userAgentData 1:1
+    const sanitized = sanitizeGoogleRequestHeaders(
+      {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/147.0.7103.49 Electron/45.2.1 Safari/537.36',
+        'sec-ch-ua': '"Electron";v="45"',
+        'sec-ch-ua-full-version': '"45.2.1"',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-ch-ua-platform-version': '"0.0.0"',
+        'sec-ch-ua-arch': '"x86"',
+        'sec-ch-ua-bitness': '"64"',
+        'sec-ch-ua-model': '"Electron"',
+        'sec-ch-ua-wow64': '?1',
+        'sec-ch-ua-form-factors': '"Unknown"'
+      },
+      '147.0.7103.49',
+      'win32',
+      { arch: 'x64' }
+    )
+    expect(sanitized['Sec-CH-UA-Mobile']).toBe('?0')
+    expect(sanitized['sec-ch-ua-full-version']).toBe('"147.0.7103.49"')
+    expect(sanitized['sec-ch-ua-platform-version']).toMatch(/^"(?:10|15)\.0\.0"$/)
+    expect(sanitized['sec-ch-ua-arch']).toBe('"x86"')
+    expect(sanitized['sec-ch-ua-bitness']).toBe('"64"')
+    expect(sanitized['sec-ch-ua-model']).toBe('""')
+    expect(sanitized['sec-ch-ua-wow64']).toBe('?0')
+    expect(sanitized['sec-ch-ua-form-factors']).toBe('"Desktop"')
+
+    // 2. Full main-world realm + synchronous child about:blank iframe patching
+    const makeRealm = (hostname: string, protocol: string, referrer = '') => {
+      class MockPlugin {}
+      class MockMimeType {}
+      class MockPluginArray { length = 0 }
+      class MockMimeTypeArray { length = 0 }
+      class MockNavigatorUAData {
+        brands = [{ brand: 'Electron', version: '45' }]
+        mobile = false
+        platform = 'Windows'
+      }
+      class MockNavigator {}
+      Object.defineProperties(MockNavigator.prototype, {
+        userAgent: {
+          configurable: true,
+          get: () => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/147.0.7103.49 Electron/45.2.1 Safari/537.36'
+        },
+        appVersion: {
+          configurable: true,
+          get: () => '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/147.0.7103.49 Electron/45.2.1 Safari/537.36'
+        },
+        vendor: { configurable: true, get: () => 'Google Inc.' },
+        webdriver: { configurable: true, get: () => true },
+        plugins: { configurable: true, get: () => new MockPluginArray() },
+        mimeTypes: { configurable: true, get: () => new MockMimeTypeArray() },
+        pdfViewerEnabled: { configurable: true, get: () => false },
+        userAgentData: { configurable: true, get: () => new MockNavigatorUAData() }
+      })
+      const nav = new MockNavigator()
+      const realm: Record<string, unknown> = {
+        Navigator: MockNavigator,
+        navigator: nav,
+        Plugin: MockPlugin,
+        MimeType: MockMimeType,
+        PluginArray: MockPluginArray,
+        MimeTypeArray: MockMimeTypeArray,
+        location: { hostname, protocol, pathname: '/v3/signin/identifier' },
+        document: { referrer },
+        performance: { timeOrigin: 1_700_000_000_000, now: () => 42.5 },
+        innerWidth: 1080,
+        innerHeight: 780,
+        outerWidth: 0,
+        outerHeight: 0,
+        Object,
+        Symbol,
+        Promise,
+        Array,
+        WeakMap,
+        Date,
+        Math
+      }
+      realm.window = realm
+      return { realm, MockNavigator, MockPluginArray, MockMimeTypeArray, MockNavigatorUAData }
+    }
+
+    const parent = makeRealm('accounts.google.com', 'https:')
+    const child = makeRealm('', 'about:', 'https://accounts.google.com/v3/signin/identifier')
+
+    class MockHTMLIFrameElement {}
+    Object.defineProperty(MockHTMLIFrameElement.prototype, 'contentWindow', {
+      configurable: true,
+      enumerable: true,
+      get() { return child.realm }
+    })
+    parent.realm.HTMLIFrameElement = MockHTMLIFrameElement
+
+    const vmCtx = vm.createContext(parent.realm)
+    vm.runInContext(patchScript, vmCtx)
+
+    // Verify authentic window.chrome (app + csi + loadTimes + runtime)
+    const chromeObj = parent.realm.chrome as {
+      app: { isInstalled: boolean; getIsInstalled: () => boolean; runningState: () => string }
+      csi: () => { startE: number; tran: number }
+      loadTimes: () => { npnNegotiatedProtocol: string; wasFetchedViaSpdy: boolean }
+      runtime: { PlatformOs: { WIN: string }; id: undefined }
+    }
+    expect(chromeObj).toBeDefined()
+    expect(chromeObj.app.isInstalled).toBe(false)
+    expect(chromeObj.app.getIsInstalled()).toBe(false)
+    expect(chromeObj.app.runningState()).toBe('cannot_run')
+    expect(chromeObj.csi()).toMatchObject({ startE: 1_700_000_000_000, tran: 15 })
+    expect(chromeObj.loadTimes()).toMatchObject({ npnNegotiatedProtocol: 'h2', wasFetchedViaSpdy: true })
+    expect(chromeObj.runtime.PlatformOs.WIN).toBe('win')
+    expect(chromeObj.runtime.id).toBeUndefined()
+
+    // Verify 5 Chrome PDF plugins + 2 MIME types + pdfViewerEnabled
+    const nav = parent.realm.navigator as {
+      plugins: { length: number; item: (i: number) => { name: string } | null }
+      mimeTypes: { length: number; namedItem: (k: string) => { type: string } | null }
+      pdfViewerEnabled: boolean
+      userAgentData: { getHighEntropyValues: (h: string[]) => Promise<Record<string, unknown>> }
+    }
+    expect(nav.plugins instanceof parent.MockPluginArray).toBe(true)
+    expect(nav.plugins.length).toBe(5)
+    expect(nav.plugins.item(0)?.name).toBe('PDF Viewer')
+    expect(nav.mimeTypes instanceof parent.MockMimeTypeArray).toBe(true)
+    expect(nav.mimeTypes.length).toBe(2)
+    expect(nav.mimeTypes.namedItem('application/pdf')?.type).toBe('application/pdf')
+    expect(nav.pdfViewerEnabled).toBe(true)
+
+    // Verify non-zero desktop outer dimensions
+    expect(parent.realm.outerWidth).toBe(1080)
+    expect(parent.realm.outerHeight).toBe(865)
+
+    // Verify Function.prototype.toString returns native signatures
+    const fnToString = vm.runInContext('Function.prototype.toString', vmCtx) as () => string
+    const uaDataGetter = Object.getOwnPropertyDescriptor(parent.MockNavigator.prototype, 'userAgentData')?.get
+    expect(fnToString.call(uaDataGetter)).toBe('function get userAgentData() { [native code] }')
+    expect(fnToString.call(chromeObj.csi)).toBe('function csi() { [native code] }')
+    expect(fnToString.call(fnToString)).toBe('function toString() { [native code] }')
+
+    // Verify full high-entropy values
+    const highEntropy = await nav.userAgentData.getHighEntropyValues([
+      'architecture',
+      'bitness',
+      'model',
+      'platformVersion',
+      'wow64',
+      'formFactors',
+      'fullVersionList',
+      'uaFullVersion'
+    ])
+    expect(highEntropy).toMatchObject({
+      architecture: 'x86',
+      bitness: '64',
+      model: '',
+      wow64: false,
+      formFactors: ['Desktop'],
+      uaFullVersion: '147.0.7103.49'
+    })
+    expect(String(highEntropy.platformVersion)).toMatch(/^(?:10|15)\.0\.0$/)
+
+    // Verify BotGuard hidden about:blank iframe gets synchronously patched on contentWindow access
+    const iframe = new MockHTMLIFrameElement() as unknown as { contentWindow: typeof child.realm }
+    const childWin = iframe.contentWindow
+    const childNav = childWin.navigator as {
+      userAgent: string
+      webdriver: boolean
+      pdfViewerEnabled: boolean
+      plugins: { length: number }
+      userAgentData: { brands: Array<{ brand: string; version: string }> }
+    }
+    expect(childNav.userAgent).not.toContain('Electron')
+    expect(childNav.webdriver).toBe(false)
+    expect(childNav.pdfViewerEnabled).toBe(true)
+    expect(childNav.plugins.length).toBe(5)
+    expect(childNav.userAgentData.brands.some((b) => b.brand === 'Google Chrome')).toBe(true)
+    expect((childWin.chrome as { app?: { isInstalled: boolean } })?.app?.isInstalled).toBe(false)
   })
 
   it('detects Google blocked or passkey pages strictly on Google/YouTube auth hosts', () => {

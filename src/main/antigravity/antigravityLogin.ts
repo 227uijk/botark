@@ -172,13 +172,26 @@ export async function openAntigravityLoginWindow(accountId: string, parent?: Bro
   const attachNavigationGuards = (wc: WebContents, parentForChild: BrowserWindow) => {
     attachGoogleOAuthWebContentsGuard(wc, ses, { allowGlobalCleanUa: true })
 
+    const clearGoogleRejectionCookies = async (): Promise<void> => {
+      if (typeof ses.cookies?.remove !== 'function') return
+      const urls = ['https://accounts.google.com/', 'https://accounts.youtube.com/']
+      const names = ['__Host-GAPS', 'GAPS', 'OTZ']
+      await Promise.allSettled(
+        urls.flatMap((url) => names.map((name) => ses.cookies.remove(url, name)))
+      )
+    }
+
     const retryWithFirefoxUa = () => {
       setGoogleFirefoxCompatMode(ses, true)
       const mainContents = win.webContents
       closeChildPopups()
       if (!mainContents.isDestroyed()) {
         mainContents.setUserAgent(buildGoogleFirefoxCompatUa())
-        void mainContents.loadURL(ANTIGRAVITY_ORIGIN).catch(() => undefined)
+        void clearGoogleRejectionCookies().finally(() => {
+          if (!mainContents.isDestroyed()) {
+            void mainContents.loadURL(ANTIGRAVITY_ORIGIN).catch(() => undefined)
+          }
+        })
       }
     }
 

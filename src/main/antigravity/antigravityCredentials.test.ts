@@ -177,6 +177,9 @@ function makeSession(initial: Cookie[]) {
     }),
     on: vi.fn(),
     off: vi.fn(),
+    remove: vi.fn(async (_url: string, name: string) => {
+      jar = jar.filter((cookie) => cookie.name !== name)
+    }),
     flushStore: vi.fn(async () => undefined)
   }
   return {
@@ -333,6 +336,7 @@ describe('Antigravity credential import IPC', () => {
       wc.windowOpenHandler({ url: 'botark-action://retry-firefox-ua' })
       expect(wc.setUserAgent).toHaveBeenLastCalledWith(expect.stringContaining('Firefox/'))
       expect(isGoogleFirefoxCompatMode(ses as never)).toBe(true)
+      await vi.waitFor(() => expect(ses.cookies.remove).toHaveBeenCalledWith('https://accounts.google.com/', '__Host-GAPS'))
 
       ses.fetch.mockResolvedValueOnce(Response.json(['person@example.com']))
       await expect(invoke('SAPISID=new-session')).resolves.toMatchObject({ signedIn: true })
