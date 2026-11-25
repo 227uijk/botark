@@ -255,7 +255,7 @@ app.whenReady().then(async () => {
   registerGrokIpc()
   registerHarkIpc()
   registerDotIpc()
-  registerHermesIpc()
+  registerHermesIpc(() => mainWindow)
   registerAntigravityIpc()
   registerCueIpc()
   registerMobileSyncIpc()

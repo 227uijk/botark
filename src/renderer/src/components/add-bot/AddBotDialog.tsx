@@ -1,3 +1,4 @@
+import { blankHermesLogin, HermesDashboardLoginFields, HermesSignInMethod, type HermesSignInMode } from '@/components/hermes/HermesSignInFields'
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
 import { getPlatform } from '@adapters/platforms'
 import { adapterRegistry } from '@adapters/registry'
@@ -1234,6 +1235,8 @@ function HermesConnectStep({
   const t = useT()
   const [baseUrl, setBaseUrl] = useState('http://127.0.0.1:8642')
   const [apiKey, setApiKey] = useState('')
+  const [mode, setMode] = useState<HermesSignInMode>('api-key')
+  const [dashboardLogin, setDashboardLogin] = useState(blankHermesLogin)
   const [model, setModel] = useState('')
   const [useLocalKey, setUseLocalKey] = useState(false)
   const [detecting, setDetecting] = useState(false)
@@ -1302,8 +1305,10 @@ function HermesConnectStep({
       const st = await hermes.configure({
         accountId,
         baseUrl: baseUrl.trim(),
-        apiKey: apiKey.trim() || undefined,
-        ...(localUrl && !apiKey.trim() && useLocalKey ? { useLocalKey: true } : {}),
+        ...(mode === 'dashboard' ? { dashboardLogin } : {
+          apiKey: apiKey.trim() || undefined,
+          ...(localUrl && !apiKey.trim() && useLocalKey ? { useLocalKey: true } : {})
+        }),
         model: model.trim() || undefined,
         displayName: 'Hermes'
       })
@@ -1322,7 +1327,10 @@ function HermesConnectStep({
     } catch (e) {
       if (isCurrent()) setError(errorMessage(e))
     } finally {
-      if (isCurrent()) setBusy(false)
+      if (isCurrent()) {
+        setDashboardLogin(v => ({ ...v, password: '' }))
+        setBusy(false)
+      }
     }
   }
 
@@ -1335,14 +1343,14 @@ function HermesConnectStep({
           <p className="text-[11.5px] text-ink-secondary">
             {detected?.reachable
               ? `已检测到本机服务在线${detected.version ? ` (v${detected.version})` : ''}`
-              : t('Connect local or remote Hermes API Server')}
+              : mode === 'dashboard' ? '登录现有 Hermes Dashboard' : t('Connect local or remote Hermes API Server')}
           </p>
         </div>
         <Button
           type="button"
           size="sm"
           variant="ghost"
-          disabled={detecting || busy || !localUrl}
+          disabled={mode === 'dashboard' || detecting || busy || !localUrl}
           onClick={() => void runDetect(baseUrl.trim())}
         >
           <RefreshCw className={cn('size-3.5', detecting && 'animate-spin')} />
@@ -1350,9 +1358,20 @@ function HermesConnectStep({
         </Button>
       </div>
 
+      <HermesSignInMethod mode={mode} disabled={busy} onChange={next => {
+        detectionId.current++
+        setMode(next)
+        setDashboardLogin(blankHermesLogin)
+        setApiKey('')
+        setDetected(null)
+        setUseLocalKey(false)
+        setDetecting(false)
+        setError('')
+        setBaseUrl(next === 'dashboard' ? '' : 'http://127.0.0.1:8642')
+      }} />
       <div className="flex flex-col gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-ink-secondary">{t('Server URL')}</span>
+          <span className="text-[12px] font-medium text-ink-secondary">{mode === 'dashboard' ? 'Dashboard 地址' : t('Server URL')}</span>
           <input
             value={baseUrl}
             disabled={busy}
@@ -1363,13 +1382,14 @@ function HermesConnectStep({
               setDetected(null)
               setDetecting(false)
             }}
-            placeholder="http://127.0.0.1:8642"
+            placeholder={mode === 'dashboard' ? 'https://hermes.example.com' : 'http://127.0.0.1:8642'}
             spellCheck={false}
             required
             className="h-9 w-full rounded-lg border border-line-strong bg-surface px-3 font-mono text-[12.5px] text-ink outline-none focus:border-accent-600 focus:ring-3 focus:ring-accent-100"
           />
         </label>
 
+        {mode === 'dashboard' ? <HermesDashboardLoginFields value={dashboardLogin} disabled={busy} onChange={setDashboardLogin} /> : (
         <label className="flex flex-col gap-1">
           <span className="text-[12px] font-medium text-ink-secondary">
             API Key <span className="font-normal text-ink-muted">(API_SERVER_KEY)</span>
@@ -1390,8 +1410,9 @@ function HermesConnectStep({
             className="h-9 w-full rounded-lg border border-line bg-surface px-3 font-mono text-[12.5px] text-ink outline-none focus:border-accent-600 focus:ring-3 focus:ring-accent-100"
           />
         </label>
+        )}
 
-        {localUrl && detected?.hasLocalEnvKey && !apiKey.trim() && (
+        {mode === 'api-key' && localUrl && detected?.hasLocalEnvKey && !apiKey.trim() && (
           <div className="flex items-center justify-between gap-3 rounded-xl bg-sunken/50 px-3 py-2">
             <span className="text-[12px] text-ink-secondary">自动读取 ~/.hermes/.env 密钥</span>
             <SwitchPill checked={useLocalKey} onCheckedChange={setUseLocalKey} />
@@ -1412,7 +1433,7 @@ function HermesConnectStep({
         </label>
       </div>
 
-      {!detected?.reachable && (
+      {mode === 'api-key' && !detected?.reachable && (
         <div className="rounded-lg border border-line bg-hover/50 px-3 py-2 text-[11.5px] leading-[17px] text-ink-secondary">
           <p className="font-medium text-ink">如何启动 Hermes API Server：</p>
           <pre className="mt-1 overflow-x-auto font-mono text-[11px] text-ink-secondary">

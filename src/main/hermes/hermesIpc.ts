@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from 'electron'
 import {
   HERMES_CHANNELS,
   type HermesAuthStatus,
@@ -7,6 +7,8 @@ import {
   type HermesRpcRequest,
   type HermesRpcResponse
 } from '@shared/ipc'
+import { loginDashboard, normalizeDashboardUrl, dashboardGet, DashboardError, DashboardSocket } from './hermesDashboard'
+import { checkDashboardDirect, clearDashboardState, dashboardRpc, sendDashboardMessage, setDashboardAccess, verifyDashboardAccount } from './hermesDashboardAccount'
 import type { HermesTurnEvent } from '../../adapters/hermes/events'
 import { loadAccountProxyUrl } from '../muse/accountProxy'
 import {
@@ -85,7 +87,19 @@ async function statusFor(accountId: string, verifyLive = true): Promise<HermesAu
       displayName: acc.displayName || 'Hermes',
       model: acc.model,
       hasApiKey: acc.hasApiKey,
+      authMode: acc.authMode,
+      dashboardProfile: acc.dashboardProfile,
       hasProxy
+    }
+  }
+  if (acc.authMode === 'dashboard') {
+    const common = { accountId, baseUrl: acc.baseUrl, handle, displayName: acc.displayName || 'Hermes',
+      model: acc.model, authMode: acc.authMode, dashboardProfile: acc.dashboardProfile, hasProxy, supportsSessions: true }
+    try {
+      await verifyDashboardAccount(accountId)
+      return { ...common, signedIn: true }
+    } catch (error) {
+      return { ...common, signedIn: false, error: error instanceof Error ? error.message : 'Hermes Dashboard 登录已失效' }
     }
   }
   const probe = await probeHermesServer({
@@ -110,6 +124,10 @@ async function statusFor(accountId: string, verifyLive = true): Promise<HermesAu
 
 async function runHermesRpc(req: HermesRpcRequest & { requestId?: string }): Promise<HermesRpcResponse> {
   try {
+    const dashboard = getHermesAccountMetadata(req.accountId)?.authMode === 'dashboard'
+    if (dashboard && req.op !== 'sendMessage' && req.op !== 'setModel') {
+      return { ok: true, data: await dashboardRpc(req) }
+    }
     switch (req.op) {
       case 'health':
         return { ok: true, data: await getHermesHealth(req.accountId) }
@@ -159,7 +177,7 @@ async function runHermesRpc(req: HermesRpcRequest & { requestId?: string }): Pro
       }
       case 'sendMessage': {
         const turn = { accountId: req.accountId, requestId: req.requestId }
-        const result = await sendHermesMessage({
+        const sendArgs: Parameters<typeof sendHermesMessage>[0] = {
           ...turn,
           botId: req.botId,
           sessionId: req.sessionId,
@@ -204,7 +222,8 @@ async function runHermesRpc(req: HermesRpcRequest & { requestId?: string }): Pro
               })
             }
           }
-        })
+        }
+        const result = dashboard ? await sendDashboardMessage(req, sendArgs.callbacks) : await sendHermesMessage(sendArgs)
         return { ok: true, data: result }
       }
       default:
@@ -213,6 +232,9 @@ async function runHermesRpc(req: HermesRpcRequest & { requestId?: string }): Pro
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       return { ok: false, status: 0, code: 'aborted', message: error.message }
+    }
+    if (error instanceof DashboardError) {
+      return { ok: false, status: error.status, message: error.message }
     }
     if (error instanceof HermesApiError) {
       return {
@@ -233,9 +255,16 @@ async function runHermesRpc(req: HermesRpcRequest & { requestId?: string }): Pro
 
 let registered = false
 
-export function registerHermesIpc(): void {
+export function registerHermesIpc(mainWindow?: () => BrowserWindow | null): void {
   if (registered) return
   registered = true
+  const assertDesktop = (event: IpcMainInvokeEvent) => {
+    if (!mainWindow) return // unit tests inject their renderer boundary separately.
+    const win = mainWindow()
+    if (!win || event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame) {
+      throw new Error('Desktop window required')
+    }
+  }
 
   ipcMain.handle(HERMES_CHANNELS.detectLocal, async (_event, customBaseUrl?: unknown): Promise<HermesLocalDetection> => {
     const local = readLocalHermesEnv()
@@ -273,8 +302,51 @@ export function registerHermesIpc(): void {
     const req = request as HermesConfigureRequest
     const accountId = typeof req.accountId === 'string' ? req.accountId.trim() : ''
     if (!accountId) throw new TypeError('accountId required')
-    const baseUrl = normalizeHermesBaseUrl(req.baseUrl)
     const expectedRevision = getHermesAccountRevision(accountId)
+    if (req.dashboardLogin !== undefined || getHermesAccountMetadata(accountId)?.authMode === 'dashboard') assertDesktop(_event)
+    if (req.dashboardLogin !== undefined) {
+      if (!/^[A-Za-z0-9_-]{1,128}$/.test(accountId) || ['__proto__', 'constructor', 'prototype'].includes(accountId)) {
+        throw new TypeError('Invalid accountId')
+      }
+      try {
+        const form = req.dashboardLogin
+        if (!form || typeof form.username !== 'string' || typeof form.password !== 'string' ||
+            (form.profile !== undefined && typeof form.profile !== 'string')) {
+          throw new DashboardError('请输入有效的 Hermes 用户名和密码')
+        }
+        const baseUrl = normalizeDashboardUrl(req.baseUrl)
+        await checkDashboardDirect(accountId)
+        const profile = form.profile?.trim() ?? ''
+        const { credential, access } = await loginDashboard(baseUrl, form.username.trim(), form.password, profile)
+        await dashboardGet(baseUrl, access.token, '/api/auth/me')
+        const link = await DashboardSocket.connect(baseUrl, access.token)
+        try {
+          if (profile) {
+            const { profiles } = await link.call('profiles.list', { include_sessions: false })
+            if (!Array.isArray(profiles) || !profiles.some(p => p && typeof p === 'object' && p.name === profile)) {
+              throw new DashboardError('Hermes Dashboard 没有这个 Profile，或当前账号无权访问')
+            }
+          }
+          // Verify a working session endpoint before persisting any token.
+          await link.call('session.list', { ...(profile ? { profile } : {}), limit: 1 })
+        } finally { link.close() }
+        const saved = await saveHermesAccount({ accountId, baseUrl, expectedRevision,
+          dashboardAuth: credential, displayName: req.displayName?.trim() || 'Hermes', model: req.model?.trim() })
+        cancelAllHermesRuns(accountId)
+        clearDashboardState(accountId)
+        setDashboardAccess(accountId, access)
+        const handle = hermesHandleFromUrl(saved.baseUrl, saved.model)
+        const displayName = saved.displayName || 'Hermes'
+        broadcast({ type: 'login', accountId, signedIn: true, handle, displayName })
+        return { accountId, signedIn: true, handle, displayName, baseUrl, authMode: 'dashboard',
+          dashboardProfile: profile, model: saved.model, hasApiKey: false, hasProxy: false, supportsSessions: true }
+      } catch (error) {
+        return { accountId, signedIn: false, authMode: 'dashboard',
+          error: error instanceof DashboardError || error instanceof Error && /^(账号密码登录|Hermes Dashboard 地址|请输入 Hermes|验证期间|系统钥匙串)/.test(error.message)
+            ? error.message : 'Hermes Dashboard 登录失败，请检查服务器配置' }
+      }
+    }
+    const baseUrl = normalizeHermesBaseUrl(req.baseUrl)
 
     const suppliedKey = typeof req.apiKey === 'string' ? req.apiKey.trim() : ''
     let effectiveKey = suppliedKey
@@ -317,6 +389,7 @@ export function registerHermesIpc(): void {
       model: req.model?.trim() || probe.defaultModel
     })
 
+    clearDashboardState(accountId)
     const handle = hermesHandleFromUrl(saved.baseUrl, saved.model)
     broadcast({
       type: 'login',
@@ -345,6 +418,7 @@ export function registerHermesIpc(): void {
     if (typeof accountId !== 'string' || !accountId.trim()) {
       throw new TypeError('Invalid accountId')
     }
+    if (getHermesAccountMetadata(accountId.trim())?.authMode === 'dashboard') assertDesktop(_event)
     return statusFor(accountId.trim(), true)
   })
 
@@ -358,8 +432,10 @@ export function registerHermesIpc(): void {
       throw new TypeError('Invalid accountId')
     }
     const id = accountId.trim()
+    if (getHermesAccountMetadata(id)?.authMode === 'dashboard') assertDesktop(_event)
     cancelAllHermesRuns(id)
     await clearHermesAccount(id)
+    clearDashboardState(id)
     broadcast({ type: 'login', accountId: id, signedIn: false })
     return { accountId: id, signedIn: false }
   })
@@ -372,6 +448,7 @@ export function registerHermesIpc(): void {
     if (typeof req.accountId !== 'string' || typeof req.op !== 'string') {
       return { ok: false, status: 0, message: 'accountId and op required' }
     }
+    if (getHermesAccountMetadata(req.accountId)?.authMode === 'dashboard') assertDesktop(_event)
     return runHermesRpc(req)
   })
 }

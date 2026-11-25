@@ -1,3 +1,4 @@
+import { blankHermesLogin, HermesDashboardLoginFields, HermesSignInMethod, type HermesSignInMode } from './HermesSignInFields'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createId } from '@shared/id'
 import type { HermesAuthStatus } from '@shared/ipc'
@@ -38,6 +39,8 @@ export function HermesAccountsSettingsPanel() {
   const [nameInput, setNameInput] = useState('')
   const [baseUrlInput, setBaseUrlInput] = useState('http://127.0.0.1:8642')
   const [apiKeyInput, setApiKeyInput] = useState('')
+  const [mode, setMode] = useState<HermesSignInMode>('api-key')
+  const [dashboardLogin, setDashboardLogin] = useState(blankHermesLogin)
   const [modelInput, setModelInput] = useState('')
   const [useLocalKey, setUseLocalKey] = useState(false)
   const [localKeyOrigin, setLocalKeyOrigin] = useState<string>()
@@ -109,9 +112,11 @@ export function HermesAccountsSettingsPanel() {
       const st = await hermes.configure({
         accountId,
         baseUrl: baseUrlInput.trim(),
-        apiKey: apiKeyInput.trim() || undefined,
-        keepExistingKey: canReuseSavedKey && !apiKeyInput.trim() && !useLocalKey,
-        useLocalKey: canUseLocalKey && !apiKeyInput.trim() && useLocalKey,
+        ...(mode === 'dashboard' ? { dashboardLogin } : {
+          apiKey: apiKeyInput.trim() || undefined,
+          keepExistingKey: canReuseSavedKey && !apiKeyInput.trim() && !useLocalKey,
+          useLocalKey: canUseLocalKey && !apiKeyInput.trim() && useLocalKey
+        }),
         model: modelInput.trim() || undefined,
         displayName
       })
@@ -147,6 +152,7 @@ export function HermesAccountsSettingsPanel() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
+      setDashboardLogin(v => ({ ...v, password: '' }))
       setBusy(false)
     }
   }
@@ -159,6 +165,8 @@ export function HermesAccountsSettingsPanel() {
     setNameInput(acc?.displayName || meta?.displayName || 'Hermes')
     setBaseUrlInput(meta?.baseUrl || 'http://127.0.0.1:8642')
     setApiKeyInput('')
+    setMode(meta?.authMode === 'dashboard' ? 'dashboard' : 'api-key')
+    setDashboardLogin({ ...blankHermesLogin, profile: meta?.dashboardProfile || '' })
     setModelInput(meta?.model || '')
     setUseLocalKey(false)
     setError(undefined)
@@ -233,9 +241,18 @@ export function HermesAccountsSettingsPanel() {
           </label>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <HermesSignInMethod mode={mode} disabled={busy} onChange={next => {
+          urlRevision.current++
+          setMode(next)
+          setDashboardLogin(blankHermesLogin)
+          setUseLocalKey(false)
+          setApiKeyInput('')
+          setBaseUrlInput(next === 'dashboard' ? '' : 'http://127.0.0.1:8642')
+          setError(undefined)
+        }} />
+        <div className={cn('grid gap-3', mode === 'api-key' && 'grid-cols-2')}>
           <label className="flex flex-col gap-1">
-            <span className="text-[12px] font-medium text-ink-secondary">API Server 地址</span>
+            <span className="text-[12px] font-medium text-ink-secondary">{mode === 'dashboard' ? 'Dashboard 地址' : 'API Server 地址'}</span>
             <input
               value={baseUrlInput}
               onChange={(e) => {
@@ -243,12 +260,13 @@ export function HermesAccountsSettingsPanel() {
                 setBaseUrlInput(e.target.value)
                 setUseLocalKey(false)
               }}
-              placeholder="http://127.0.0.1:8642"
+              placeholder={mode === 'dashboard' ? 'https://hermes.example.com' : 'http://127.0.0.1:8642'}
               spellCheck={false}
               required
               className="h-9 rounded-lg border border-line bg-main px-3 font-mono text-[12.5px] text-ink outline-none focus:border-accent-600"
             />
           </label>
+          {mode === 'dashboard' ? <HermesDashboardLoginFields value={dashboardLogin} disabled={busy} onChange={setDashboardLogin} /> : (
           <label className="flex flex-col gap-1">
             <span className="text-[12px] font-medium text-ink-secondary">API Key (API_SERVER_KEY)</span>
             <input
@@ -269,9 +287,10 @@ export function HermesAccountsSettingsPanel() {
               className="h-9 rounded-lg border border-line bg-main px-3 font-mono text-[12.5px] text-ink outline-none focus:border-accent-600"
             />
           </label>
+          )}
         </div>
 
-        {canUseLocalKey && !apiKeyInput.trim() && (
+        {mode === 'api-key' && canUseLocalKey && !apiKeyInput.trim() && (
           <div className="flex items-center justify-between gap-3 rounded-xl bg-main px-3 py-2 ring-1 ring-line/50">
             <span className="text-[12px] text-ink-secondary">
               自动读取本机 <code className="font-mono text-[11px] text-ink">~/.hermes/.env</code> 密钥
@@ -282,7 +301,7 @@ export function HermesAccountsSettingsPanel() {
 
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
           <span className="rounded-md bg-main px-2 py-1 font-mono text-[11px] text-ink-muted ring-1 ring-line/50">
-            hermes gateway
+            {mode === 'dashboard' ? 'hermes dashboard' : 'hermes gateway'}
           </span>
           <div className="flex items-center gap-2">
             {editingAccountId && (
@@ -294,6 +313,8 @@ export function HermesAccountsSettingsPanel() {
                   setEditingAccountId(null)
                   setNameInput('')
                   setApiKeyInput('')
+                  setMode('api-key')
+                  setDashboardLogin(blankHermesLogin)
                   setModelInput('')
                   setUseLocalKey(false)
                 }}

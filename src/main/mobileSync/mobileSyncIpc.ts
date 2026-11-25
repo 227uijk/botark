@@ -104,6 +104,7 @@ function collectDirectHermesCredentials(): DirectHermesCredential[] {
   const out: DirectHermesCredential[] = []
   try {
     for (const rec of listHermesAccountRecords()) {
+      if (rec.authMode === 'dashboard') continue
       const full = getHermesAccount(rec.accountId)
       if (!full?.baseUrl) continue
       out.push({

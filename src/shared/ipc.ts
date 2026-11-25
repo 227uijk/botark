@@ -1190,6 +1190,7 @@ export const HERMES_CHANNELS = {
 export interface HermesConfigureRequest {
   accountId: string
   baseUrl: string
+  dashboardLogin?: { username: string; password: string; profile?: string }
   /** Optional API_SERVER_KEY; leave empty for unauthenticated local listener or set `useLocalKey` to read ~/.hermes/.env in main process. */
   apiKey?: string
   /** When true, keep the currently stored encrypted API key if `apiKey` is omitted. */
@@ -1221,6 +1222,8 @@ export interface HermesAuthStatus {
   model?: string
   version?: string
   hasApiKey?: boolean
+  authMode?: 'api-key' | 'dashboard'
+  dashboardProfile?: string
   hasProxy?: boolean
   supportsSessions?: boolean
   error?: string

@@ -808,7 +808,7 @@ export async function deleteHermesJob(accountId: string, jobId: string): Promise
 
 // ---------------- Sessions ----------------
 
-function mapSessionRow(row: Record<string, unknown>): HermesSessionSummary {
+export function mapSessionRow(row: Record<string, unknown>): HermesSessionSummary {
   return {
     id: String(row['id'] ?? ''),
     title: typeof row['title'] === 'string' ? row['title'] : null,

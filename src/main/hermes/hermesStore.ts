@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { app, safeStorage } from 'electron'
 import { createMutex } from '@shared/proxyPool'
 import { readJsonFile, writeJsonAtomic } from '../jsonFile'
+import { normalizeDashboardUrl, type DashboardCredential } from './hermesDashboard'
 
 const STORE_FILE = 'hermes-accounts.json'
 const withStoreLock = createMutex()
@@ -24,6 +25,8 @@ export interface StoredHermesAccountRecord {
   model?: string
   /** Base64 safeStorage ciphertext for API_SERVER_KEY (omitted for unauthenticated local servers). */
   apiKeyEnc?: string
+  dashboardAuthEnc?: string
+  dashboardProfile?: string
   updatedAtMs: number
 }
 
@@ -34,6 +37,8 @@ export interface ResolvedHermesAccount {
   baseUrl: string
   apiKey?: string
   hasApiKey: boolean
+  authMode?: 'api-key' | 'dashboard'
+  dashboardProfile?: string
   displayName?: string
   model?: string
   updatedAtMs: number
@@ -109,7 +114,8 @@ function writeRawStore(data: StoredHermesAccountMap): void {
 
 function isEncryptionAvailable(): boolean {
   try {
-    return typeof safeStorage?.isEncryptionAvailable === 'function' && safeStorage.isEncryptionAvailable()
+    return typeof safeStorage?.isEncryptionAvailable === 'function' && safeStorage.isEncryptionAvailable() &&
+      (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend?.() !== 'basic_text')
   } catch {
     return false
   }
@@ -137,6 +143,7 @@ function accountMetadata(accountId: string, rec: StoredHermesAccountRecord): Her
     accountId,
     baseUrl: rec.baseUrl,
     hasApiKey: Boolean(rec.apiKeyEnc),
+    ...(rec.dashboardAuthEnc ? { authMode: 'dashboard' as const, dashboardProfile: rec.dashboardProfile } : {}),
     displayName: rec.displayName,
     model: rec.model,
     updatedAtMs: rec.updatedAtMs
@@ -170,18 +177,40 @@ export function sameHermesOrigin(first: string, second: string): boolean {
   return new URL(first).origin === new URL(second).origin
 }
 
+export function getDashboardCredential(accountId: string): DashboardCredential | undefined {
+  const record = readRawStore()[accountId]
+  if (!record?.dashboardAuthEnc) return undefined
+  const item = JSON.parse(decryptApiKey(record.dashboardAuthEnc) ?? '{}') as DashboardCredential
+  if (!item.provider || !item.refreshToken || typeof item.profile !== 'string') {
+    throw new Error('Hermes 登录凭据无效，请重新登录')
+  }
+  return item
+}
+
+export async function rotateDashboardCredential(accountId: string, expectedRevision: symbol, item: DashboardCredential): Promise<void> {
+  await withStoreLock(async () => {
+    if (getHermesAccountRevision(accountId) !== expectedRevision) throw new Error('Hermes 登录已更改，请重试')
+    const store = readRawStore()
+    const record = store[accountId]
+    if (!record?.dashboardAuthEnc) throw new Error('Hermes 已退出登录')
+    store[accountId] = { ...record, dashboardAuthEnc: encryptApiKey(JSON.stringify(item)) }
+    writeRawStore(store)
+  })
+}
+
 export async function saveHermesAccount(args: {
   accountId: string
   baseUrl: string
   apiKey?: string
   keepExistingKey?: boolean
+  dashboardAuth?: DashboardCredential
   expectedRevision: symbol
   displayName?: string
   model?: string
 }): Promise<HermesAccountMetadata> {
   const id = (args.accountId ?? '').trim()
   if (!id) throw new Error('accountId required')
-  const normalizedUrl = normalizeHermesBaseUrl(args.baseUrl)
+  const normalizedUrl = args.dashboardAuth ? normalizeDashboardUrl(args.baseUrl) : normalizeHermesBaseUrl(args.baseUrl)
   return withStoreLock(async () => {
     if (args.expectedRevision !== getHermesAccountRevision(id)) {
       throw new Error('验证期间 Hermes 账号配置已更改，请重试')
@@ -200,6 +229,7 @@ export async function saveHermesAccount(args: {
       displayName: args.displayName?.trim() || prev?.displayName || undefined,
       model: args.model !== undefined ? args.model.trim() || undefined : prev?.model,
       ...(apiKeyEnc ? { apiKeyEnc } : {}),
+      ...(args.dashboardAuth ? { dashboardAuthEnc: encryptApiKey(JSON.stringify(args.dashboardAuth)), dashboardProfile: args.dashboardAuth.profile } : {}),
       updatedAtMs: Date.now()
     }
     store[id] = next
